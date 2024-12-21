@@ -80,6 +80,17 @@
 - Squash commits before merging to main
 - Delete branches after successful merge
 
+# PR Description Guidelines
+- PR title should include issue number and concise description
+- PR description should be structured in sections:
+  - Overview: Brief summary of changes
+  - Major Components: Categorized list of main changes (e.g., "CI/CD Setup", "Code Quality Tools")
+  - Process Updates: Any workflow or process changes
+  - Documentation: Documentation updates and changes
+- Each section should use bullet points for clarity
+- Include "Resolves #X" to link to relevant issue
+- Update description when making significant changes to PR
+
 # Project Board Usage
 - All development work must be tracked in the project board
 - New features/bugs start in "To Do"
