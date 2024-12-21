@@ -6,29 +6,39 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # Improve SBT performance
+  SBT_OPTS: >-
+    -Xmx2G
+    -XX:+UseG1GC
+    -XX:+UseStringDeduplication
+    -Xss2M
+  # Coursier cache optimization
+  COURSIER_CACHE: ~/.cache/coursier
+
 jobs:
   test:
+    name: Test
     runs-on: ubuntu-latest
-    container:
-      image: hseeberger/scala-sbt:11.0.20_1.9.7_3.3.1
-      options: --user root
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Cache sbt
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'sbt'
+          
+      - name: Cache Coursier
         uses: actions/cache@v3
         with:
           path: |
+            ~/.cache/coursier
             ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/Library/Caches/Coursier/v1
-            target
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
           restore-keys: |
-            ${{ runner.os }}-sbt-cache-
+            ${{ runner.os }}-sbt-coursier-
 
       - name: Run tests with coverage
         run: sbt clean coverage test coverageReport
@@ -50,27 +60,27 @@ jobs:
           retention-days: 14
 
   lint:
+    name: Lint
     runs-on: ubuntu-latest
-    container:
-      image: hseeberger/scala-sbt:11.0.20_1.9.7_3.3.1
-      options: --user root
-
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Cache sbt
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'sbt'
+          
+      - name: Cache Coursier
         uses: actions/cache@v3
         with:
           path: |
+            ~/.cache/coursier
             ~/.sbt
-            ~/.ivy2/cache
-            ~/.coursier/cache/v1
-            ~/.cache/coursier/v1
-            ~/Library/Caches/Coursier/v1
-            target
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
           restore-keys: |
-            ${{ runner.os }}-sbt-cache-
+            ${{ runner.os }}-sbt-coursier-
 
       - name: Check formatting
         run: sbt scalafmtCheckAll
