@@ -104,6 +104,12 @@
 - Update card status when transitioning between columns
 - Check task dependencies before starting new work
 
+# Task Management Guidelines
+- Prefer updating existing tasks over creating new ones
+- Keep task history in comments for traceability
+- Update task labels to reflect current scope
+- Ensure task titles remain concise but descriptive
+
 # Dependencies Management
 - Check issue dependencies before starting work
 - Don't start tasks if dependencies aren't complete

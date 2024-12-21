@@ -1,0 +1,33 @@
+#12: Add GitHub Actions CI/CD Pipeline and Code Quality Tools
+
+This PR sets up the complete CI/CD pipeline and code quality tooling:
+
+# CI/CD Setup
+- Adds GitHub Actions workflow with separate lint and test jobs
+- Configures test workflow with scoverage checks (90% minimum)
+- Sets up JDK 11 and SBT installation in CI environment
+- Configures caching for better performance
+
+# Code Quality Tools
+- Adds ScalaFix configuration with recommended rules:
+  - OrganizeImports for consistent import organization
+  - RemoveUnused for dead code elimination
+  - LeakingImplicitClassVal for better implicit handling
+  - NoValInForComprehension for idiomatic for-comprehensions
+  - ProcedureSyntax for modern Scala syntax
+- Adds lint command aliases:
+  - 'sbt lint' for checking code quality
+  - 'sbt lintFix' for automatic fixes
+
+# Process Updates
+- Updates .cursorrules with comprehensive linting requirements
+- Adds Code Quality Requirements section
+- Updates Development Workflow to include linting steps
+- Updates CI/CD Workflow for Agents with lint verification
+
+# Documentation
+- Documents all linting commands and processes
+- Updates workflow requirements in .cursorrules
+- Ensures changes are reflected in both .cursorrules and README.md
+
+Resolves #12
