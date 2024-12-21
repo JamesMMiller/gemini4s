@@ -77,7 +77,10 @@
 - Bug fix branches should be named: fix/[issue-number]-short-description
 - Release branches should be named: release/v[version]
 - All commits should reference issue numbers: "#123: Add feature X"
-- Squash commits before merging to main
+- All PRs must be merged using squash merge
+- PR title will be used as the squash commit title
+- PR description will be used as the squash commit message
+- Branches are automatically deleted after merge
 - Delete branches after successful merge
 
 # PR Description Guidelines
