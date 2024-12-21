@@ -25,5 +25,10 @@ lazy val root = project
     coverageMinimumStmtTotal := 90,
     coverageFailOnMinimum := true,
     coverageHighlighting := true,
-    coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*"
+    coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
+
+    ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0",
+
+    addCommandAlias("lint", ";scalafixAll --check"),
+    addCommandAlias("lintFix", ";scalafixAll")
   ) 
