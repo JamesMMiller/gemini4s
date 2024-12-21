@@ -94,6 +94,14 @@
 - Include "Resolves #X" to link to relevant issue
 - Update description when making significant changes to PR
 
+# PR Description Command Example
+```bash
+# Create a temporary description file and update PR
+printf "Title of PR\n\n# Overview\nBrief summary of changes.\n\n# Major Components\n- Component 1\n  - Subitem 1\n  - Subitem 2\n- Component 2\n  - Subitem 1\n  - Subitem 2\n\n# Process Updates\n- Process change 1\n- Process change 2\n\n# Documentation\n- Doc update 1\n- Doc update 2\n\nResolves #X" > pr_description.md && \
+gh pr edit PR_NUMBER --body-file pr_description.md && \
+rm pr_description.md
+```
+
 # Project Board Usage
 - All development work must be tracked in the project board
 - New features/bugs start in "To Do"
