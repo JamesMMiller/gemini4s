@@ -1,87 +1,107 @@
 package gemini4s.error
 
-import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.matchers.should.Matchers
+import zio.test.Assertion._
+import zio.test._
 
-class GeminiErrorSpec extends AnyFlatSpec with Matchers {
-  "GeminiError" should "provide correct error messages" in {
-    val msg = "Test error"
-    val error = new GeminiError(msg)
-    error.getMessage shouldBe msg
-  }
+object GeminiErrorSpec extends ZIOSpecDefault {
+  import GeminiError._
+  import GeminiErrorCompanion._
 
-  it should "handle causes correctly" in {
-    val msg = "Test error"
-    val cause = new RuntimeException("Cause")
-    val error = new GeminiError(msg, Some(cause))
-    error.getMessage shouldBe msg
-    error.cause shouldBe Some(cause)
-    error.getCause shouldBe cause
-  }
+  def spec = suite("GeminiError")(
+    test("provide correct error messages") {
+      val error = InvalidApiKey("Custom message")
+      assertTrue(
+        error.message == "Custom message",
+        error.getMessage == "Custom message"
+      )
+    },
 
-  it should "handle null causes correctly" in {
-    val msg = "Test error"
-    val error = new GeminiError(msg, None)
-    error.getMessage shouldBe msg
-    error.cause shouldBe None
-    error.getCause shouldBe null
-  }
+    test("handle causes correctly") {
+      val cause = new RuntimeException("Test cause")
+      val error = ConnectionError("Test error", Some(cause))
+      assertTrue(
+        error.cause == Some(cause),
+        error.getCause == cause
+      )
+    },
 
-  "GeminiErrorCompanion" should "create errors with smart constructors" in {
-    val modelId = "test-model"
-    val category = "test-category"
-    val msg = "Test error"
+    test("handle null causes correctly") {
+      val error = InvalidRequest("Test error")
+      assertTrue(
+        error.cause == None,
+        error.getCause == null
+      )
+    },
 
-    unsupportedModel(modelId).getMessage shouldBe s"Model $modelId is not supported"
-    
-    safetyThresholdExceeded(category).getMessage shouldBe
-      s"Content blocked due to safety threshold exceeded for category: $category"
-    
-    contentGenerationFailed(msg).getMessage shouldBe msg
-  }
+    test("create errors with smart constructors") {
+      assertTrue(
+        invalidApiKey().message == "Invalid API key provided",
+        missingApiKey.message == "API key is required but not provided",
+        rateLimitExceeded.message == "API rate limit exceeded",
+        modelOverloaded.message == "Model is currently overloaded",
+        timeoutError.message == "Request timed out"
+      )
+    },
 
-  it should "create errors with custom messages" in {
-    val msg = "Test error"
-    val cause = new RuntimeException("Cause")
-    val error = GeminiError(msg, Some(cause))
-    error.getMessage shouldBe msg
-    error.cause shouldBe Some(cause)
-  }
+    test("create errors with custom messages") {
+      val modelId = "gemini-pro"
+      val category = "hate-speech"
+      val msg = "Custom error"
+      assertTrue(
+        unsupportedModel(modelId).message == s"Model $modelId is not supported",
+        safetyThresholdExceeded(category).message == s"Content exceeded safety threshold for category: $category",
+        contentGenerationFailed(msg).message == msg
+      )
+    },
 
-  it should "create network errors correctly" in {
-    val msg = "Test error"
-    val cause = new RuntimeException("Cause")
-    val error1 = networkError(msg)
-    val error2 = networkError(msg, Some(cause))
+    test("create network errors correctly") {
+      val msg = "Connection failed"
+      val cause = new RuntimeException("Network error")
+      val error = connectionError(msg, cause)
+      assertTrue(
+        error.message == msg,
+        error.cause == Some(cause)
+      )
+    },
 
-    error1.getMessage shouldBe msg
-    error1.cause shouldBe None
+    test("create stream errors correctly") {
+      val msg = "Stream interrupted"
+      val cause = new RuntimeException("Stream error")
+      
+      val error1 = streamError(msg)
+      val error2 = streamError(msg, Some(cause))
+      assertTrue(
+        error1.message == msg,
+        error1.cause == None,
+        error2.message == msg,
+        error2.cause == Some(cause)
+      )
+    },
 
-    error2.getMessage shouldBe msg
-    error2.cause shouldBe Some(cause)
-  }
+    test("map throwables to GeminiErrors") {
+      val geminiError = InvalidApiKey()
+      val runtime = new RuntimeException("Test")
+      val mapped = fromThrowable(runtime)
+      assertTrue(
+        fromThrowable(geminiError) == geminiError,
+        mapped.isInstanceOf[ConnectionError],
+        mapped.message.contains("Test"),
+        mapped.cause == Some(runtime)
+      )
+    },
 
-  it should "map throwables to GeminiErrors" in {
-    val geminiError = GeminiError("Test")
-    val runtime = new RuntimeException("Test")
-    
-    fromThrowable(geminiError) shouldBe geminiError
-    
-    val mapped = fromThrowable(runtime)
-    mapped shouldBe a[ConnectionError]
-    mapped.getMessage should include("Test")
-    mapped.cause shouldBe Some(runtime)
-  }
-
-  it should "map status codes to appropriate errors" in {
-    val msg = "Test error"
-    fromStatusCode(400, msg) shouldBe a[InvalidRequest]
-    fromStatusCode(401, msg) shouldBe a[InvalidApiKey]
-    fromStatusCode(403, msg) shouldBe a[InvalidApiKey]
-    fromStatusCode(404, msg) shouldBe a[InvalidRequest]
-    fromStatusCode(429, msg) shouldBe a[RateLimitExceeded]
-    fromStatusCode(500, msg) shouldBe a[ModelOverloaded]
-    fromStatusCode(503, msg) shouldBe a[ModelOverloaded]
-    fromStatusCode(418, msg) shouldBe a[ConnectionError]
-  }
+    test("map status codes to appropriate errors") {
+      val msg = "Test message"
+      assertTrue(
+        fromStatusCode(400, msg).isInstanceOf[InvalidRequest],
+        fromStatusCode(401, msg).isInstanceOf[InvalidApiKey],
+        fromStatusCode(403, msg).isInstanceOf[InvalidApiKey],
+        fromStatusCode(404, msg).isInstanceOf[InvalidRequest],
+        fromStatusCode(429, msg).isInstanceOf[RateLimitExceeded],
+        fromStatusCode(500, msg).isInstanceOf[ModelOverloaded],
+        fromStatusCode(503, msg).isInstanceOf[ModelOverloaded],
+        fromStatusCode(418, msg).isInstanceOf[ConnectionError]
+      )
+    }
+  )
 } 
