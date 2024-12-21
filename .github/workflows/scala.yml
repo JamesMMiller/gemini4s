@@ -75,13 +75,3 @@ jobs:
           name: coverage-report
           path: target/scala-3.3.1/scoverage-report/
           retention-days: 14
-
-      # Cleanup before saving cache
-      - name: Clean up
-        run: |
-          rm -rf target/streams
-          rm -rf target/task-temp-directory
-          rm -rf target/bg-jobs
-          rm -rf project/target/streams
-          rm -rf project/target/task-temp-directory
-          find ~/.sbt -name "*.lock" -type f -delete
