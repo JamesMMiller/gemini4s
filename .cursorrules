@@ -1,5 +1,11 @@
 # Cursor Rules for gemini4s
 
+# Meta Rules
+- This file must be updated whenever workflow or process changes
+- All workflow changes must be reflected in both .cursorrules and README.md
+- Changes to rules require PR review
+- Rules should be kept in sync with project board structure
+
 # Project Structure Guidelines
 - Source code should be organized in the src/main/scala/gemini4s directory
 - Test code should be in the src/test/scala/gemini4s directory
@@ -18,6 +24,15 @@
 - Implementation layer depends on both foundation and core API layers
 - Documentation should be updated incrementally but finalized last
 - Each layer must maintain 90% test coverage
+
+# CI/CD Requirements
+- All PRs must pass GitHub Actions checks
+- Build must succeed on all supported Scala versions
+- Tests must pass with minimum 90% coverage
+- Scoverage report must be generated
+- Branch protection rules must be enforced
+- No direct commits to main branch
+- PR reviews required before merge
 
 # Coding Standards
 - Use meaningful type parameters (e.g., F[_] for effect type)
@@ -64,6 +79,7 @@
 - Include both unit and integration tests
 - Maintain minimum 90% code coverage with scoverage
 - Run full test suite before submitting PR
+- All tests must pass in CI before merge
 
 # Error Handling
 - Define specific error types for each failure case
@@ -83,3 +99,4 @@
 - Include examples in ScalaDoc
 - Maintain CHANGELOG.md
 - Document dependencies between components
+- Update build status badges in README

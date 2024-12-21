@@ -2,6 +2,9 @@
 
 A Tagless Final Scala library for the Google Gemini API built on top of ZIO.
 
+[![Build Status](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml/badge.svg)](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml)
+[![Coverage Status](https://github.com/JamesMMiller/gemini4s/actions/workflows/scoverage.yml/badge.svg)](https://github.com/JamesMMiller/gemini4s/actions/workflows/scoverage.yml)
+
 ## Features (Planned)
 
 - Tagless Final design for maximum flexibility and composability
@@ -44,6 +47,14 @@ This project is under development. More information will be added soon.
 
 ## Development Process
 
+### Documentation and Workflow Changes
+
+All process and workflow changes must be properly documented:
+- Update both `.cursorrules` and `README.md` when changing workflows
+- Changes to development rules require PR review
+- Keep documentation in sync with project board structure
+- Process changes should be reflected in CI/CD pipeline when applicable
+
 ### Project Layers and Dependencies
 
 Development follows a structured approach with clear dependencies:
@@ -51,6 +62,20 @@ Development follows a structured approach with clear dependencies:
 2. Core API Layer (Algebra, HTTP Client) - depends on Foundation
 3. Implementation Layer (ZIO Interpreter) - depends on Core API
 4. Documentation Layer - depends on Implementation
+
+### CI/CD Pipeline
+
+All changes must pass through our CI/CD pipeline:
+- Automated build and test on every PR
+- Scoverage checks (minimum 90% coverage)
+- Branch protection rules enforced
+- PR reviews required before merge
+- No direct commits to main branch allowed
+
+Status checks must pass before merge:
+- ✅ Build and Test
+- ✅ Coverage Check
+- ✅ PR Review
 
 ### Git Flow
 
@@ -80,10 +105,12 @@ We maintain high code quality standards:
 - Integration tests for external API interactions
 - Full test suite must pass before PR merge
 
-To run tests with coverage:
+To run tests with coverage locally:
 ```bash
 sbt clean coverage test coverageReport
 ```
+
+Coverage reports will be available in `target/scala-3.3.1/scoverage-report/`.
 
 ## Contributing
 
@@ -94,8 +121,9 @@ Contributions are welcome! Please follow these steps:
 3. Create a new branch following our naming convention
 4. Implement changes with tests (90% coverage required)
 5. Submit a PR and link it to the relevant project card
-6. Respond to review feedback
-7. Squash commits when ready to merge
+6. Ensure all CI checks pass
+7. Respond to review feedback
+8. Squash commits when ready to merge
 
 See our [.cursorrules](.cursorrules) file for detailed development guidelines.
 
