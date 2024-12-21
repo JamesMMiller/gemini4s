@@ -24,6 +24,19 @@
 - Implementation layer depends on both foundation and core API layers
 - Documentation should be updated incrementally but finalized last
 - Each layer must maintain 90% test coverage
+- Run `sbt lint` after making code changes
+- Run `sbt lintFix` to automatically fix linting issues
+- Verify code passes linting before committing
+
+# Code Quality Requirements
+- All code must pass ScalaFix linting rules
+- Run linting checks after every code change
+- Fix any linting issues before committing
+- Maintain consistent import organization
+- Remove unused imports and variables
+- Follow Scala best practices enforced by ScalaFix
+- Use `sbt lintFix` to automatically fix common issues
+- Manual review required for any disabled lint rules
 
 # CI/CD Requirements
 - All PRs must pass GitHub Actions checks
@@ -33,6 +46,7 @@
 - Branch protection rules must be enforced
 - No direct commits to main branch
 - PR reviews required before merge
+- All lint checks must pass before merge
 
 # CI/CD Workflow for Agents
 - After pushing changes to a PR, always check GitHub Actions status
@@ -40,6 +54,7 @@
 - If checks fail, examine logs and fix issues
 - Verify both build and test jobs pass
 - Ensure coverage meets 90% threshold
+- Verify lint job passes successfully
 - Do not proceed with additional changes until CI is green
 - Include CI status in progress updates to user
 
