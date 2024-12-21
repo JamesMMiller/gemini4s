@@ -34,6 +34,15 @@
 - No direct commits to main branch
 - PR reviews required before merge
 
+# CI/CD Workflow for Agents
+- After pushing changes to a PR, always check GitHub Actions status
+- Wait for CI checks to complete before proceeding
+- If checks fail, examine logs and fix issues
+- Verify both build and test jobs pass
+- Ensure coverage meets 90% threshold
+- Do not proceed with additional changes until CI is green
+- Include CI status in progress updates to user
+
 # Coding Standards
 - Use meaningful type parameters (e.g., F[_] for effect type)
 - All public APIs must be documented with ScalaDoc
