@@ -18,5 +18,12 @@ lazy val root = project
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
       "dev.zio" %% "zio-test-magnolia" % zioVersion % Test
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+    
+    // Scoverage settings
+    coverageEnabled := true,
+    coverageMinimumStmtTotal := 90,
+    coverageFailOnMinimum := true,
+    coverageHighlighting := true,
+    coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*"
   ) 
