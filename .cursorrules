@@ -109,6 +109,11 @@
 - Keep task history in comments for traceability
 - Update task labels to reflect current scope
 - Ensure task titles remain concise but descriptive
+- Regularly review and clean up duplicate tasks:
+  - Identify overlapping functionality
+  - Update primary task with any unique requirements
+  - Close duplicate tasks with explanatory comments
+  - Link closed tasks to their primary counterparts
 
 # Dependencies Management
 - Check issue dependencies before starting work
