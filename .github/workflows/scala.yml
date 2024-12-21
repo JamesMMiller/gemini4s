@@ -9,24 +9,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: hseeberger/scala-sbt:11.0.20_1.9.7_3.3.1
+      options: --user root
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Cache sbt
+        uses: actions/cache@v3
         with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: 'sbt'
-
-      - name: Setup SBT
-        run: |
-          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
-          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
-          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo apt-key add
-          sudo apt-get update
-          sudo apt-get install sbt
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.coursier/cache/v1
+            ~/.cache/coursier/v1
+            ~/Library/Caches/Coursier/v1
+            target
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-cache-
 
       - name: Run tests with coverage
         run: sbt clean coverage test coverageReport
@@ -49,24 +51,26 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    container:
+      image: hseeberger/scala-sbt:11.0.20_1.9.7_3.3.1
+      options: --user root
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Cache sbt
+        uses: actions/cache@v3
         with:
-          java-version: '11'
-          distribution: 'temurin'
-          cache: 'sbt'
-
-      - name: Setup SBT
-        run: |
-          echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
-          echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | sudo tee /etc/apt/sources.list.d/sbt_old.list
-          curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | sudo apt-key add
-          sudo apt-get update
-          sudo apt-get install sbt
+          path: |
+            ~/.sbt
+            ~/.ivy2/cache
+            ~/.coursier/cache/v1
+            ~/.cache/coursier/v1
+            ~/Library/Caches/Coursier/v1
+            target
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-sbt-cache-
 
       - name: Check formatting
         run: sbt scalafmtCheckAll
