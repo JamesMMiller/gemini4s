@@ -6,6 +6,19 @@
 - Follow the tagless final pattern for all core abstractions
 - Use ZIO for effects and resource management
 
+# Project Layers
+- Foundation Layer: error types and core models
+- Core API Layer: algebra definitions and HTTP client
+- Implementation Layer: ZIO interpreter
+- Documentation Layer: examples and guides
+
+# Development Workflow
+- Start with foundation layer tasks first
+- Core API layer tasks can be worked on in parallel once foundation is ready
+- Implementation layer depends on both foundation and core API layers
+- Documentation should be updated incrementally but finalized last
+- Each layer must maintain 90% test coverage
+
 # Coding Standards
 - Use meaningful type parameters (e.g., F[_] for effect type)
 - All public APIs must be documented with ScalaDoc
@@ -36,12 +49,13 @@
 - Only move to "Done" after tests pass and PR is merged
 - Link commits and PRs to relevant project cards
 - Update card status when transitioning between columns
+- Check task dependencies before starting new work
 
-# Naming Conventions
-- Use descriptive names that reflect the tagless final pattern
-- Algebra traits should end with 'Algebra'
-- Interpreters should end with 'Interpreter'
-- Test files should end with 'Spec'
+# Dependencies Management
+- Check issue dependencies before starting work
+- Don't start tasks if dependencies aren't complete
+- Mark blocked tasks in project board
+- Update dependent tasks when completing work
 
 # Testing Requirements
 - All public APIs must have test coverage
@@ -49,6 +63,7 @@
 - Mock external services in tests
 - Include both unit and integration tests
 - Maintain minimum 90% code coverage with scoverage
+- Run full test suite before submitting PR
 
 # Error Handling
 - Define specific error types for each failure case
@@ -66,4 +81,5 @@
 - Keep README.md up to date
 - Document all type class instances
 - Include examples in ScalaDoc
-- Maintain CHANGELOG.md 
+- Maintain CHANGELOG.md
+- Document dependencies between components
