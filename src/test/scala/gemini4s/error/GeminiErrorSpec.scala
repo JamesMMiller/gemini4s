@@ -4,82 +4,77 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class GeminiErrorSpec extends AnyFlatSpec with Matchers {
-  import GeminiError._
-  import GeminiErrorCompanion._
-
   "GeminiError" should "provide correct error messages" in {
-    val error = InvalidApiKey("Custom message")
-    error.message shouldBe "Custom message"
-    error.getMessage shouldBe "Custom message"
+    val msg = "Test error"
+    val error = new GeminiError(msg)
+    error.getMessage shouldBe msg
   }
 
   it should "handle causes correctly" in {
-    val cause = new RuntimeException("Test cause")
-    val error = ConnectionError("Test error", Some(cause))
+    val msg = "Test error"
+    val cause = new RuntimeException("Cause")
+    val error = new GeminiError(msg, Some(cause))
+    error.getMessage shouldBe msg
     error.cause shouldBe Some(cause)
     error.getCause shouldBe cause
   }
 
   it should "handle null causes correctly" in {
-    val error = InvalidRequest("Test error")
+    val msg = "Test error"
+    val error = new GeminiError(msg, None)
+    error.getMessage shouldBe msg
     error.cause shouldBe None
     error.getCause shouldBe null
   }
 
   "GeminiErrorCompanion" should "create errors with smart constructors" in {
-    invalidApiKey().message shouldBe "Invalid API key provided"
-    missingApiKey.message shouldBe "API key is required but not provided"
-    rateLimitExceeded.message shouldBe "API rate limit exceeded"
-    modelOverloaded.message shouldBe "Model is currently overloaded"
-    timeoutError.message shouldBe "Request timed out"
+    val modelId = "test-model"
+    val category = "test-category"
+    val msg = "Test error"
+
+    unsupportedModel(modelId).getMessage shouldBe s"Model $modelId is not supported"
+    
+    safetyThresholdExceeded(category).getMessage shouldBe
+      s"Content blocked due to safety threshold exceeded for category: $category"
+    
+    contentGenerationFailed(msg).getMessage shouldBe msg
   }
 
   it should "create errors with custom messages" in {
-    val modelId = "gemini-pro"
-    unsupportedModel(modelId).message shouldBe s"Model $modelId is not supported"
-
-    val category = "hate-speech"
-    safetyThresholdExceeded(category).message shouldBe
-      s"Content exceeded safety threshold for category: $category"
-
-    val msg = "Custom error"
-    contentGenerationFailed(msg).message shouldBe msg
-  }
-
-  it should "create network errors correctly" in {
-    val msg = "Connection failed"
-    val cause = new RuntimeException("Network error")
-    val error = connectionError(msg, cause)
-    error.message shouldBe msg
+    val msg = "Test error"
+    val cause = new RuntimeException("Cause")
+    val error = GeminiError(msg, Some(cause))
+    error.getMessage shouldBe msg
     error.cause shouldBe Some(cause)
   }
 
-  it should "create stream errors correctly" in {
-    val msg = "Stream interrupted"
-    val cause = new RuntimeException("Stream error")
-    
-    val error1 = streamError(msg)
-    error1.message shouldBe msg
+  it should "create network errors correctly" in {
+    val msg = "Test error"
+    val cause = new RuntimeException("Cause")
+    val error1 = networkError(msg)
+    val error2 = networkError(msg, Some(cause))
+
+    error1.getMessage shouldBe msg
     error1.cause shouldBe None
 
-    val error2 = streamError(msg, Some(cause))
-    error2.message shouldBe msg
+    error2.getMessage shouldBe msg
     error2.cause shouldBe Some(cause)
   }
 
   it should "map throwables to GeminiErrors" in {
-    val geminiError = InvalidApiKey()
-    fromThrowable(geminiError) shouldBe geminiError
-
+    val geminiError = GeminiError("Test")
     val runtime = new RuntimeException("Test")
+    
+    fromThrowable(geminiError) shouldBe geminiError
+    
     val mapped = fromThrowable(runtime)
     mapped shouldBe a[ConnectionError]
-    mapped.message should include("Test")
+    mapped.getMessage should include("Test")
     mapped.cause shouldBe Some(runtime)
   }
 
   it should "map status codes to appropriate errors" in {
-    val msg = "Test message"
+    val msg = "Test error"
     fromStatusCode(400, msg) shouldBe a[InvalidRequest]
     fromStatusCode(401, msg) shouldBe a[InvalidApiKey]
     fromStatusCode(403, msg) shouldBe a[InvalidApiKey]
