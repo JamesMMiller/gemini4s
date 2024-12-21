@@ -17,9 +17,10 @@ env:
   COURSIER_CACHE: ~/.cache/coursier
 
 jobs:
-  test:
-    name: Test
+  build:
+    name: Build and Test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       
@@ -30,20 +31,23 @@ jobs:
           java-version: '11'
           cache: 'sbt'
 
-      - name: Setup SBT
-        uses: olafurpg/setup-scala@v14
-        with:
-          java-version: adopt@1.11
-          
-      - name: Cache Coursier
+      # Improve caching of sbt dependencies
+      - name: Cache sbt
         uses: actions/cache@v3
         with:
           path: |
+            ~/.sbt/boot
+            ~/.sbt/cache
+            ~/.sbt/launchers
             ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
+          key: sbt-cache-${{ runner.os }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}-${{ hashFiles('build.sbt') }}
           restore-keys: |
-            ${{ runner.os }}-sbt-coursier-
+            sbt-cache-${{ runner.os }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}-
+            sbt-cache-${{ runner.os }}-${{ hashFiles('project/build.properties') }}-
+            sbt-cache-${{ runner.os }}-
+
+      - name: Check formatting
+        run: sbt scalafmtCheckAll
 
       - name: Run tests with coverage
         run: sbt clean coverage test coverageReport
@@ -64,33 +68,12 @@ jobs:
           path: target/scala-3.3.1/scoverage-report/
           retention-days: 14
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-          cache: 'sbt'
-
-      - name: Setup SBT
-        uses: olafurpg/setup-scala@v14
-        with:
-          java-version: adopt@1.11
-          
-      - name: Cache Coursier
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-coursier-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
-          restore-keys: |
-            ${{ runner.os }}-sbt-coursier-
-
-      - name: Check formatting
-        run: sbt scalafmtCheckAll
+      # Cleanup before saving cache
+      - name: Clean up
+        run: |
+          rm -rf target/streams
+          rm -rf target/task-temp-directory
+          rm -rf target/bg-jobs
+          rm -rf project/target/streams
+          rm -rf project/target/task-temp-directory
+          find ~/.sbt -name "*.lock" -type f -delete
