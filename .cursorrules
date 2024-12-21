@@ -19,6 +19,24 @@
 - Keep files focused and small (< 300 lines)
 - Group related functionality in packages
 
+# Git Flow Guidelines
+- Main branch is protected and requires PR review
+- Feature branches should be named: feature/[issue-number]-short-description
+- Bug fix branches should be named: fix/[issue-number]-short-description
+- Release branches should be named: release/v[version]
+- All commits should reference issue numbers: "#123: Add feature X"
+- Squash commits before merging to main
+- Delete branches after successful merge
+
+# Project Board Usage
+- All development work must be tracked in the project board
+- New features/bugs start in "To Do"
+- Move cards to "In Progress" when work begins
+- Use "Review" column for PR review phase
+- Only move to "Done" after tests pass and PR is merged
+- Link commits and PRs to relevant project cards
+- Update card status when transitioning between columns
+
 # Naming Conventions
 - Use descriptive names that reflect the tagless final pattern
 - Algebra traits should end with 'Algebra'
@@ -30,6 +48,7 @@
 - Use property-based testing where appropriate
 - Mock external services in tests
 - Include both unit and integration tests
+- Maintain minimum 90% code coverage with scoverage
 
 # Error Handling
 - Define specific error types for each failure case
