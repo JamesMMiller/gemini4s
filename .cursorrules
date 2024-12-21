@@ -1,0 +1,50 @@
+# Cursor Rules for gemini4s
+
+# Project Structure Guidelines
+- Source code should be organized in the src/main/scala/gemini4s directory
+- Test code should be in the src/test/scala/gemini4s directory
+- Follow the tagless final pattern for all core abstractions
+- Use ZIO for effects and resource management
+
+# Coding Standards
+- Use meaningful type parameters (e.g., F[_] for effect type)
+- All public APIs must be documented with ScalaDoc
+- Error handling should use custom ADTs in the error channel
+- Prefer immutable data structures
+- Use ZIO's built-in testing framework for all tests
+
+# File Organization
+- One primary trait/type class per file
+- Implementation modules should be in separate files
+- Keep files focused and small (< 300 lines)
+- Group related functionality in packages
+
+# Naming Conventions
+- Use descriptive names that reflect the tagless final pattern
+- Algebra traits should end with 'Algebra'
+- Interpreters should end with 'Interpreter'
+- Test files should end with 'Spec'
+
+# Testing Requirements
+- All public APIs must have test coverage
+- Use property-based testing where appropriate
+- Mock external services in tests
+- Include both unit and integration tests
+
+# Error Handling
+- Define specific error types for each failure case
+- Use ZIO error channel for error propagation
+- Provide meaningful error messages
+- Handle rate limiting and API quotas gracefully
+
+# Performance Considerations
+- Use streaming for large responses
+- Implement proper resource cleanup
+- Consider backpressure in streaming operations
+- Cache responses where appropriate
+
+# Documentation
+- Keep README.md up to date
+- Document all type class instances
+- Include examples in ScalaDoc
+- Maintain CHANGELOG.md 
