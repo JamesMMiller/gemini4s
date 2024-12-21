@@ -94,6 +94,14 @@
 - Include "Resolves #X" to link to relevant issue
 - Update description when making significant changes to PR
 
+# PR Description Command Example
+```bash
+# Create a temporary description file and update PR
+printf "Title of PR\n\n# Overview\nBrief summary of changes.\n\n# Major Components\n- Component 1\n  - Subitem 1\n  - Subitem 2\n- Component 2\n  - Subitem 1\n  - Subitem 2\n\n# Process Updates\n- Process change 1\n- Process change 2\n\n# Documentation\n- Doc update 1\n- Doc update 2\n\nResolves #X" > pr_description.md && \
+gh pr edit PR_NUMBER --body-file pr_description.md && \
+rm pr_description.md
+```
+
 # Project Board Usage
 - All development work must be tracked in the project board
 - New features/bugs start in "To Do"
@@ -103,6 +111,17 @@
 - Link commits and PRs to relevant project cards
 - Update card status when transitioning between columns
 - Check task dependencies before starting new work
+
+# Task Management Guidelines
+- Prefer updating existing tasks over creating new ones
+- Keep task history in comments for traceability
+- Update task labels to reflect current scope
+- Ensure task titles remain concise but descriptive
+- Regularly review and clean up duplicate tasks:
+  - Identify overlapping functionality
+  - Update primary task with any unique requirements
+  - Close duplicate tasks with explanatory comments
+  - Link closed tasks to their primary counterparts
 
 # Dependencies Management
 - Check issue dependencies before starting work
