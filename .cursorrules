@@ -24,6 +24,19 @@
 - Implementation layer depends on both foundation and core API layers
 - Documentation should be updated incrementally but finalized last
 - Each layer must maintain 90% test coverage
+- Run `sbt lint` after making code changes
+- Run `sbt lintFix` to automatically fix linting issues
+- Verify code passes linting before committing
+
+# Code Quality Requirements
+- All code must pass ScalaFix linting rules
+- Run linting checks after every code change
+- Fix any linting issues before committing
+- Maintain consistent import organization
+- Remove unused imports and variables
+- Follow Scala best practices enforced by ScalaFix
+- Use `sbt lintFix` to automatically fix common issues
+- Manual review required for any disabled lint rules
 
 # CI/CD Requirements
 - All PRs must pass GitHub Actions checks
@@ -33,6 +46,17 @@
 - Branch protection rules must be enforced
 - No direct commits to main branch
 - PR reviews required before merge
+- All lint checks must pass before merge
+
+# CI/CD Workflow for Agents
+- After pushing changes to a PR, always check GitHub Actions status
+- Wait for CI checks to complete before proceeding
+- If checks fail, examine logs and fix issues
+- Verify both build and test jobs pass
+- Ensure coverage meets 90% threshold
+- Verify lint job passes successfully
+- Do not proceed with additional changes until CI is green
+- Include CI status in progress updates to user
 
 # Coding Standards
 - Use meaningful type parameters (e.g., F[_] for effect type)
@@ -53,8 +77,22 @@
 - Bug fix branches should be named: fix/[issue-number]-short-description
 - Release branches should be named: release/v[version]
 - All commits should reference issue numbers: "#123: Add feature X"
-- Squash commits before merging to main
+- All PRs must be merged using squash merge
+- PR title will be used as the squash commit title
+- PR description will be used as the squash commit message
+- Branches are automatically deleted after merge
 - Delete branches after successful merge
+
+# PR Description Guidelines
+- PR title should include issue number and concise description
+- PR description should be structured in sections:
+  - Overview: Brief summary of changes
+  - Major Components: Categorized list of main changes (e.g., "CI/CD Setup", "Code Quality Tools")
+  - Process Updates: Any workflow or process changes
+  - Documentation: Documentation updates and changes
+- Each section should use bullet points for clarity
+- Include "Resolves #X" to link to relevant issue
+- Update description when making significant changes to PR
 
 # Project Board Usage
 - All development work must be tracked in the project board
