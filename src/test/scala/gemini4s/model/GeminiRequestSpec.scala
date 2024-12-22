@@ -328,6 +328,32 @@ object GeminiRequestSpec extends ZIOSpecDefault {
         HarmBlockThreshold.values.contains(HarmBlockThreshold.BLOCK_ONLY_HIGH),
         HarmBlockThreshold.values.contains(HarmBlockThreshold.BLOCK_NONE)
       )
+    },
+
+    test("GenerateContent should handle minimal configuration") {
+      val request = GenerateContent(
+        contents = List.empty,
+        safetySettings = None,
+        generationConfig = None
+      )
+      val json = request.toJson
+      val decoded = json.fromJson[GenerateContent]
+      assertTrue(
+        decoded == Right(request),
+        request.contents.isEmpty,
+        request.safetySettings.isEmpty,
+        request.generationConfig.isEmpty
+      )
+    },
+
+    test("Content should handle empty text") {
+      val content = Content.Text("")
+      val json = content.toJson
+      val decoded = json.fromJson[Content]
+      assertTrue(
+        decoded == Right(content),
+        content.text.isEmpty
+      )
     }
   )
 } 

@@ -465,6 +465,54 @@ object GeminiResponseSpec extends ZIOSpecDefault {
         BlockReason.values.contains(BlockReason.SAFETY),
         BlockReason.values.contains(BlockReason.OTHER)
       )
+    },
+
+    test("GenerateContentResponse should handle empty candidates") {
+      val response = GenerateContentResponse(
+        candidates = List.empty,
+        promptFeedback = None
+      )
+      val json = response.toJson
+      val decoded = json.fromJson[GenerateContentResponse]
+      assertTrue(
+        decoded == Right(response),
+        response.candidates.isEmpty,
+        response.promptFeedback.isEmpty
+      )
+    },
+
+    test("ResponseContent should handle empty parts") {
+      val content = ResponseContent(
+        parts = List.empty,
+        role = None
+      )
+      val json = content.toJson
+      val decoded = json.fromJson[ResponseContent]
+      assertTrue(
+        decoded == Right(content),
+        content.parts.isEmpty,
+        content.role.isEmpty
+      )
+    },
+
+    test("Candidate should handle minimal configuration") {
+      val candidate = Candidate(
+        content = ResponseContent(
+          parts = List.empty,
+          role = None
+        ),
+        finishReason = FinishReason.FINISH_REASON_UNSPECIFIED,
+        safetyRatings = List.empty,
+        citationMetadata = None
+      )
+      val json = candidate.toJson
+      val decoded = json.fromJson[Candidate]
+      assertTrue(
+        decoded == Right(candidate),
+        candidate.content.parts.isEmpty,
+        candidate.safetyRatings.isEmpty,
+        candidate.citationMetadata.isEmpty
+      )
     }
   )
 } 
