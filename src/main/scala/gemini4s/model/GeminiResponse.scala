@@ -20,6 +20,15 @@ object GeminiResponse {
   ) extends GeminiResponse
 
   /**
+   * Response from token counting.
+   *
+   * @param tokenCount The number of tokens in the content
+   */
+  final case class CountTokensResponse(
+    tokenCount: Int
+  ) extends GeminiResponse
+
+  /**
    * A generated candidate response.
    *
    * @param content The generated content

@@ -11,6 +11,7 @@ import GeminiCodecs.given
 sealed trait GeminiRequest {
   def toJson: String = this match {
     case req: GeminiRequest.GenerateContent => req.toJsonPretty
+    case req: GeminiRequest.CountTokensRequest => req.toJsonPretty
   }
 }
 
@@ -26,6 +27,15 @@ object GeminiRequest {
     contents: List[Content],
     safetySettings: Option[List[SafetySetting]] = None,
     generationConfig: Option[GenerationConfig] = None
+  ) extends GeminiRequest
+
+  /**
+   * Request to count tokens for given content.
+   *
+   * @param contents The list of content parts to count tokens for
+   */
+  final case class CountTokensRequest(
+    contents: List[Content]
   ) extends GeminiRequest
 
   /**

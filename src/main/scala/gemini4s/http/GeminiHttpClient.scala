@@ -7,7 +7,7 @@ import gemini4s.error.GeminiError
 import gemini4s.model.{GeminiRequest, GeminiResponse}
 
 /**
- * Abstract HTTP client algebra for Gemini API.
+ * HTTP client algebra for Gemini API.
  * Uses tagless final pattern to allow different implementations.
  *
  * @tparam F The effect type
