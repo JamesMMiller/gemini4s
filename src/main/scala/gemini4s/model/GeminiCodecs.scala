@@ -25,6 +25,8 @@ object GeminiCodecs {
 
   given generateContentCodec: JsonCodec[GenerateContent] = DeriveJsonCodec.gen[GenerateContent]
 
+  given countTokensRequestCodec: JsonCodec[CountTokensRequest] = DeriveJsonCodec.gen[CountTokensRequest]
+
   // Response codecs
   given responsePartTextCodec: JsonCodec[ResponsePart.Text] = DeriveJsonCodec.gen[ResponsePart.Text]
 
@@ -48,6 +50,8 @@ object GeminiCodecs {
   given promptFeedbackCodec: JsonCodec[PromptFeedback] = DeriveJsonCodec.gen[PromptFeedback]
 
   given generateContentResponseCodec: JsonCodec[GenerateContentResponse] = DeriveJsonCodec.gen[GenerateContentResponse]
+
+  given countTokensResponseCodec: JsonCodec[CountTokensResponse] = DeriveJsonCodec.gen[CountTokensResponse]
 
   // Enum codecs
   given harmCategoryCodec: JsonCodec[HarmCategory] = JsonCodec[String].transform(
