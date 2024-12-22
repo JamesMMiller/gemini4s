@@ -2,6 +2,7 @@ val scala3Version = "3.3.1"
 val zioVersion = "2.0.19"
 val zioHttpVersion = "3.0.0-RC3"
 val zioJsonVersion = "0.6.2"
+val zioCliVersion = "0.5.0"
 
 inThisBuild(
   List(
@@ -51,7 +52,7 @@ lazy val examples = project
     name := "gemini4s-examples",
     version := "0.1.0-SNAPSHOT",
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-cli" % "0.5.0"  // For CLI application
+      "dev.zio" %% "zio-cli" % zioCliVersion
     ),
     
     // Assembly settings
