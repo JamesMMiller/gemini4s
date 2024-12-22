@@ -31,59 +31,51 @@ object GeminiRequestSpec extends ZIOSpecDefault {
       )
 
       val expectedJson = """{
-        |  "contents" : [
+        |  "contents": [
         |    {
-        |      "text" : "Test prompt"
+        |      "text": "Test prompt"
         |    }
         |  ],
-        |  "safetySettings" : [
+        |  "safetySettings": [
         |    {
-        |      "category" : "HARASSMENT",
-        |      "threshold" : "BLOCK_MEDIUM_AND_ABOVE"
+        |      "category": "HARASSMENT",
+        |      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
         |    }
         |  ],
-        |  "generationConfig" : {
-        |    "temperature" : 0.7,
-        |    "topK" : 40,
-        |    "topP" : 0.95,
-        |    "candidateCount" : 1,
-        |    "maxOutputTokens" : 1024,
-        |    "stopSequences" : [
-        |      ".",
-        |      "?",
-        |      "!"
-        |    ]
+        |  "generationConfig": {
+        |    "temperature": 0.7,
+        |    "topK": 40,
+        |    "topP": 0.95,
+        |    "candidateCount": 1,
+        |    "maxOutputTokens": 1024,
+        |    "stopSequences": [".", "?", "!"]
         |  }
-        |}""".stripMargin
+        |}""".stripMargin.replaceAll("\\s", "")
 
-      val actualJson = request.toJson
+      val actualJson = request.toJson.replaceAll("\\s", "")
       assertTrue(actualJson == expectedJson)
     },
 
     test("GenerateContent should deserialize from JSON correctly") {
       val json = """{
-        |  "contents" : [
+        |  "contents": [
         |    {
-        |      "text" : "Test prompt"
+        |      "text": "Test prompt"
         |    }
         |  ],
-        |  "safetySettings" : [
+        |  "safetySettings": [
         |    {
-        |      "category" : "HARASSMENT",
-        |      "threshold" : "BLOCK_MEDIUM_AND_ABOVE"
+        |      "category": "HARASSMENT",
+        |      "threshold": "BLOCK_MEDIUM_AND_ABOVE"
         |    }
         |  ],
-        |  "generationConfig" : {
-        |    "temperature" : 0.7,
-        |    "topK" : 40,
-        |    "topP" : 0.95,
-        |    "candidateCount" : 1,
-        |    "maxOutputTokens" : 1024,
-        |    "stopSequences" : [
-        |      ".",
-        |      "?",
-        |      "!"
-        |    ]
+        |  "generationConfig": {
+        |    "temperature": 0.7,
+        |    "topK": 40,
+        |    "topP": 0.95,
+        |    "candidateCount": 1,
+        |    "maxOutputTokens": 1024,
+        |    "stopSequences": [".", "?", "!"]
         |  }
         |}""".stripMargin
 
@@ -188,7 +180,7 @@ object GeminiRequestSpec extends ZIOSpecDefault {
         HarmCategory.SEXUALLY_EXPLICIT,
         HarmCategory.DANGEROUS_CONTENT
       )
-      val expectedJson = "[\"HARM_CATEGORY_UNSPECIFIED\",\"HARASSMENT\",\"HATE_SPEECH\",\"SEXUALLY_EXPLICIT\",\"DANGEROUS_CONTENT\"]"
+      val expectedJson = "[\"HARM_CATEGORY_UNSPECIFIED\",\"HARASSMENT\",\"HATE_SPEECH\",\"SEXUALLY_EXPLICIT\",\"DANGEROUS_CONTENT\"]" 
       val actualJson = categories.toJson
       assertTrue(actualJson == expectedJson)
     },
@@ -248,6 +240,43 @@ object GeminiRequestSpec extends ZIOSpecDefault {
         config.candidateCount == Some(1),
         config.maxOutputTokens == Some(1024),
         config.stopSequences == Some(List(".", "?", "!"))
+      )
+    },
+
+    test("GenerationConfig should handle empty values correctly") {
+      val config = GenerationConfig()
+      val json = config.toJson
+      val decoded = json.fromJson[GenerationConfig]
+      assertTrue(
+        decoded == Right(config),
+        config.temperature == None,
+        config.topK == None,
+        config.topP == None,
+        config.candidateCount == None,
+        config.maxOutputTokens == None,
+        config.stopSequences == None
+      )
+    },
+
+    test("GenerationConfig should handle partial values correctly") {
+      val config = GenerationConfig(
+        temperature = Some(0.7f),
+        topK = None,
+        topP = Some(0.95f),
+        candidateCount = None,
+        maxOutputTokens = Some(1024),
+        stopSequences = None
+      )
+      val json = config.toJson
+      val decoded = json.fromJson[GenerationConfig]
+      assertTrue(
+        decoded == Right(config),
+        config.temperature == Some(0.7f),
+        config.topK == None,
+        config.topP == Some(0.95f),
+        config.candidateCount == None,
+        config.maxOutputTokens == Some(1024),
+        config.stopSequences == None
       )
     },
 
