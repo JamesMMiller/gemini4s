@@ -4,7 +4,7 @@ import zio.stream.ZStream
 
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
-import gemini4s.model.GeminiRequest.{Content, GenerateContent, GenerationConfig, SafetySetting}
+import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse.GenerateContentResponse
 
 /**

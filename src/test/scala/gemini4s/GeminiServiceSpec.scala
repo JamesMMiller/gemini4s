@@ -3,14 +3,14 @@ package gemini4s
 import zio._
 import zio.json._
 import zio.stream.ZStream
-import zio.test._
 import zio.test.Assertion._
+import zio.test._
 
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
-import gemini4s.model.GeminiRequest.{Content, GenerateContent, GenerationConfig, SafetySetting}
+import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse
-import gemini4s.model.GeminiResponse.{Candidate, GenerateContentResponse, PromptFeedback, ResponseContent, ResponsePart}
+import gemini4s.model.GeminiResponse._
 
 object GeminiServiceSpec extends ZIOSpecDefault {
   // Test implementation of GeminiService
