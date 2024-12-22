@@ -3,16 +3,16 @@ package gemini4s.interpreter
 import zio._
 import zio.json._
 import zio.stream.ZStream
-import zio.test._
 import zio.test.Assertion._
+import zio.test._
 
 import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
-import gemini4s.model.{GeminiRequest, GeminiResponse}
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
+import gemini4s.model.{GeminiRequest, GeminiResponse}
 
 object GeminiServiceLiveSpec extends ZIOSpecDefault {
   // Test HTTP client that returns predefined responses
@@ -27,7 +27,7 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
             candidates = List(
               Candidate(
                 content = ResponseContent(
-                  parts = List(ResponsePart.Text(s"Response for: ${contents.head}")),
+                  parts = List(ResponsePart.Text(s"Response for: Content.Text(${contents.head.asInstanceOf[Content.Text].text})")),
                   role = Some("model")
                 ),
                 finishReason = FinishReason.STOP,
@@ -43,7 +43,7 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
           val response = CountTokensResponse(42)
           ZIO.succeed(Right(response.asInstanceOf[Res]))
 
-        case _ =>
+        case null =>
           ZIO.succeed(Left(GeminiError.InvalidRequest("Unsupported request type")))
       }
     }
@@ -58,7 +58,7 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
             candidates = List(
               Candidate(
                 content = ResponseContent(
-                  parts = List(ResponsePart.Text(s"Streaming response for: ${contents.head}")),
+                  parts = List(ResponsePart.Text(s"Streaming response for: Content.Text(${contents.head.asInstanceOf[Content.Text].text})")),
                   role = Some("model")
                 ),
                 finishReason = FinishReason.STOP,
@@ -79,8 +79,9 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
   // Test config
   given testConfig: GeminiConfig = GeminiConfig("test-api-key")
 
-  // Test environment
-  val testEnv = ZLayer.succeed(new TestHttpClient())
+  // Test layers
+  val httpClientLayer = ZLayer.succeed[GeminiHttpClient[Task]](new TestHttpClient())
+  val serviceLayer = GeminiServiceLive.live
 
   override def spec = suite("GeminiServiceLive")(
     test("generateContent should return successful response") {
@@ -142,7 +143,5 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
         } yield assertTrue(service.isInstanceOf[GeminiServiceLive])
       }
     )
-  ).provide(
-    testEnv >>> GeminiServiceLive.live
-  )
+  ).provide(serviceLayer, httpClientLayer)
 } 
