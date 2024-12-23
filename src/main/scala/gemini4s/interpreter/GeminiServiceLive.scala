@@ -8,9 +8,9 @@ import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 import gemini4s.error.{GeminiError, GeminiErrorCompanion}
 import gemini4s.http.GeminiHttpClient
+import gemini4s.model.GeminiCodecs.given
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
-import gemini4s.model.GeminiCodecs.{generateContentCodec, countTokensRequestCodec, generateContentResponseCodec, countTokensResponseCodec, given}
 
 /**
  * Live ZIO implementation of the GeminiService.

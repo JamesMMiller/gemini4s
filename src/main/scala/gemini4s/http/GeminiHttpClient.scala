@@ -14,15 +14,15 @@ import gemini4s.model.GeminiRequest
  * Handles request/response serialization and error mapping.
  */
 trait GeminiHttpClient[F[_]] {
-  def post[Req <: GeminiRequest, Res](
+  def post[Req <: GeminiRequest, Res: JsonDecoder](
     endpoint: String,
     request: Req
-  )(using config: GeminiConfig, decoder: JsonDecoder[Res]): F[Either[GeminiError, Res]]
+  )(using config: GeminiConfig): F[Either[GeminiError, Res]]
 
-  def postStream[Req <: GeminiRequest, Res](
+  def postStream[Req <: GeminiRequest, Res: JsonDecoder](
     endpoint: String,
     request: Req
-  )(using config: GeminiConfig, decoder: JsonDecoder[Res]): F[ZStream[Any, GeminiError, Res]]
+  )(using config: GeminiConfig): F[ZStream[Any, GeminiError, Res]]
 }
 
 object GeminiHttpClient {
@@ -30,11 +30,11 @@ object GeminiHttpClient {
     for {
       client <- ZIO.service[Client]
     } yield new GeminiHttpClient[Task] {
-      override def post[Req <: GeminiRequest, Res](
+      override def post[Req <: GeminiRequest, Res: JsonDecoder](
         endpoint: String,
         request: Req
-      )(using config: GeminiConfig, decoder: JsonDecoder[Res]): Task[Either[GeminiError, Res]] = {
-        val url = s"https://generativelanguage.googleapis.com/v1beta/${endpoint}?key=${config.apiKey}"
+      )(using config: GeminiConfig): Task[Either[GeminiError, Res]] = {
+        val url = s"${config.baseUrl}/${endpoint}?key=${config.apiKey}"
         val req = Request.post(
           url = URL.decode(url).toOption.get,
           body = Body.fromString(request.toJson)
@@ -61,11 +61,11 @@ object GeminiHttpClient {
         }
       }
 
-      override def postStream[Req <: GeminiRequest, Res](
+      override def postStream[Req <: GeminiRequest, Res: JsonDecoder](
         endpoint: String,
         request: Req
-      )(using config: GeminiConfig, decoder: JsonDecoder[Res]): Task[ZStream[Any, GeminiError, Res]] = {
-        val url = s"https://generativelanguage.googleapis.com/v1beta/${endpoint}?key=${config.apiKey}"
+      )(using config: GeminiConfig): Task[ZStream[Any, GeminiError, Res]] = {
+        val url = s"${config.baseUrl}/${endpoint}?key=${config.apiKey}"
         val req = Request.post(
           url = URL.decode(url).toOption.get,
           body = Body.fromString(request.toJson)

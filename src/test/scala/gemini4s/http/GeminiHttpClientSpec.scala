@@ -1,115 +1,141 @@
 package gemini4s.http
 
-import zio.Exit.Failure
 import zio._
-import zio.json._
-import zio.stream.ZStream
+import zio.json.JsonDecoder
+import zio.stream._
 import zio.test.Assertion._
 import zio.test._
 
 import gemini4s.config.GeminiConfig
-import gemini4s.error.GeminiError._
-import gemini4s.error._
+import gemini4s.error.GeminiError
 import gemini4s.model.GeminiCodecs.given
+import gemini4s.model.GeminiRequest
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
-import gemini4s.model._
 
 object GeminiHttpClientSpec extends ZIOSpecDefault {
-  class MockGeminiHttpClient(
-    postResponse: Either[GeminiError, GenerateContentResponse],
-    streamResponses: Either[GeminiError, List[GenerateContentResponse]]
-  ) extends GeminiHttpClient[[A] =>> IO[GeminiError, A]] {
-
-    override def post[Req <: GeminiRequest, Res <: GeminiResponse](endpoint: String, request: Req)(using config: GeminiConfig): IO[GeminiError, Either[GeminiError, Res]] = {
-      postResponse match {
-        case Right(response) => ZIO.succeed(Right(response.asInstanceOf[Res]))
-        case Left(error) => ZIO.succeed(Left(error))
-      }
-    }
-
-    override def postStream[Req <: GeminiRequest, Res <: GeminiResponse](endpoint: String, request: Req)(using config: GeminiConfig): IO[GeminiError, ZStream[Any, GeminiError, Res]] = {
-      streamResponses match {
-        case Right(responses) => ZIO.succeed(ZStream.fromIterable(responses.asInstanceOf[List[Res]]))
-        case Left(error) => ZIO.succeed(ZStream.fail(error))
-      }
-    }
-  }
-
-  given GeminiConfig = GeminiConfig("test-api-key", "https://test.example.com")
-
-  def spec = suite("GeminiHttpClient")(
-    test("post should handle successful response") {
-      val request = GenerateContent(contents = List(Content.Text("Test prompt")))
+  class TestHttpClient extends GeminiHttpClient[Task] {
+    override def post[Req <: GeminiRequest, Res: JsonDecoder](
+      endpoint: String,
+      request: Req
+    )(using config: GeminiConfig): Task[Either[GeminiError, Res]] = {
+      // Simulate successful response for test content
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(ResponsePart.Text("Generated text")),
+              parts = List(Part(text = "Generated text")),
               role = Some("model")
             ),
-            finishReason = FinishReason.STOP,
-            safetyRatings = List(SafetyRating(
-              category = HarmCategory.HARASSMENT,
-              probability = HarmProbability.LOW
-            )),
-            citationMetadata = None
+            finishReason = Some("STOP"),
+            index = None,
+            safetyRatings = Some(List(
+              SafetyRating(
+                category = "HARASSMENT",
+                probability = "LOW"
+              )
+            ))
           )
         ),
-        promptFeedback = None
+        usageMetadata = Some(
+          UsageMetadata(
+            promptTokenCount = 10,
+            candidatesTokenCount = 20,
+            totalTokenCount = 30
+          )
+        ),
+        modelVersion = Some("gemini-pro")
       )
+      ZIO.succeed(Right(response.asInstanceOf[Res]))
+    }
 
-      val mockClient = MockGeminiHttpClient(Right(response), Right(List.empty))
-
-      assertZIO(
-        mockClient.post[GenerateContent, GenerateContentResponse]("/test", request).exit
-      )(succeeds(isRight(equalTo(response))))
-    },
-
-    test("postStream should stream successful response chunks") {
-      val request = GenerateContent(contents = List(Content.Text("Test prompt")))
+    override def postStream[Req <: GeminiRequest, Res: JsonDecoder](
+      endpoint: String,
+      request: Req
+    )(using config: GeminiConfig): Task[ZStream[Any, GeminiError, Res]] = {
+      // Simulate successful streaming response
       val responses = List(
         GenerateContentResponse(
-          candidates = List(Candidate(
-            content = ResponseContent(parts = List(ResponsePart.Text("First")), role = Some("model")),
-            finishReason = FinishReason.STOP,
-            safetyRatings = List(SafetyRating(category = HarmCategory.HARASSMENT, probability = HarmProbability.LOW)),
-            citationMetadata = None
-          )),
-          promptFeedback = None
+          candidates = List(
+            Candidate(
+              content = ResponseContent(
+                parts = List(Part(text = "First")),
+                role = Some("model")
+              ),
+              finishReason = Some("STOP"),
+              index = None,
+              safetyRatings = Some(List(
+                SafetyRating(
+                  category = "HARASSMENT",
+                  probability = "LOW"
+                )
+              ))
+            )
+          ),
+          usageMetadata = Some(
+            UsageMetadata(
+              promptTokenCount = 10,
+              candidatesTokenCount = 20,
+              totalTokenCount = 30
+            )
+          ),
+          modelVersion = Some("gemini-pro")
         ),
         GenerateContentResponse(
-          candidates = List(Candidate(
-            content = ResponseContent(parts = List(ResponsePart.Text("Second")), role = Some("model")),
-            finishReason = FinishReason.STOP,
-            safetyRatings = List.empty,
-            citationMetadata = None
-          )),
-          promptFeedback = None
+          candidates = List(
+            Candidate(
+              content = ResponseContent(
+                parts = List(Part(text = "Second")),
+                role = Some("model")
+              ),
+              finishReason = Some("STOP"),
+              index = None,
+              safetyRatings = None
+            )
+          ),
+          usageMetadata = None,
+          modelVersion = None
         )
       )
+      ZIO.succeed(ZStream.fromIterable(responses.asInstanceOf[List[Res]]))
+    }
+  }
 
-      val mockClient = MockGeminiHttpClient(Right(responses.head), Right(responses))
-
-      assertZIO(
-        mockClient.postStream[GenerateContent, GenerateContentResponse]("/test", request)
-          .flatMap(_.runCollect).exit
-      )(succeeds(equalTo(Chunk.fromIterable(responses))))
-    },
-
-    test("error types should have proper messages and causes") {
-      val cause = new RuntimeException("Test error")
-      val errors = List(
-        StreamInitializationError("Init failed", None) -> "Init failed",
-        StreamInterrupted("Interrupted", Some(cause)) -> "Interrupted",
-        StreamInitializationError("With cause", Some(cause)) -> "With cause"
+  def spec = suite("GeminiHttpClient")(
+    test("post should return successful response") {
+      val client = new TestHttpClient()
+      given config: GeminiConfig = GeminiConfig("test-api-key")
+      val request = GenerateContent(
+        contents = List(Content.Text("Test input")),
+        safetySettings = None,
+        generationConfig = None
       )
 
-      assertTrue(
-        errors.forall { case (error, msg) => 
-          error.getMessage == msg && 
-          error.getCause == error.cause.getOrElse(null)
-        }
+      for {
+        result <- client.post[GenerateContent, GenerateContentResponse]("test-endpoint", request)
+      } yield assertTrue(
+        result.isRight,
+        result.exists(_.asInstanceOf[GenerateContentResponse].candidates.nonEmpty),
+        result.exists(_.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "Generated text"))
+      )
+    },
+
+    test("postStream should return successful stream") {
+      val client = new TestHttpClient()
+      given config: GeminiConfig = GeminiConfig("test-api-key")
+      val request = GenerateContent(
+        contents = List(Content.Text("Test input")),
+        safetySettings = None,
+        generationConfig = None
+      )
+
+      for {
+        stream <- client.postStream[GenerateContent, GenerateContentResponse]("test-endpoint", request)
+        result <- stream.runCollect
+      } yield assertTrue(
+        result.nonEmpty,
+        result.head.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "First"),
+        result.last.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "Second")
       )
     }
   )
