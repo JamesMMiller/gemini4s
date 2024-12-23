@@ -33,14 +33,14 @@ object GeminiResponse {
    * Content part in a response.
    */
   final case class ResponseContent(
-    parts: List[Part],
+    parts: List[ResponsePart],
     role: Option[String] = None
   )
 
   /**
    * A part of the response content.
    */
-  final case class Part(
+  final case class ResponsePart(
     text: String
   )
 

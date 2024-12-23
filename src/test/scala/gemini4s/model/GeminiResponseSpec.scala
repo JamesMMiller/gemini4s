@@ -14,7 +14,7 @@ object GeminiResponseSpec extends ZIOSpecDefault {
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(Part(text = "Generated text")),
+              parts = List(ResponsePart(text = "Generated text")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -41,7 +41,7 @@ object GeminiResponseSpec extends ZIOSpecDefault {
 
       assertTrue(
         result.isRight,
-        result.exists(_.candidates.head.content.parts.head == Part(text = "Generated text")),
+        result.exists(_.candidates.head.content.parts.head == ResponsePart(text = "Generated text")),
         result.exists(_.candidates.head.finishReason == Some("STOP")),
         result.exists(_.candidates.head.safetyRatings.exists(_.head.category == "HARASSMENT")),
         result.exists(_.candidates.head.safetyRatings.exists(_.head.probability == "LOW")),
@@ -54,7 +54,7 @@ object GeminiResponseSpec extends ZIOSpecDefault {
 
     test("ResponseContent should serialize and deserialize correctly") {
       val expected = ResponseContent(
-        parts = List(Part(text = "Test text")),
+        parts = List(ResponsePart(text = "Test text")),
         role = Some("model")
       )
 
@@ -63,7 +63,7 @@ object GeminiResponseSpec extends ZIOSpecDefault {
 
       assertTrue(
         result.isRight,
-        result.exists(_.parts == List(Part(text = "Test text"))),
+        result.exists(_.parts == List(ResponsePart(text = "Test text"))),
         result.exists(_.role.contains("model"))
       )
     },

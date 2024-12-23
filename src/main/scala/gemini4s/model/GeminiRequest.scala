@@ -5,9 +5,7 @@ import zio.json._
 /**
  * Base trait for all Gemini API requests.
  */
-sealed trait GeminiRequest {
-  def toJson: String
-}
+trait GeminiRequest
 
 object GeminiRequest {
   /**
@@ -17,57 +15,27 @@ object GeminiRequest {
     contents: List[Content],
     safetySettings: Option[List[SafetySetting]] = None,
     generationConfig: Option[GenerationConfig] = None
-  ) extends GeminiRequest {
-    override def toJson: String = {
-      val contentJson = contents.map(c => c match {
-        case Content.Text(text) => s"""{"parts": [{"text": "$text"}]}"""
-      }).mkString("[", ",", "]")
-
-      val safetyJson = safetySettings.map(settings =>
-        settings.map(s => s"""{"category": "${s.category}", "threshold": "${s.threshold}"}""").mkString("[", ",", "]")
-      ).getOrElse("[]")
-
-      val configJson = generationConfig.map(c =>
-        s"""{
-           |  "temperature": ${c.temperature.getOrElse("null")},
-           |  "topK": ${c.topK.getOrElse("null")},
-           |  "topP": ${c.topP.getOrElse("null")},
-           |  "candidateCount": ${c.candidateCount.getOrElse("null")},
-           |  "maxOutputTokens": ${c.maxOutputTokens.getOrElse("null")},
-           |  "stopSequences": ${c.stopSequences.map(_.mkString("[\"", "\",\"", "\"]")).getOrElse("[]")}
-           |}""".stripMargin
-      ).getOrElse("{}")
-
-      s"""{
-         |  "contents": $contentJson,
-         |  "safetySettings": $safetyJson,
-         |  "generationConfig": $configJson
-         |}""".stripMargin
-    }
-  }
+  ) extends GeminiRequest
 
   /**
    * Request to count tokens for given content.
    */
   final case class CountTokensRequest(
     contents: List[Content]
-  ) extends GeminiRequest {
-    override def toJson: String = {
-      val contentJson = contents.map(c => c match {
-        case Content.Text(text) => s"""{"parts": [{"text": "$text"}]}"""
-      }).mkString("[", ",", "]")
-
-      s"""{"contents": $contentJson}"""
-    }
-  }
+  ) extends GeminiRequest
 
   /**
    * Content part that can be used in requests.
    */
-  sealed trait Content
-  object Content {
-    final case class Text(text: String) extends Content
-  }
+  final case class Content(
+    parts: List[Part],
+    role: Option[String] = None
+  )
+
+  /**
+   * A part of the content.
+   */
+  final case class Part(text: String)
 
   /**
    * Safety setting for content filtering.

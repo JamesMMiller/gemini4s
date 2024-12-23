@@ -7,6 +7,7 @@ import zio.stream.{ZPipeline, ZStream}
 
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
+import gemini4s.model.GeminiCodecs.given
 import gemini4s.model.GeminiRequest
 
 /**
@@ -37,7 +38,7 @@ object GeminiHttpClient {
         val url = s"${config.baseUrl}/${endpoint}?key=${config.apiKey}"
         val req = Request.post(
           url = URL.decode(url).toOption.get,
-          body = Body.fromString(request.toJson)
+          body = Body.fromString(summon[JsonEncoder[GeminiRequest]].encodeJson(request, None).toString)
         ).addHeader(Header.ContentType(MediaType.application.json))
           .addHeader(Header.Host("generativelanguage.googleapis.com"))
 
@@ -68,7 +69,7 @@ object GeminiHttpClient {
         val url = s"${config.baseUrl}/${endpoint}?key=${config.apiKey}"
         val req = Request.post(
           url = URL.decode(url).toOption.get,
-          body = Body.fromString(request.toJson)
+          body = Body.fromString(summon[JsonEncoder[GeminiRequest]].encodeJson(request, None).toString)
         ).addHeader(Header.ContentType(MediaType.application.json))
           .addHeader(Header.Host("generativelanguage.googleapis.com"))
 

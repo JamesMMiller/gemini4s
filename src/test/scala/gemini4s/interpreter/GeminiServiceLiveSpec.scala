@@ -25,7 +25,7 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(Part(text = s"Response for: Content.Text(${request.asInstanceOf[GenerateContent].contents.head.asInstanceOf[Content.Text].text})")),
+              parts = List(ResponsePart(text = s"Response for: ${request.asInstanceOf[GenerateContent].contents.head.parts.head.text}")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -47,7 +47,7 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(Part(text = s"Streaming response for: Content.Text(${request.asInstanceOf[GenerateContent].contents.head.asInstanceOf[Content.Text].text})")),
+              parts = List(ResponsePart(text = s"Streaming response for: ${request.asInstanceOf[GenerateContent].contents.head.parts.head.text}")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -68,10 +68,10 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
       val config = GeminiConfig("test-api-key")
 
       for {
-        result <- service.generateContent(List(Content.Text(input)))(using config)
+        result <- service.generateContent(List(Content(parts = List(Part(text = input)))))(using config)
       } yield assertTrue(
         result.isRight,
-        result.toOption.get.candidates.head.content.parts.head == Part(text = "Response for: Content.Text(Test input)")
+        result.toOption.get.candidates.head.content.parts.head == ResponsePart(text = "Response for: Test input")
       )
     },
 
@@ -81,11 +81,11 @@ object GeminiServiceLiveSpec extends ZIOSpecDefault {
       val config = GeminiConfig("test-api-key")
 
       for {
-        stream <- service.generateContentStream(List(Content.Text(input)))(using config)
+        stream <- service.generateContentStream(List(Content(parts = List(Part(text = input)))))(using config)
         result <- stream.runHead
       } yield assertTrue(
         result.isDefined,
-        result.get.candidates.head.content.parts.head == Part(text = "Streaming response for: Content.Text(Test input)")
+        result.get.candidates.head.content.parts.head == ResponsePart(text = "Streaming response for: Test input")
       )
     }
   )

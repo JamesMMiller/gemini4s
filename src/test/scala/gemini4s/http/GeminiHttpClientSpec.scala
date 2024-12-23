@@ -24,7 +24,7 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(Part(text = "Generated text")),
+              parts = List(ResponsePart(text = "Generated text")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -59,33 +59,22 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
           candidates = List(
             Candidate(
               content = ResponseContent(
-                parts = List(Part(text = "First")),
+                parts = List(ResponsePart(text = "First")),
                 role = Some("model")
               ),
               finishReason = Some("STOP"),
               index = None,
-              safetyRatings = Some(List(
-                SafetyRating(
-                  category = "HARASSMENT",
-                  probability = "LOW"
-                )
-              ))
+              safetyRatings = None
             )
           ),
-          usageMetadata = Some(
-            UsageMetadata(
-              promptTokenCount = 10,
-              candidatesTokenCount = 20,
-              totalTokenCount = 30
-            )
-          ),
-          modelVersion = Some("gemini-pro")
+          usageMetadata = None,
+          modelVersion = None
         ),
         GenerateContentResponse(
           candidates = List(
             Candidate(
               content = ResponseContent(
-                parts = List(Part(text = "Second")),
+                parts = List(ResponsePart(text = "Second")),
                 role = Some("model")
               ),
               finishReason = Some("STOP"),
@@ -106,7 +95,7 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
       val client = new TestHttpClient()
       given config: GeminiConfig = GeminiConfig("test-api-key")
       val request = GenerateContent(
-        contents = List(Content.Text("Test input")),
+        contents = List(Content(parts = List(Part(text = "Test input")))),
         safetySettings = None,
         generationConfig = None
       )
@@ -115,8 +104,8 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
         result <- client.post[GenerateContent, GenerateContentResponse]("test-endpoint", request)
       } yield assertTrue(
         result.isRight,
-        result.exists(_.asInstanceOf[GenerateContentResponse].candidates.nonEmpty),
-        result.exists(_.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "Generated text"))
+        result.exists(_.candidates.nonEmpty),
+        result.exists(_.candidates.head.content.parts.head == ResponsePart(text = "Generated text"))
       )
     },
 
@@ -124,7 +113,7 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
       val client = new TestHttpClient()
       given config: GeminiConfig = GeminiConfig("test-api-key")
       val request = GenerateContent(
-        contents = List(Content.Text("Test input")),
+        contents = List(Content(parts = List(Part(text = "Test input")))),
         safetySettings = None,
         generationConfig = None
       )
@@ -134,8 +123,8 @@ object GeminiHttpClientSpec extends ZIOSpecDefault {
         result <- stream.runCollect
       } yield assertTrue(
         result.nonEmpty,
-        result.head.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "First"),
-        result.last.asInstanceOf[GenerateContentResponse].candidates.head.content.parts.head == Part(text = "Second")
+        result.head.candidates.head.content.parts.head == ResponsePart(text = "First"),
+        result.last.candidates.head.content.parts.head == ResponsePart(text = "Second")
       )
     }
   )

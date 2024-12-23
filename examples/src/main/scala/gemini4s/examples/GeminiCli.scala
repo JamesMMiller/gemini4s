@@ -56,7 +56,7 @@ object GeminiCli {
           )) else None
 
           service.generateContent(
-            contents = List(Content.Text(c.prompt)),
+            contents = List(Content(parts = List(Part(text = c.prompt)))),
             safetySettings = safetySettings,
             generationConfig = Some(generationConfig)
           )(using geminiConfig).map {
@@ -71,7 +71,7 @@ object GeminiCli {
         case c if c.prompt.nonEmpty && c.stream =>
           // Stream content
           service.generateContentStream(
-            contents = List(Content.Text(c.prompt))
+            contents = List(Content(parts = List(Part(text = c.prompt))))
           )(using geminiConfig).flatMap { stream =>
             stream
               .map { response =>
@@ -87,7 +87,7 @@ object GeminiCli {
 
         case c =>
           // Count tokens
-          service.countTokens(List(Content.Text(c.prompt)))(using geminiConfig).map {
+          service.countTokens(List(Content(parts = List(Part(text = c.prompt)))))(using geminiConfig).map {
             case Right(count) => s"Token count: $count"
             case Left(error) => s"Error: ${error.message}"
           }

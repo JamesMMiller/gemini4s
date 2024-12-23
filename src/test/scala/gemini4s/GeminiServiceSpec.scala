@@ -25,7 +25,7 @@ object GeminiServiceSpec extends ZIOSpecDefault {
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(Part(text = "Test response")),
+              parts = List(ResponsePart(text = "Test response")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -49,7 +49,7 @@ object GeminiServiceSpec extends ZIOSpecDefault {
           candidates = List(
             Candidate(
               content = ResponseContent(
-                parts = List(Part(text = "Streaming test response")),
+                parts = List(ResponsePart(text = "Streaming test response")),
                 role = Some("model")
               ),
               finishReason = Some("STOP"),
@@ -89,7 +89,7 @@ object GeminiServiceSpec extends ZIOSpecDefault {
     },
     test("text helper should create Content.Text correctly") {
       val content = "test content"
-      assertTrue(GeminiService.text(content) == Content.Text(content))
+      assertTrue(GeminiService.text(content) == Content(parts = List(Part(text = content))))
     },
     test("Endpoints should generate correct paths") {
       assertTrue(
