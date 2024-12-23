@@ -2,26 +2,14 @@ package gemini4s.model
 
 import zio.json._
 
-import GeminiCodecs.given
-
 /**
  * Base trait for all Gemini API requests.
- * Follows the API schema defined in the Gemini API documentation.
  */
-sealed trait GeminiRequest {
-  def toJson: String = this match {
-    case req: GeminiRequest.GenerateContent => req.toJsonPretty
-    case req: GeminiRequest.CountTokensRequest => req.toJsonPretty
-  }
-}
+trait GeminiRequest
 
 object GeminiRequest {
   /**
    * Request for text generation using the Gemini API.
-   *
-   * @param contents The list of content parts to generate from
-   * @param safetySettings Optional safety settings for content filtering
-   * @param generationConfig Optional configuration for text generation
    */
   final case class GenerateContent(
     contents: List[Content],
@@ -31,8 +19,6 @@ object GeminiRequest {
 
   /**
    * Request to count tokens for given content.
-   *
-   * @param contents The list of content parts to count tokens for
    */
   final case class CountTokensRequest(
     contents: List[Content]
@@ -41,16 +27,18 @@ object GeminiRequest {
   /**
    * Content part that can be used in requests.
    */
-  sealed trait Content
-  object Content {
-    final case class Text(text: String) extends Content
-  }
+  final case class Content(
+    parts: List[Part],
+    role: Option[String] = None
+  )
+
+  /**
+   * A part of the content.
+   */
+  final case class Part(text: String)
 
   /**
    * Safety setting for content filtering.
-   *
-   * @param category The harm category to configure
-   * @param threshold The safety threshold to apply
    */
   final case class SafetySetting(
     category: HarmCategory,
@@ -81,13 +69,6 @@ object GeminiRequest {
 
   /**
    * Configuration for text generation.
-   *
-   * @param temperature Controls randomness in generation
-   * @param topK Top-k tokens to consider
-   * @param topP Nucleus sampling threshold
-   * @param candidateCount Number of candidates to generate
-   * @param maxOutputTokens Maximum tokens to generate
-   * @param stopSequences Sequences that stop generation
    */
   final case class GenerationConfig(
     temperature: Option[Float] = None,

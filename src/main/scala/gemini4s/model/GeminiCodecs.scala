@@ -1,81 +1,46 @@
 package gemini4s.model
 
 import zio.json._
+import zio.json.internal.{RetractReader, Write}
 
-import GeminiRequest._
-import GeminiResponse._
+import gemini4s.model.GeminiRequest._
+import gemini4s.model.GeminiResponse._
 
 /**
  * JSON codecs for Gemini API models using zio-json.
  */
 object GeminiCodecs {
   // Request codecs
-  given contentTextCodec: JsonCodec[Content.Text] = DeriveJsonCodec.gen[Content.Text]
-
-  given contentCodec: JsonCodec[Content] = JsonCodec[Content.Text].transform[Content](
-    text => text,
-    {
-      case text: Content.Text => text
-    }
-  )
-
-  given safetySettingCodec: JsonCodec[SafetySetting] = DeriveJsonCodec.gen[SafetySetting]
-
-  given generationConfigCodec: JsonCodec[GenerationConfig] = DeriveJsonCodec.gen[GenerationConfig]
-
-  given generateContentCodec: JsonCodec[GenerateContent] = DeriveJsonCodec.gen[GenerateContent]
-
-  given countTokensRequestCodec: JsonCodec[CountTokensRequest] = DeriveJsonCodec.gen[CountTokensRequest]
+  given JsonCodec[Part]               = DeriveJsonCodec.gen[Part]
+  given JsonCodec[Content]            = DeriveJsonCodec.gen[Content]
+  given JsonCodec[SafetySetting]      = DeriveJsonCodec.gen[SafetySetting]
+  given JsonCodec[GenerationConfig]   = DeriveJsonCodec.gen[GenerationConfig]
+  given JsonCodec[GenerateContent]    = DeriveJsonCodec.gen[GenerateContent]
+  given JsonCodec[CountTokensRequest] = DeriveJsonCodec.gen[CountTokensRequest]
 
   // Response codecs
-  given responsePartTextCodec: JsonCodec[ResponsePart.Text] = DeriveJsonCodec.gen[ResponsePart.Text]
-
-  given responsePartCodec: JsonCodec[ResponsePart] = JsonCodec[ResponsePart.Text].transform[ResponsePart](
-    text => text,
-    {
-      case text: ResponsePart.Text => text
-    }
-  )
-
-  given responseContentCodec: JsonCodec[ResponseContent] = DeriveJsonCodec.gen[ResponseContent]
-
-  given safetyRatingCodec: JsonCodec[SafetyRating] = DeriveJsonCodec.gen[SafetyRating]
-
-  given citationCodec: JsonCodec[Citation] = DeriveJsonCodec.gen[Citation]
-
-  given citationMetadataCodec: JsonCodec[CitationMetadata] = DeriveJsonCodec.gen[CitationMetadata]
-
-  given candidateCodec: JsonCodec[Candidate] = DeriveJsonCodec.gen[Candidate]
-
-  given promptFeedbackCodec: JsonCodec[PromptFeedback] = DeriveJsonCodec.gen[PromptFeedback]
-
-  given generateContentResponseCodec: JsonCodec[GenerateContentResponse] = DeriveJsonCodec.gen[GenerateContentResponse]
-
-  given countTokensResponseCodec: JsonCodec[CountTokensResponse] = DeriveJsonCodec.gen[CountTokensResponse]
+  given JsonCodec[ResponsePart]            = DeriveJsonCodec.gen[ResponsePart]
+  given JsonCodec[ResponseContent]         = DeriveJsonCodec.gen[ResponseContent]
+  given JsonCodec[SafetyRating]            = DeriveJsonCodec.gen[SafetyRating]
+  given JsonCodec[UsageMetadata]           = DeriveJsonCodec.gen[UsageMetadata]
+  given JsonCodec[Candidate]               = DeriveJsonCodec.gen[Candidate]
+  given JsonCodec[GenerateContentResponse] = DeriveJsonCodec.gen[GenerateContentResponse]
+  given JsonCodec[CountTokensResponse]     = DeriveJsonCodec.gen[CountTokensResponse]
 
   // Enum codecs
-  given harmCategoryCodec: JsonCodec[HarmCategory] = JsonCodec[String].transform(
-    str => HarmCategory.valueOf(str),
-    value => value.toString
-  )
+  given JsonEncoder[HarmCategory] = JsonEncoder[String].contramap[HarmCategory](_.toString)
+  given JsonDecoder[HarmCategory] = JsonDecoder[String].map(HarmCategory.valueOf)
 
-  given harmBlockThresholdCodec: JsonCodec[HarmBlockThreshold] = JsonCodec[String].transform(
-    str => HarmBlockThreshold.valueOf(str),
-    value => value.toString
-  )
+  given JsonEncoder[HarmBlockThreshold] = JsonEncoder[String].contramap[HarmBlockThreshold](_.toString)
+  given JsonDecoder[HarmBlockThreshold] = JsonDecoder[String].map(HarmBlockThreshold.valueOf)
 
-  given finishReasonCodec: JsonCodec[FinishReason] = JsonCodec[String].transform(
-    str => FinishReason.valueOf(str),
-    value => value.toString
-  )
+  // Base trait codec
+  given JsonEncoder[GeminiRequest] = new JsonEncoder[GeminiRequest] {
 
-  given harmProbabilityCodec: JsonCodec[HarmProbability] = JsonCodec[String].transform(
-    str => HarmProbability.valueOf(str),
-    value => value.toString
-  )
+    override def unsafeEncode(a: GeminiRequest, indent: Option[Int], out: Write): Unit = a match {
+      case g: GenerateContent    => summon[JsonEncoder[GenerateContent]].unsafeEncode(g, indent, out)
+      case c: CountTokensRequest => summon[JsonEncoder[CountTokensRequest]].unsafeEncode(c, indent, out)
+    }
 
-  given blockReasonCodec: JsonCodec[BlockReason] = JsonCodec[String].transform(
-    str => BlockReason.valueOf(str),
-    value => value.toString
-  )
-} 
+  }
+}
