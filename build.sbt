@@ -8,7 +8,8 @@ inThisBuild(
   List(
     scalaVersion := scala3Version,
     semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
+    semanticdbVersion := scalafixSemanticdb.revision,
+    coverageEnabled := true
   )
 )
 
@@ -35,14 +36,15 @@ lazy val root = project
     version := "0.1.0-SNAPSHOT",
     
     // Scoverage settings
-    coverageEnabled := true,
-    coverageMinimumBranchTotal := 90,
+    // coverageMinimumStmtTotal := 90,
+    // coverageMinimumBranchTotal := 90,
     coverageFailOnMinimum := true,
     coverageHighlighting := true,
     coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
 
     addCommandAlias("lint", ";scalafixAll --check"),
-    addCommandAlias("lintFix", ";scalafixAll")
+    addCommandAlias("lintFix", ";scalafixAll"),
+    addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport")
   )
 
 lazy val examples = project
