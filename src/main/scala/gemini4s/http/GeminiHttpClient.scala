@@ -11,16 +11,37 @@ import gemini4s.model.GeminiCodecs.given
 import gemini4s.model.GeminiRequest
 
 /**
+ * HTTP client algebra for Gemini API.
+ * Uses tagless final pattern to allow different implementations.
+ *
+ * @tparam F The effect type
+ */
  * HTTP client for communicating with the Gemini API.
  * Handles request/response serialization and error mapping.
  */
 trait GeminiHttpClient[F[_]] {
-  def post[Req <: GeminiRequest, Res: JsonDecoder](
+   /**
+   * Sends a POST request to the Gemini API.
+   *
+   * @param endpoint The API endpoint path
+   * @param request The typed request model
+   * @param config The API configuration
+   * @return Response model wrapped in effect F with GeminiError in error channel
+   */
+   def post[Req <: GeminiRequest, Res: JsonDecoder](```
     endpoint: String,
     request: Req
   )(using config: GeminiConfig): F[Either[GeminiError, Res]]
 
-  def postStream[Req <: GeminiRequest, Res: JsonDecoder](
+  /**
+   * Sends a POST request and streams the response.
+   *
+   * @param endpoint The API endpoint path
+   * @param request The typed request model
+   * @param config The API configuration
+   * @return Response chunks as a stream with GeminiError in error channel
+   */
+  def postStream[Req <: GeminiRequest, Res <: GeminiResponse](```
     endpoint: String,
     request: Req
   )(using config: GeminiConfig): F[ZStream[Any, GeminiError, Res]]
