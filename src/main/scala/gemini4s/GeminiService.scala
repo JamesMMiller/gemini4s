@@ -87,5 +87,5 @@ object GeminiService {
   )
 
   /** Helper to create a text content part */
-  def text(content: String): Content = Content.Text(content)
+  def text(content: String): Content = Content(parts = List(Part(text = content)))
 } 
