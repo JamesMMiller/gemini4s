@@ -2,8 +2,7 @@
 
 A Tagless Final Scala library for the Google Gemini API built on top of ZIO.
 
-[![Build Status](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml/badge.svg)](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml)
-[![Coverage Status](https://github.com/JamesMMiller/gemini4s/actions/workflows/scoverage.yml/badge.svg)](https://github.com/JamesMMiller/gemini4s/actions/workflows/scoverage.yml)
+[![Scala CI](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml/badge.svg?branch=main)](https://github.com/JamesMMiller/gemini4s/actions/workflows/scala.yml)
 
 ## Features (Planned)
 
