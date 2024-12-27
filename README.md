@@ -81,6 +81,75 @@ def streamContent(prompt: String)(using config: GeminiConfig) = {
 }
 ```
 
+#### Error Handling
+
+The library provides comprehensive error handling with retry and fallback strategies:
+
+```scala
+val program = for {
+  service <- ZIO.service[GeminiService[Task]]
+  result <- service.generateContent(
+    contents = List(Content(parts = List(Part(text = prompt))))
+  )(using config)
+    .tapError(error => Console.printLine(s"Error occurred: ${error.message}"))
+    .retry(Schedule.exponential(1.second) && Schedule.recurs(3))
+    .catchAll {
+      case GeminiError.RateLimitError(_) => 
+        Console.printLine("Rate limit reached, waiting...") *>
+        ZIO.sleep(5.seconds) *>
+        service.generateContent(contents)(using config)
+      case GeminiError.NetworkError(_, _) =>
+        Console.printLine("Network error, using fallback...") *>
+        ZIO.succeed(Right(fallbackResponse))
+      case _ => 
+        Console.printLine("Unrecoverable error, terminating") *>
+        ZIO.fail(error)
+    }
+} yield result
+```
+
+#### Combining Features
+
+You can combine multiple features like streaming, safety checks, and token counting:
+
+```scala
+val program = for {
+  service <- ZIO.service[GeminiService[Task]]
+  
+  // First check token count
+  tokenCount <- service.countTokens(
+    List(Content(parts = List(Part(text = prompt))))
+  )(using config)
+  _ <- tokenCount match {
+    case Right(count) => Console.printLine(s"Token count: $count")
+    case Left(error) => Console.printLine(s"Token count error: ${error.message}")
+  }
+  
+  // Then stream content with safety and generation settings
+  stream <- service.generateContentStream(
+    contents = List(Content(parts = List(Part(text = prompt)))),
+    safetySettings = Some(safetySettings),
+    generationConfig = Some(generationConfig)
+  )(using config)
+  
+  _ <- stream
+    .tap { response =>
+      // Log safety ratings
+      val safetyInfo = response.candidates.head.safetyRatings
+        .map(rating => s"${rating.category}: ${rating.probability}")
+        .mkString("\n")
+      Console.printLine(s"Safety Ratings:\n$safetyInfo")
+    }
+    .map(_.candidates.head.content.parts.head.text)
+    .tap(Console.printLine(_))
+    .runDrain
+    .catchAll { error =>
+      Console.printLine(s"Stream error: ${error.message}") *>
+      ZIO.unit
+    }
+} yield ()
+```
+
 #### Safety Settings
 
 Control content safety with customizable settings:
