@@ -8,14 +8,14 @@ import zio.stream.{ZPipeline, ZStream}
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.model.GeminiCodecs.given
-import gemini4s.model.GeminiRequest
+import gemini4s.model.{GeminiRequest, GeminiResponse}
 
 /**
  * HTTP client algebra for Gemini API.
  * Uses tagless final pattern to allow different implementations.
  *
  * @tparam F The effect type
- */
+ *
  * HTTP client for communicating with the Gemini API.
  * Handles request/response serialization and error mapping.
  */
@@ -28,7 +28,7 @@ trait GeminiHttpClient[F[_]] {
    * @param config The API configuration
    * @return Response model wrapped in effect F with GeminiError in error channel
    */
-   def post[Req <: GeminiRequest, Res: JsonDecoder](```
+   def post[Req <: GeminiRequest, Res: JsonDecoder](
     endpoint: String,
     request: Req
   )(using config: GeminiConfig): F[Either[GeminiError, Res]]
@@ -41,7 +41,7 @@ trait GeminiHttpClient[F[_]] {
    * @param config The API configuration
    * @return Response chunks as a stream with GeminiError in error channel
    */
-  def postStream[Req <: GeminiRequest, Res <: GeminiResponse](```
+   def postStream[Req <: GeminiRequest, Res: JsonDecoder](
     endpoint: String,
     request: Req
   )(using config: GeminiConfig): F[ZStream[Any, GeminiError, Res]]
