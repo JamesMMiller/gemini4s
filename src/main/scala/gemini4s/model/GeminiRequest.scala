@@ -69,6 +69,34 @@ object GeminiRequest {
 
   /**
    * Configuration for text generation.
+   * 
+   * @param temperature Controls the randomness of the output (0.0 to 1.0).
+   *                    Values closer to 1.0 produce more varied/creative responses,
+   *                    while values closer to 0.0 produce more focused/deterministic responses.
+   *                    Default is 0.9.
+   * 
+   * @param topK Maximum number of tokens to consider when sampling.
+   *             The model will only consider the top K most probable tokens.
+   *             Works in combination with topP for sampling.
+   *             Default is 10.
+   * 
+   * @param topP Maximum cumulative probability for nucleus sampling (0.0 to 1.0).
+   *             The model considers tokens until their cumulative probability reaches this value.
+   *             Works with topK for a combined sampling approach.
+   *             Default is 0.9.
+   * 
+   * @param candidateCount Number of alternative responses to generate (1 to 8).
+   *                       Higher values give you multiple different completions.
+   *                       Default is 1.
+   * 
+   * @param maxOutputTokens Maximum number of tokens to generate in the response.
+   *                        Default is 30,720 for Gemini Pro.
+   *                        Can be set lower to limit response length.
+   * 
+   * @param stopSequences List of character sequences that will stop output generation.
+   *                      The model will stop at the first appearance of any sequence in this list.
+   *                      The stop sequence will not be included in the response.
+   *                      Optional, defaults to None.
    */
   final case class GenerationConfig(
     temperature: Option[Float] = None,
