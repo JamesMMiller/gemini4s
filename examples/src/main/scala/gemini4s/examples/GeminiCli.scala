@@ -85,7 +85,7 @@ object GeminiCli {
             temperature = Some(c.temperature),
             maxOutputTokens = Some(c.maxTokens),
             topK = Some(10),
-            topP = Some(0.9),
+            topP = Some(0.9f),
             candidateCount = Some(1)
           )
           val safetySettings = if (c.safety) Some(List(
@@ -115,9 +115,11 @@ object GeminiCli {
             case Right(response) =>
               response.candidates.headOption.map { candidate =>
                 val text = candidate.content.parts.head.text
-                val safetyInfo = candidate.safetyRatings.map { rating =>
-                  s"\nSafety Rating - ${rating.category}: ${rating.probability}"
-                }.mkString("\n")
+                val safetyInfo = candidate.safetyRatings.map { ratings =>
+                  ratings.map { rating =>
+                    s"\nSafety Rating - ${rating.category}: ${rating.probability}"
+                  }.mkString("\n")
+                }.getOrElse("")
                 s"Generated Content:$text\n$safetyInfo"
               }.getOrElse("No response generated")
             case Left(error) => s"Error: ${error.message}"

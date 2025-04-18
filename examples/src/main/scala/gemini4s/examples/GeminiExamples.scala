@@ -9,7 +9,7 @@ import gemini4s.config.GeminiConfig
 import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceLive
 import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiError
+import gemini4s.error.GeminiError
 
 /**
  * Examples demonstrating various gemini4s features and error handling.
@@ -25,17 +25,17 @@ object GeminiExamples extends ZIOAppDefault {
       result <- service.generateContent(
         contents = List(Content(parts = List(Part(text = "Tell me a joke about programming"))))
       )(using GeminiConfig(apiKey))
-        .tapError(error => Console.printLine(s"Error occurred: ${error.message}"))
+        .tapError(error => Console.printLine(s"Error occurred: ${error.getCause().getMessage()}"))
         .retry(Schedule.exponential(1.second) && Schedule.recurs(3))
         .catchAll { error =>
           error match {
-            case GeminiError.RateLimitError(_) => 
+            case GeminiError.RateLimitExceeded(message, _) => 
               Console.printLine("Rate limit reached, waiting...") *>
               ZIO.sleep(5.seconds) *>
               service.generateContent(
                 contents = List(Content(parts = List(Part(text = "Tell me a joke about programming"))))
               )(using GeminiConfig(apiKey))
-            case GeminiError.NetworkError(_, _) =>
+            case error: GeminiError.NetworkError =>
               Console.printLine("Network error, using fallback...") *>
               ZIO.succeed(Right(fallbackResponse))
             case _ => 
@@ -72,9 +72,9 @@ object GeminiExamples extends ZIOAppDefault {
     )
 
     val generationConfig = GenerationConfig(
-      temperature = Some(0.8),
+      temperature = Some(0.8f),
       topK = Some(10),
-      topP = Some(0.9),
+      topP = Some(0.9f),
       candidateCount = Some(1),
       maxOutputTokens = Some(2048)
     )
@@ -103,7 +103,7 @@ object GeminiExamples extends ZIOAppDefault {
         .tap { response =>
           // Log safety ratings
           val safetyInfo = response.candidates.head.safetyRatings
-            .map(rating => s"${rating.category}: ${rating.probability}")
+            .map(ratings => ratings.map(rating => s"${rating.category}: ${rating.probability}").mkString("\n"))
             .mkString("\n")
           Console.printLine(s"Safety Ratings:\n$safetyInfo")
         }
@@ -111,7 +111,7 @@ object GeminiExamples extends ZIOAppDefault {
         .tap(Console.printLine(_))
         .runDrain
         .catchAll { error =>
-          Console.printLine(s"Stream error: ${error.message}") *>
+          Console.printLine(s"Stream error: ${error.getCause().getMessage()}") *>
           ZIO.unit
         }
     } yield ()

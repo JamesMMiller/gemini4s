@@ -9,7 +9,7 @@ import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
-import gemini4s.model.GeminiError
+import gemini4s.error.GeminiError
 
 object GeminiExamplesSpec extends ZIOSpecDefault {
   def spec = suite("GeminiExamples")(

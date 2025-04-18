@@ -102,6 +102,7 @@ See our [.cursorrules](.cursorrules) file for detailed development guidelines, i
 3. Include examples for new features
 4. Keep CHANGELOG.md up to date
 5. Update API reference documentation
+6. Refer to docs/API_DOCUMENTATION.md for in-depth API specifications and error handling details.
 
 ## Questions and Support
 
