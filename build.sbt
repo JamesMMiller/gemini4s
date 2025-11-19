@@ -1,4 +1,4 @@
-val scala3Version = "3.3.1"
+val scala3Version = "3.6.2"
 val zioCliVersion = "0.5.0"
 
 inThisBuild(
@@ -55,12 +55,12 @@ lazy val root = project
     ),
 
     // Scoverage settings
-    // coverageMinimumStmtTotal := 90,
-    // coverageMinimumBranchTotal := 90,
+    coverageMinimumStmtTotal := 80,
+    coverageMinimumBranchTotal := 90,
     coverageFailOnMinimum    := true,
     coverageHighlighting     := true,
     coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
-    addCommandAlias("lint", ";scalafixAll --check"),
+    addCommandAlias("lint", ";scalafixAll --check; testCoverage"),
     addCommandAlias("lintFix", ";scalafixAll"),
     addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
 

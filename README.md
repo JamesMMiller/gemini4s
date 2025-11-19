@@ -16,7 +16,7 @@ A Tagless Final Scala library for the Google Gemini API, built on the Typelevel 
 
 ### Prerequisites
 
-- Scala 3.3.1
+- Scala 3.6.2
 - JDK 11 or higher
 - Google Cloud API key for Gemini
 

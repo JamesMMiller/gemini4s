@@ -11,8 +11,11 @@ trait GeminiRequest
 object GeminiRequest {
 
   given Encoder[GeminiRequest] = Encoder.instance {
-    case req: GenerateContent    => deriveEncoder[GenerateContent].apply(req)
-    case req: CountTokensRequest => deriveEncoder[CountTokensRequest].apply(req)
+    case req: GenerateContent              => deriveEncoder[GenerateContent].apply(req)
+    case req: CountTokensRequest           => deriveEncoder[CountTokensRequest].apply(req)
+    case req: EmbedContentRequest          => deriveEncoder[EmbedContentRequest].apply(req)
+    case req: BatchEmbedContentsRequest    => deriveEncoder[BatchEmbedContentsRequest].apply(req)
+    case req: CreateCachedContentRequest   => deriveEncoder[CreateCachedContentRequest].apply(req)
   }
 
   /**
