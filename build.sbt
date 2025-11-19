@@ -41,12 +41,13 @@ lazy val root = project
     homepage               := Some(url("https://github.com/JamesMMiller/gemini4s")),
     licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     sonatypeCredentialHost := "central.sonatype.com",
+    publishTo              := sonatypePublishToBundle.value,
     developers             := List(
       Developer(
         "jamesmiller",
         "James Miller",
-        "james@example.com",
-        url("https://github.com/JamesMMiller")
+        "james@jamesmiller.io",
+        url("https://jamesmiller.io")
       )
     ),
     scmInfo                := Some(
