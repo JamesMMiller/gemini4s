@@ -15,7 +15,7 @@ import gemini4s.model.GeminiResponse._
  * Live implementation of the GeminiService using Cats Effect.
  * Uses GeminiHttpClient for API communication.
  */
-final class GeminiServiceLive[F[_]: Async](
+final class GeminiServiceImpl[F[_]: Async](
     httpClient: GeminiHttpClient[F]
 ) extends GeminiService[F] {
 
@@ -68,10 +68,10 @@ final class GeminiServiceLive[F[_]: Async](
 
 }
 
-object GeminiServiceLive {
+object GeminiServiceImpl {
 
   /**
    * Creates a new GeminiService instance.
    */
-  def make[F[_]: Async](httpClient: GeminiHttpClient[F]): GeminiService[F] = new GeminiServiceLive(httpClient)
+  def make[F[_]: Async](httpClient: GeminiHttpClient[F]): GeminiService[F] = new GeminiServiceImpl(httpClient)
 }
