@@ -1,76 +1,84 @@
 val scala3Version = "3.3.1"
-val zioVersion = "2.0.19"
-val zioHttpVersion = "3.0.0-RC3"
-val zioJsonVersion = "0.6.2"
 val zioCliVersion = "0.5.0"
 
 inThisBuild(
   List(
-    scalaVersion := scala3Version,
+    scalaVersion      := scala3Version,
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    coverageEnabled := true
+    coverageEnabled   := true
   )
 )
 
 lazy val commonSettings = Seq(
   scalaVersion := scala3Version,
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % zioVersion,
-    "dev.zio" %% "zio-streams" % zioVersion,
-    "dev.zio" %% "zio-http" % zioHttpVersion,
-    "dev.zio" %% "zio-json" % zioJsonVersion,
-    "dev.zio" %% "zio-test" % zioVersion % Test,
-    "dev.zio" %% "zio-test-sbt" % zioVersion % Test,
-    "dev.zio" %% "zio-test-magnolia" % zioVersion % Test,
-    "org.scalatest" %% "scalatest" % "3.2.17" % Test cross CrossVersion.for3Use2_13
+    "org.typelevel"                 %% "cats-effect"         % "3.5.2",
+    "co.fs2"                        %% "fs2-core"            % "3.9.3",
+    "co.fs2"                        %% "fs2-io"              % "3.9.3",
+    "com.softwaremill.sttp.client3" %% "core"                % "3.9.1",
+    "com.softwaremill.sttp.client3" %% "fs2"                 % "3.9.1",
+    "com.softwaremill.sttp.client3" %% "circe"               % "3.9.1",
+    "io.circe"                      %% "circe-core"          % "0.14.6",
+    "io.circe"                      %% "circe-generic"       % "0.14.6",
+    "io.circe"                      %% "circe-parser"        % "0.14.6",
+    "org.scalameta"                 %% "munit"               % "0.7.29" % Test,
+    "org.typelevel"                 %% "munit-cats-effect-3" % "1.0.7"  % Test
   ),
-  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+  testFrameworks += new TestFramework("munit.Framework")
 )
 
 lazy val root = project
   .in(file("."))
   .settings(
     commonSettings,
-    name := "gemini4s",
+    name    := "gemini4s",
     version := "0.1.0-SNAPSHOT",
-    
+
+    // Publishing settings
+    organization := "com.github.jamesmiller",
+    homepage     := Some(url("https://github.com/JamesMMiller/gemini4s")),
+    licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers   := List(
+      Developer(
+        "jamesmiller",
+        "James Miller",
+        "james@example.com",
+        url("https://github.com/JamesMMiller")
+      )
+    ),
+    scmInfo      := Some(
+      ScmInfo(
+        url("https://github.com/JamesMMiller/gemini4s"),
+        "scm:git:git@github.com:JamesMMiller/gemini4s.git"
+      )
+    ),
+
     // Scoverage settings
     // coverageMinimumStmtTotal := 90,
     // coverageMinimumBranchTotal := 90,
-    coverageFailOnMinimum := true,
-    coverageHighlighting := true,
+    coverageFailOnMinimum    := true,
+    coverageHighlighting     := true,
     coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
-
     addCommandAlias("lint", ";scalafixAll --check"),
     addCommandAlias("lintFix", ";scalafixAll"),
-    addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport")
-  )
+    addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
 
-lazy val examples = project
-  .in(file("examples"))
-  .settings(
-    commonSettings,
-    name := "gemini4s-examples",
-    version := "0.1.0-SNAPSHOT",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-cli" % zioCliVersion
-    ),
-    
-    // Assembly settings
-    assembly / mainClass := Some("gemini4s.examples.GeminiCli"),
-    assembly / assemblyJarName := "gemini4s-cli.jar",
-    assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", xs @ _*) =>
-        (xs map {_.toLowerCase}) match {
-          case ("manifest.mf" :: Nil) | ("index.list" :: Nil) | ("dependencies" :: Nil) =>
-            MergeStrategy.discard
-          case _ => MergeStrategy.first
-        }
-      case "application.conf" => MergeStrategy.concat
-      case "reference.conf" => MergeStrategy.concat
-      case x => MergeStrategy.first
+    // Load .env file for tests
+    Test / fork    := true,
+    Test / envVars := {
+      val envFile = file(".env")
+      if (envFile.exists()) {
+        val props = new java.util.Properties()
+        val is    = new java.io.FileInputStream(envFile)
+        try props.load(is)
+        finally is.close()
+        import scala.collection.JavaConverters._
+        props.asScala.toMap.map { case (k, v) => k -> v.trim }
+      } else {
+        Map.empty
+      }
     }
   )
-  .dependsOn(root)
-  
+
+// Examples project removed as it was ZIO-based

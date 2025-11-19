@@ -1,6 +1,7 @@
 package gemini4s.model
 
-import zio.json._
+import io.circe._
+import io.circe.generic.semiauto._
 
 /**
  * Base trait for all Gemini API requests.
@@ -8,42 +9,73 @@ import zio.json._
 trait GeminiRequest
 
 object GeminiRequest {
+
+  given Encoder[GeminiRequest] = Encoder.instance {
+    case req: GenerateContent    => deriveEncoder[GenerateContent].apply(req)
+    case req: CountTokensRequest => deriveEncoder[CountTokensRequest].apply(req)
+  }
+
   /**
    * Request for text generation using the Gemini API.
    */
   final case class GenerateContent(
-    contents: List[Content],
-    safetySettings: Option[List[SafetySetting]] = None,
-    generationConfig: Option[GenerationConfig] = None
+      contents: List[Content],
+      safetySettings: Option[List[SafetySetting]] = None,
+      generationConfig: Option[GenerationConfig] = None
   ) extends GeminiRequest
+
+  object GenerateContent {
+    given Encoder[GenerateContent] = deriveEncoder
+    given Decoder[GenerateContent] = deriveDecoder
+  }
 
   /**
    * Request to count tokens for given content.
    */
   final case class CountTokensRequest(
-    contents: List[Content]
+      contents: List[Content]
   ) extends GeminiRequest
+
+  object CountTokensRequest {
+    given Encoder[CountTokensRequest] = deriveEncoder
+    given Decoder[CountTokensRequest] = deriveDecoder
+  }
 
   /**
    * Content part that can be used in requests.
    */
   final case class Content(
-    parts: List[Part],
-    role: Option[String] = None
+      parts: List[Part],
+      role: Option[String] = None
   )
+
+  object Content {
+    given Encoder[Content] = deriveEncoder
+    given Decoder[Content] = deriveDecoder
+  }
 
   /**
    * A part of the content.
    */
   final case class Part(text: String)
 
+  object Part {
+    given Encoder[Part] = deriveEncoder
+    given Decoder[Part] = deriveDecoder
+  }
+
   /**
    * Safety setting for content filtering.
    */
   final case class SafetySetting(
-    category: HarmCategory,
-    threshold: HarmBlockThreshold
+      category: HarmCategory,
+      threshold: HarmBlockThreshold
   )
+
+  object SafetySetting {
+    given Encoder[SafetySetting] = deriveEncoder
+    given Decoder[SafetySetting] = deriveDecoder
+  }
 
   /**
    * Categories of potential harm in generated content.
@@ -54,6 +86,16 @@ object GeminiRequest {
     case HATE_SPEECH
     case SEXUALLY_EXPLICIT
     case DANGEROUS_CONTENT
+  }
+
+  object HarmCategory {
+    given Encoder[HarmCategory] = Encoder.encodeString.contramap(_.toString)
+
+    given Decoder[HarmCategory] = Decoder.decodeString.emap { str =>
+      try Right(HarmCategory.valueOf(str))
+      catch { case _: IllegalArgumentException => Left(s"Unknown HarmCategory: $str") }
+    }
+
   }
 
   /**
@@ -67,43 +109,31 @@ object GeminiRequest {
     case BLOCK_NONE
   }
 
+  object HarmBlockThreshold {
+    given Encoder[HarmBlockThreshold] = Encoder.encodeString.contramap(_.toString)
+
+    given Decoder[HarmBlockThreshold] = Decoder.decodeString.emap { str =>
+      try Right(HarmBlockThreshold.valueOf(str))
+      catch { case _: IllegalArgumentException => Left(s"Unknown HarmBlockThreshold: $str") }
+    }
+
+  }
+
   /**
    * Configuration for text generation.
-   * 
-   * @param temperature Controls the randomness of the output (0.0 to 1.0).
-   *                    Values closer to 1.0 produce more varied/creative responses,
-   *                    while values closer to 0.0 produce more focused/deterministic responses.
-   *                    Default is 0.9.
-   * 
-   * @param topK Maximum number of tokens to consider when sampling.
-   *             The model will only consider the top K most probable tokens.
-   *             Works in combination with topP for sampling.
-   *             Default is 10.
-   * 
-   * @param topP Maximum cumulative probability for nucleus sampling (0.0 to 1.0).
-   *             The model considers tokens until their cumulative probability reaches this value.
-   *             Works with topK for a combined sampling approach.
-   *             Default is 0.9.
-   * 
-   * @param candidateCount Number of alternative responses to generate (1 to 8).
-   *                       Higher values give you multiple different completions.
-   *                       Default is 1.
-   * 
-   * @param maxOutputTokens Maximum number of tokens to generate in the response.
-   *                        Default is 30,720 for Gemini Pro.
-   *                        Can be set lower to limit response length.
-   * 
-   * @param stopSequences List of character sequences that will stop output generation.
-   *                      The model will stop at the first appearance of any sequence in this list.
-   *                      The stop sequence will not be included in the response.
-   *                      Optional, defaults to None.
    */
   final case class GenerationConfig(
-    temperature: Option[Float] = None,
-    topK: Option[Int] = None,
-    topP: Option[Float] = None,
-    candidateCount: Option[Int] = None,
-    maxOutputTokens: Option[Int] = None,
-    stopSequences: Option[List[String]] = None
+      temperature: Option[Float] = None,
+      topK: Option[Int] = None,
+      topP: Option[Float] = None,
+      candidateCount: Option[Int] = None,
+      maxOutputTokens: Option[Int] = None,
+      stopSequences: Option[List[String]] = None
   )
-} 
+
+  object GenerationConfig {
+    given Encoder[GenerationConfig] = deriveEncoder
+    given Decoder[GenerationConfig] = deriveDecoder
+  }
+
+}

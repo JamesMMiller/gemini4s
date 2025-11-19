@@ -1,105 +1,101 @@
 package gemini4s.model
 
-import zio.json._
-import zio.test.Assertion._
-import zio.test._
+import io.circe.parser._
+import io.circe.syntax._
+import munit.FunSuite
 
-import gemini4s.model.GeminiCodecs.given
 import gemini4s.model.GeminiResponse._
 
-object GeminiResponseSpec extends ZIOSpecDefault {
-  def spec = suite("GeminiResponse")(
-    test("GenerateContentResponse should serialize and deserialize correctly") {
-      val expected = GenerateContentResponse(
-        candidates = List(
-          Candidate(
-            content = ResponseContent(
-              parts = List(ResponsePart(text = "Generated text")),
-              role = Some("model")
-            ),
-            finishReason = Some("STOP"),
-            safetyRatings = Some(List(
+class GeminiResponseSpec extends FunSuite {
+
+  test("GenerateContentResponse should serialize and deserialize correctly") {
+    val expected = GenerateContentResponse(
+      candidates = List(
+        Candidate(
+          content = ResponseContent(
+            parts = List(ResponsePart(text = "Generated text")),
+            role = Some("model")
+          ),
+          finishReason = Some("STOP"),
+          safetyRatings = Some(
+            List(
               SafetyRating(
                 category = "HARASSMENT",
                 probability = "LOW"
               )
-            ))
+            )
           )
-        ),
-        usageMetadata = Some(
-          UsageMetadata(
-            promptTokenCount = 10,
-            candidatesTokenCount = 20,
-            totalTokenCount = 30
-          )
-        ),
-        modelVersion = Some("gemini-pro")
-      )
+        )
+      ),
+      usageMetadata = Some(
+        UsageMetadata(
+          promptTokenCount = 10,
+          candidatesTokenCount = 20,
+          totalTokenCount = 30
+        )
+      ),
+      modelVersion = Some("gemini-pro")
+    )
 
-      val json = expected.toJson
-      val result = json.fromJson[GenerateContentResponse]
+    val json   = expected.asJson.noSpaces
+    val result = decode[GenerateContentResponse](json)
 
-      assertTrue(
-        result.isRight,
-        result.exists(_.candidates.head.content.parts.head == ResponsePart(text = "Generated text")),
-        result.exists(_.candidates.head.finishReason == Some("STOP")),
-        result.exists(_.candidates.head.safetyRatings.exists(_.head.category == "HARASSMENT")),
-        result.exists(_.candidates.head.safetyRatings.exists(_.head.probability == "LOW")),
-        result.exists(_.usageMetadata.exists(_.promptTokenCount == 10)),
-        result.exists(_.usageMetadata.exists(_.candidatesTokenCount == 20)),
-        result.exists(_.usageMetadata.exists(_.totalTokenCount == 30)),
-        result.exists(_.modelVersion.contains("gemini-pro"))
-      )
-    },
+    assert(result.isRight)
+    val decoded = result.toOption.get
+    assertEquals(decoded.candidates.head.content.parts.head, ResponsePart(text = "Generated text"))
+    assertEquals(decoded.candidates.head.finishReason, Some("STOP"))
+    assertEquals(decoded.candidates.head.safetyRatings.flatMap(_.headOption.map(_.category)), Some("HARASSMENT"))
+    assertEquals(decoded.candidates.head.safetyRatings.flatMap(_.headOption.map(_.probability)), Some("LOW"))
+    assertEquals(decoded.usageMetadata.map(_.promptTokenCount), Some(10))
+    assertEquals(decoded.usageMetadata.map(_.candidatesTokenCount), Some(20))
+    assertEquals(decoded.usageMetadata.map(_.totalTokenCount), Some(30))
+    assertEquals(decoded.modelVersion, Some("gemini-pro"))
+  }
 
-    test("ResponseContent should serialize and deserialize correctly") {
-      val expected = ResponseContent(
-        parts = List(ResponsePart(text = "Test text")),
-        role = Some("model")
-      )
+  test("ResponseContent should serialize and deserialize correctly") {
+    val expected = ResponseContent(
+      parts = List(ResponsePart(text = "Test text")),
+      role = Some("model")
+    )
 
-      val json = expected.toJson
-      val result = json.fromJson[ResponseContent]
+    val json   = expected.asJson.noSpaces
+    val result = decode[ResponseContent](json)
 
-      assertTrue(
-        result.isRight,
-        result.exists(_.parts == List(ResponsePart(text = "Test text"))),
-        result.exists(_.role.contains("model"))
-      )
-    },
+    assert(result.isRight)
+    val decoded = result.toOption.get
+    assertEquals(decoded.parts, List(ResponsePart(text = "Test text")))
+    assertEquals(decoded.role, Some("model"))
+  }
 
-    test("SafetyRating should serialize and deserialize correctly") {
-      val expected = SafetyRating(
-        category = "SEXUALLY_EXPLICIT",
-        probability = "MEDIUM"
-      )
+  test("SafetyRating should serialize and deserialize correctly") {
+    val expected = SafetyRating(
+      category = "SEXUALLY_EXPLICIT",
+      probability = "MEDIUM"
+    )
 
-      val json = expected.toJson
-      val result = json.fromJson[SafetyRating]
+    val json   = expected.asJson.noSpaces
+    val result = decode[SafetyRating](json)
 
-      assertTrue(
-        result.isRight,
-        result.exists(_.category == "SEXUALLY_EXPLICIT"),
-        result.exists(_.probability == "MEDIUM")
-      )
-    },
+    assert(result.isRight)
+    val decoded = result.toOption.get
+    assertEquals(decoded.category, "SEXUALLY_EXPLICIT")
+    assertEquals(decoded.probability, "MEDIUM")
+  }
 
-    test("UsageMetadata should serialize and deserialize correctly") {
-      val expected = UsageMetadata(
-        promptTokenCount = 10,
-        candidatesTokenCount = 20,
-        totalTokenCount = 30
-      )
+  test("UsageMetadata should serialize and deserialize correctly") {
+    val expected = UsageMetadata(
+      promptTokenCount = 10,
+      candidatesTokenCount = 20,
+      totalTokenCount = 30
+    )
 
-      val json = expected.toJson
-      val result = json.fromJson[UsageMetadata]
+    val json   = expected.asJson.noSpaces
+    val result = decode[UsageMetadata](json)
 
-      assertTrue(
-        result.isRight,
-        result.exists(_.promptTokenCount == 10),
-        result.exists(_.candidatesTokenCount == 20),
-        result.exists(_.totalTokenCount == 30)
-      )
-    }
-  )
-} 
+    assert(result.isRight)
+    val decoded = result.toOption.get
+    assertEquals(decoded.promptTokenCount, 10)
+    assertEquals(decoded.candidatesTokenCount, 20)
+    assertEquals(decoded.totalTokenCount, 30)
+  }
+}

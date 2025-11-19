@@ -1,30 +1,29 @@
 package gemini4s.interpreter
 
-import zio._
-import zio.json._
-import zio.stream.ZStream
+import cats.effect.Async
+import cats.syntax.all._
+import fs2.Stream
 
 import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
-import gemini4s.error.{GeminiError, GeminiErrorCompanion}
+import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
-import gemini4s.model.GeminiCodecs.given
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
 
 /**
- * Live ZIO implementation of the GeminiService.
- * Uses GeminiHttpClient for API communication and handles proper error mapping.
+ * Live implementation of the GeminiService using Cats Effect.
+ * Uses GeminiHttpClient for API communication.
  */
-final class GeminiServiceLive(
-  httpClient: GeminiHttpClient[Task]
-) extends GeminiService[Task] {
+final class GeminiServiceLive[F[_]: Async](
+    httpClient: GeminiHttpClient[F]
+) extends GeminiService[F] {
 
   override def generateContent(
-    contents: List[Content],
-    safetySettings: Option[List[SafetySetting]],
-    generationConfig: Option[GenerationConfig]
-  )(using config: GeminiConfig): Task[Either[GeminiError, GenerateContentResponse]] = {
+      contents: List[Content],
+      safetySettings: Option[List[SafetySetting]],
+      generationConfig: Option[GenerationConfig]
+  )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
@@ -38,10 +37,10 @@ final class GeminiServiceLive(
   }
 
   override def generateContentStream(
-    contents: List[Content],
-    safetySettings: Option[List[SafetySetting]],
-    generationConfig: Option[GenerationConfig]
-  )(using config: GeminiConfig): Task[ZStream[Any, GeminiError, GenerateContentResponse]] = {
+      contents: List[Content],
+      safetySettings: Option[List[SafetySetting]],
+      generationConfig: Option[GenerationConfig]
+  )(using config: GeminiConfig): Stream[F, GenerateContentResponse] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
@@ -55,36 +54,24 @@ final class GeminiServiceLive(
   }
 
   override def countTokens(
-    contents: List[Content]
-  )(using config: GeminiConfig): Task[Either[GeminiError, Int]] = {
+      contents: List[Content]
+  )(using config: GeminiConfig): F[Either[GeminiError, Int]] = {
     val request = CountTokensRequest(contents)
 
-    httpClient.post[CountTokensRequest, CountTokensResponse](
-      GeminiService.Endpoints.countTokens(),
-      request
-    ).map(_.map(_.tokenCount))
+    httpClient
+      .post[CountTokensRequest, CountTokensResponse](
+        GeminiService.Endpoints.countTokens(),
+        request
+      )
+      .map(_.map(_.totalTokens))
   }
+
 }
 
 object GeminiServiceLive {
-  /**
-   * Creates a new GeminiService layer using the provided HTTP client.
-   *
-   * @param httpClient The HTTP client to use for API communication
-   * @return A ZLayer that provides a GeminiService
-   */
-  def layer(httpClient: GeminiHttpClient[Task]): ULayer[GeminiService[Task]] =
-    ZLayer.succeed(new GeminiServiceLive(httpClient))
 
   /**
-   * Creates a new GeminiService layer using the default HTTP client.
-   *
-   * @return A ZLayer that provides a GeminiService
+   * Creates a new GeminiService instance.
    */
-  val live: URLayer[GeminiHttpClient[Task], GeminiService[Task]] =
-    ZLayer {
-      for {
-        client <- ZIO.service[GeminiHttpClient[Task]]
-      } yield new GeminiServiceLive(client)
-    }
-} 
+  def make[F[_]: Async](httpClient: GeminiHttpClient[F]): GeminiService[F] = new GeminiServiceLive(httpClient)
+}
