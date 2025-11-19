@@ -41,7 +41,13 @@ lazy val root = project
     homepage               := Some(url("https://github.com/JamesMMiller/gemini4s")),
     licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     sonatypeCredentialHost := "central.sonatype.com",
-    publishTo              := sonatypePublishToBundle.value,
+    publishTo              := {
+      if (isSnapshot.value) {
+        Some("snapshots" at "https://central.sonatype.com/repository/maven-snapshots/")
+      } else {
+        sonatypePublishToBundle.value
+      }
+    },
     developers             := List(
       Developer(
         "jamesmiller",
