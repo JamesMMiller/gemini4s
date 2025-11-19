@@ -7,119 +7,171 @@ import gemini4s.error.GeminiError
 import gemini4s.model.GeminiRequest._
 import gemini4s.model.GeminiResponse._
 
+/**
+ * Core service algebra for interacting with the Google Gemini API.
+ *
+ * This service follows the Tagless Final pattern, allowing for different effect type implementations.
+ * It provides high-level operations for content generation, streaming, and token counting.
+ *
+ * @tparam F The effect type (e.g., IO for Cats Effect implementation)
+ */
+trait GeminiService[F[_]] {
+
   /**
-   * Core service algebra for interacting with the Google Gemini API.
+   * Generates content using the Gemini API.
    *
-   * This service follows the Tagless Final pattern, allowing for different effect type implementations.
-   * It provides high-level operations for content generation, streaming, and token counting.
-   *
-   * @tparam F The effect type (e.g., IO for Cats Effect implementation)
+   * @param contents The input prompts and their contents
+   * @param safetySettings Optional safety settings to control content filtering
+   * @param generationConfig Optional configuration for content generation
+   * @param systemInstruction Optional system instructions
+   * @param tools Optional tools available for the model
+   * @param toolConfig Optional configuration for tool use
+   * @param config The API configuration (implicit)
+   * @return Either a [[GeminiError]] or a [[GenerateContentResponse]]
    */
-  trait GeminiService[F[_]] {
+  def generateContent(
+      contents: List[Content],
+      safetySettings: Option[List[SafetySetting]] = None,
+      generationConfig: Option[GenerationConfig] = None,
+      systemInstruction: Option[Content] = None,
+      tools: Option[List[Tool]] = None,
+      toolConfig: Option[ToolConfig] = None
+  )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]]
 
-    /**
-     * Generates content using the Gemini API.
-     *
-     * @param contents The input prompts and their contents
-     * @param safetySettings Optional safety settings to control content filtering
-     * @param generationConfig Optional configuration for content generation
-     * @param systemInstruction Optional system instructions
-     * @param tools Optional tools available for the model
-     * @param toolConfig Optional configuration for tool use
-     * @param config The API configuration (implicit)
-     * @return Either a [[GeminiError]] or a [[GenerateContentResponse]]
-     */
-    def generateContent(
-        contents: List[Content],
-        safetySettings: Option[List[SafetySetting]] = None,
-        generationConfig: Option[GenerationConfig] = None,
-        systemInstruction: Option[Content] = None,
-        tools: Option[List[Tool]] = None,
-        toolConfig: Option[ToolConfig] = None
-    )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]]
+  /**
+   * Generates content using the Gemini API with streaming response.
+   *
+   * @param contents The input prompts and their contents
+   * @param safetySettings Optional safety settings to control content filtering
+   * @param generationConfig Optional configuration for content generation
+   * @param systemInstruction Optional system instructions
+   * @param tools Optional tools available for the model
+   * @param toolConfig Optional configuration for tool use
+   * @param config The API configuration (implicit)
+   * @return A stream of [[GenerateContentResponse]] chunks
+   */
+  def generateContentStream(
+      contents: List[Content],
+      safetySettings: Option[List[SafetySetting]] = None,
+      generationConfig: Option[GenerationConfig] = None,
+      systemInstruction: Option[Content] = None,
+      tools: Option[List[Tool]] = None,
+      toolConfig: Option[ToolConfig] = None
+  )(using config: GeminiConfig): Stream[F, GenerateContentResponse]
 
-    /**
-     * Generates content using the Gemini API with streaming response.
-     *
-     * @param contents The input prompts and their contents
-     * @param safetySettings Optional safety settings to control content filtering
-     * @param generationConfig Optional configuration for content generation
-     * @param systemInstruction Optional system instructions
-     * @param tools Optional tools available for the model
-     * @param toolConfig Optional configuration for tool use
-     * @param config The API configuration (implicit)
-     * @return A stream of [[GenerateContentResponse]] chunks
-     */
-    def generateContentStream(
-        contents: List[Content],
-        safetySettings: Option[List[SafetySetting]] = None,
-        generationConfig: Option[GenerationConfig] = None,
-        systemInstruction: Option[Content] = None,
-        tools: Option[List[Tool]] = None,
-        toolConfig: Option[ToolConfig] = None
-    )(using config: GeminiConfig): Stream[F, GenerateContentResponse]
+  /**
+   * Counts tokens in the provided content.
+   *
+   * @param contents The content to analyze
+   * @param config The API configuration (implicit)
+   * @return The number of tokens
+   */
+  def countTokens(
+      contents: List[Content]
+  )(using config: GeminiConfig): F[Either[GeminiError, Int]]
 
-    /**
-     * Counts tokens in the provided content.
-     *
-     * @param contents The content to analyze
-     * @param config The API configuration (implicit)
-     * @return The number of tokens
-     */
-    def countTokens(
-        contents: List[Content]
-    )(using config: GeminiConfig): F[Either[GeminiError, Int]]
+  /**
+   * Generates an embedding for the given content.
+   *
+   * @param content The content to embed
+   * @param taskType Optional task type
+   * @param title Optional title (only valid with RETRIEVAL_DOCUMENT task type)
+   * @param outputDimensionality Optional output dimensionality
+   * @param config The API configuration (implicit)
+   * @return Either a [[GeminiError]] or the embedding values
+   */
+  def embedContent(
+      content: Content,
+      taskType: Option[TaskType] = None,
+      title: Option[String] = None,
+      outputDimensionality: Option[Int] = None
+  )(using config: GeminiConfig): F[Either[GeminiError, ContentEmbedding]]
 
-  }
+  /**
+   * Generates embeddings for a batch of contents.
+   *
+   * @param requests The list of embed requests
+   * @param config The API configuration (implicit)
+   * @return Either a [[GeminiError]] or the list of embeddings
+   */
+  def batchEmbedContents(
+      requests: List[EmbedContentRequest]
+  )(using config: GeminiConfig): F[Either[GeminiError, List[ContentEmbedding]]]
 
-  object GeminiService {
+  /**
+   * Creates cached content for efficient reuse.
+   *
+   * @param model The model name
+   * @param systemInstruction Optional system instructions
+   * @param contents Optional content to cache
+   * @param tools Optional tools to cache
+   * @param toolConfig Optional tool configuration
+   * @param ttl Optional TTL (e.g., "3600s")
+   * @param displayName Optional display name
+   * @param config The API configuration (implicit)
+   * @return Either a [[GeminiError]] or the created [[CachedContent]]
+   */
+  def createCachedContent(
+      model: String,
+      systemInstruction: Option[Content] = None,
+      contents: Option[List[Content]] = None,
+      tools: Option[List[Tool]] = None,
+      toolConfig: Option[ToolConfig] = None,
+      ttl: Option[String] = None,
+      displayName: Option[String] = None
+  )(using config: GeminiConfig): F[Either[GeminiError, CachedContent]]
 
-    /** Default model identifier for Gemini 2.5 Flash */
-    val DefaultModel = "gemini-2.5-flash"
-    val Gemini25Flash = "gemini-2.5-flash"
-    val Gemini25Pro = "gemini-2.5-pro"
-    val Gemini25FlashLite = "gemini-2.5-flash-lite"
-    val Gemini3Pro = "gemini-3-pro-preview"
-    val Imagen4 = "imagen-4.0-generate-001"
-    val EmbeddingText004 = "text-embedding-004"
+}
 
-    /** Maximum tokens per request (30,720 for Gemini Pro) */
-    val MaxTokensPerRequest = 30720
+object GeminiService {
 
-    /** Default temperature for content generation (0.9) */
-    val DefaultTemperature = 0.9f
+  /** Default model identifier for Gemini 2.5 Flash */
+  val DefaultModel = "gemini-2.5-flash"
+  val Gemini25Flash = "gemini-2.5-flash"
+  val Gemini25Pro = "gemini-2.5-pro"
+  val Gemini25FlashLite = "gemini-2.5-flash-lite"
+  val Gemini3Pro = "gemini-3-pro-preview"
+  val Imagen4 = "imagen-4.0-generate-001"
+  val EmbeddingText004 = "text-embedding-004"
 
-    /** Default top-k value for content generation (10) */
-    val DefaultTopK = 10
+  /** Maximum tokens per request (30,720 for Gemini Pro) */
+  val MaxTokensPerRequest = 30720
 
-    /** Default top-p value for content generation (0.9) */
-    val DefaultTopP = 0.9f
+  /** Default temperature for content generation (0.9) */
+  val DefaultTemperature = 0.9f
 
-    /** Default generation configuration with recommended settings */
-    val DefaultGenerationConfig = GenerationConfig(
-      temperature = Some(DefaultTemperature),
-      topK = Some(DefaultTopK),
-      topP = Some(DefaultTopP),
-      maxOutputTokens = Some(MaxTokensPerRequest)
-    )
+  /** Default top-k value for content generation (10) */
+  val DefaultTopK = 10
 
-    /**
-     * Creates a Content instance from text input.
-     *
-     * @param text The input text
-     * @return A Content instance with the text wrapped in a Part
-     */
-    def text(text: String): Content = Content(parts = List(Part(text = text)))
+  /** Default top-p value for content generation (0.9) */
+  val DefaultTopP = 0.9f
 
-    /**
-     * API endpoint paths for different operations.
-     */
-    object Endpoints {
-      def generateContent(model: String = DefaultModel): String       = s"models/$model:generateContent"
-      def generateContentStream(model: String = DefaultModel): String = s"models/$model:streamGenerateContent"
+  /** Default generation configuration with recommended settings */
+  val DefaultGenerationConfig = GenerationConfig(
+    temperature = Some(DefaultTemperature),
+    topK = Some(DefaultTopK),
+    topP = Some(DefaultTopP),
+    maxOutputTokens = Some(MaxTokensPerRequest)
+  )
+
+  /**
+   * Creates a Content instance from text input.
+   *
+   * @param text The input text
+   * @return A Content instance with the text wrapped in a Part
+   */
+  def text(text: String): Content = Content(parts = List(Part(text = text)))
+
+  /**
+   * API endpoint paths for different operations.
+   */
+  object Endpoints {
+    def generateContent(model: String = DefaultModel): String       = s"models/$model:generateContent"
+    def generateContentStream(model: String = DefaultModel): String = s"models/$model:streamGenerateContent"
       def countTokens(model: String = DefaultModel): String           = s"models/$model:countTokens"
       def embedContent(model: String = DefaultModel): String          = s"models/$model:embedContent"
       def batchEmbedContents(model: String = DefaultModel): String    = s"models/$model:batchEmbedContents"
+      def createCachedContent: String                                 = "cachedContents"
     }
 
   }

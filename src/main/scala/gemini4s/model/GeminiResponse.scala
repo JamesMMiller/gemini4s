@@ -47,6 +47,59 @@ object GeminiResponse {
   }
 
   /**
+   * Response from embedding content.
+   */
+  final case class EmbedContentResponse(
+      embedding: ContentEmbedding
+  )
+
+  object EmbedContentResponse {
+    given Decoder[EmbedContentResponse] = deriveDecoder
+    given Encoder[EmbedContentResponse] = deriveEncoder
+  }
+
+  /**
+   * Response from batch embedding contents.
+   */
+  final case class BatchEmbedContentsResponse(
+      embeddings: List[ContentEmbedding]
+  )
+
+  object BatchEmbedContentsResponse {
+    given Decoder[BatchEmbedContentsResponse] = deriveDecoder
+    given Encoder[BatchEmbedContentsResponse] = deriveEncoder
+  }
+
+  /**
+   * A list of floats representing an embedding.
+   */
+  final case class ContentEmbedding(
+      values: List[Float]
+  )
+
+  object ContentEmbedding {
+    given Decoder[ContentEmbedding] = deriveDecoder
+    given Encoder[ContentEmbedding] = deriveEncoder
+  }
+
+  /**
+   * Response from creating cached content.
+   */
+  final case class CachedContent(
+      name: String,
+      model: String,
+      createTime: String,
+      updateTime: String,
+      expireTime: String,
+      displayName: Option[String] = None
+  )
+
+  object CachedContent {
+    given Decoder[CachedContent] = deriveDecoder
+    given Encoder[CachedContent] = deriveEncoder
+  }
+
+  /**
    * A candidate response from the model.
    */
   final case class Candidate(

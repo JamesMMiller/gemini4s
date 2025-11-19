@@ -73,6 +73,36 @@ class GeminiServiceSpec extends CatsEffectSuite {
       // Simulate token counting with a fixed value
       IO.pure(Right(42))
 
+    override def embedContent(
+        content: Content,
+        taskType: Option[TaskType],
+        title: Option[String],
+        outputDimensionality: Option[Int]
+    )(using config: GeminiConfig): IO[Either[GeminiError, ContentEmbedding]] =
+      IO.pure(Right(ContentEmbedding(values = List(0.1f, 0.2f))))
+
+    override def batchEmbedContents(
+        requests: List[EmbedContentRequest]
+    )(using config: GeminiConfig): IO[Either[GeminiError, List[ContentEmbedding]]] =
+      IO.pure(Right(List(ContentEmbedding(values = List(0.1f, 0.2f)))))
+
+    override def createCachedContent(
+        model: String,
+        systemInstruction: Option[Content],
+        contents: Option[List[Content]],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig],
+        ttl: Option[String],
+        displayName: Option[String]
+    )(using config: GeminiConfig): IO[Either[GeminiError, CachedContent]] =
+      IO.pure(Right(CachedContent(
+        name = "cachedContents/123",
+        model = model,
+        createTime = "now",
+        updateTime = "now",
+        expireTime = "later"
+      )))
+
   }
 
   test("DefaultModel should be gemini-2.5-flash") {

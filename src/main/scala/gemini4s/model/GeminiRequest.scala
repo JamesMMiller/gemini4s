@@ -45,6 +45,67 @@ object GeminiRequest {
   }
 
   /**
+   * Request to embed content.
+   */
+  final case class EmbedContentRequest(
+      content: Content,
+      model: String,
+      taskType: Option[TaskType] = None,
+      title: Option[String] = None,
+      outputDimensionality: Option[Int] = None
+  ) extends GeminiRequest
+
+  object EmbedContentRequest {
+    given Encoder[EmbedContentRequest] = deriveEncoder
+    given Decoder[EmbedContentRequest] = deriveDecoder
+  }
+
+  /**
+   * Request to batch embed contents.
+   */
+  final case class BatchEmbedContentsRequest(
+      requests: List[EmbedContentRequest]
+  ) extends GeminiRequest
+
+  object BatchEmbedContentsRequest {
+    given Encoder[BatchEmbedContentsRequest] = deriveEncoder
+    given Decoder[BatchEmbedContentsRequest] = deriveDecoder
+  }
+
+  /**
+   * Type of task for which the embedding will be used.
+   */
+  enum TaskType {
+    case TASK_TYPE_UNSPECIFIED, RETRIEVAL_QUERY, RETRIEVAL_DOCUMENT, SEMANTIC_SIMILARITY, CLASSIFICATION, CLUSTERING
+  }
+
+  object TaskType {
+    given Encoder[TaskType] = Encoder.encodeString.contramap(_.toString)
+    given Decoder[TaskType] = Decoder.decodeString.emap { str =>
+      try Right(TaskType.valueOf(str))
+      catch { case _: IllegalArgumentException => Left(s"Unknown TaskType: $str") }
+    }
+  }
+
+  /**
+   * Request to create cached content.
+   */
+  final case class CreateCachedContentRequest(
+      model: Option[String] = None,
+      systemInstruction: Option[Content] = None,
+      contents: Option[List[Content]] = None,
+      tools: Option[List[Tool]] = None,
+      toolConfig: Option[ToolConfig] = None,
+      ttl: Option[String] = None,
+      displayName: Option[String] = None
+  ) extends GeminiRequest
+
+  object CreateCachedContentRequest {
+    given Encoder[CreateCachedContentRequest] = deriveEncoder
+    given Decoder[CreateCachedContentRequest] = deriveDecoder
+  }
+
+  /**
    * Content part that can be used in requests.
    */
   final case class Content(
