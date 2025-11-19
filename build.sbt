@@ -114,8 +114,36 @@ lazy val docs = project
         .site
         .topNavigationBar(
           homeLink = IconLink.internal(Root / "index.md", HeliumIcon.home),
-          navLinks = Seq(
-            IconLink.external("https://github.com/JamesMMiller/gemini4s", HeliumIcon.github)
+          navLinks = Seq()
+        )
+        .site
+        .mainNavigation(
+          appendLinks = Seq(
+            ThemeNavigationSection(
+              "Getting Started",
+              TextLink.internal(Root / "quickstart.md", "Quick Start")
+            ),
+            ThemeNavigationSection(
+              "Core Concepts",
+              TextLink.internal(Root / "core-concepts.md", "Fundamentals"),
+              TextLink.internal(Root / "models.md", "Models"),
+              TextLink.internal(Root / "error-handling.md", "Error Handling")
+            ),
+            ThemeNavigationSection(
+              "Features",
+              TextLink.internal(Root / "content-generation.md", "Content Generation"),
+              TextLink.internal(Root / "streaming.md", "Streaming"),
+              TextLink.internal(Root / "function-calling.md", "Function Calling"),
+              TextLink.internal(Root / "embeddings.md", "Embeddings"),
+              TextLink.internal(Root / "safety.md", "Safety Settings"),
+              TextLink.internal(Root / "caching.md", "Context Caching")
+            ),
+            ThemeNavigationSection(
+              "Reference",
+              TextLink.internal(Root / "examples.md", "Examples"),
+              TextLink.internal(Root / "best-practices.md", "Best Practices"),
+              TextLink.internal(Root / "faq.md", "FAQ")
+            )
           )
         )
     },
