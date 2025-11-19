@@ -90,4 +90,42 @@ lazy val root = project
     }
   )
 
+// Documentation subproject
+lazy val docs = project
+  .in(file("site"))
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    name := "gemini4s-docs",
+
+    // mdoc settings for type-checked examples
+    mdocIn := file("docs"),
+
+    // Site configuration
+    tlSiteHelium := {
+      import laika.helium.config._
+      import laika.ast.Path.Root
+
+      tlSiteHelium.value.site
+        .metadata(
+          title = Some("gemini4s"),
+          description = Some("A Tagless Final Scala library for the Google Gemini API"),
+          language = Some("en")
+        )
+        .site
+        .topNavigationBar(
+          homeLink = IconLink.internal(Root / "index.md", HeliumIcon.home),
+          navLinks = Seq(
+            IconLink.external("https://github.com/JamesMMiller/gemini4s", HeliumIcon.github)
+          )
+        )
+    },
+
+    // Link to API documentation
+    tlSiteApiUrl := Some(url("https://javadoc.io/doc/io.github.jamesmmiller/gemini4s_3")),
+
+    // GitHub Pages settings
+    tlSitePublishBranch := Some("gh-pages")
+  )
+  .dependsOn(root)
+
 // Examples project removed as it was ZIO-based
