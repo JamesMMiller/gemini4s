@@ -27,7 +27,7 @@ trait GeminiService[F[_]] {
    * @param tools Optional tools available for the model
    * @param toolConfig Optional configuration for tool use
    * @param config The API configuration (implicit)
-   * @return Either a [[GeminiError]] or a [[GenerateContentResponse]]
+   * @return Either a [[gemini4s.error.GeminiError]] or a [[gemini4s.model.GeminiResponse.GenerateContentResponse]]
    */
   def generateContent(
       contents: List[Content],
@@ -48,7 +48,7 @@ trait GeminiService[F[_]] {
    * @param tools Optional tools available for the model
    * @param toolConfig Optional configuration for tool use
    * @param config The API configuration (implicit)
-   * @return A stream of [[GenerateContentResponse]] chunks
+   * @return A stream of [[gemini4s.model.GeminiResponse.GenerateContentResponse]] chunks
    */
   def generateContentStream(
       contents: List[Content],
@@ -78,7 +78,7 @@ trait GeminiService[F[_]] {
    * @param title Optional title (only valid with RETRIEVAL_DOCUMENT task type)
    * @param outputDimensionality Optional output dimensionality
    * @param config The API configuration (implicit)
-   * @return Either a [[GeminiError]] or the embedding values
+   * @return Either a [[gemini4s.error.GeminiError]] or the embedding values
    */
   def embedContent(
       content: Content,
@@ -92,7 +92,7 @@ trait GeminiService[F[_]] {
    *
    * @param requests The list of embed requests
    * @param config The API configuration (implicit)
-   * @return Either a [[GeminiError]] or the list of embeddings
+   * @return Either a [[gemini4s.error.GeminiError]] or the list of embeddings
    */
   def batchEmbedContents(
       requests: List[EmbedContentRequest]
@@ -109,7 +109,7 @@ trait GeminiService[F[_]] {
    * @param ttl Optional TTL (e.g., "3600s")
    * @param displayName Optional display name
    * @param config The API configuration (implicit)
-   * @return Either a [[GeminiError]] or the created [[CachedContent]]
+   * @return Either a [[gemini4s.error.GeminiError]] or the created [[gemini4s.model.GeminiResponse.CachedContent]]
    */
   def createCachedContent(
       model: String,
@@ -126,13 +126,13 @@ trait GeminiService[F[_]] {
 object GeminiService {
 
   /** Default model identifier for Gemini 2.5 Flash */
-  val DefaultModel = "gemini-2.5-flash"
-  val Gemini25Flash = "gemini-2.5-flash"
-  val Gemini25Pro = "gemini-2.5-pro"
+  val DefaultModel      = "gemini-2.5-flash"
+  val Gemini25Flash     = "gemini-2.5-flash"
+  val Gemini25Pro       = "gemini-2.5-pro"
   val Gemini25FlashLite = "gemini-2.5-flash-lite"
-  val Gemini3Pro = "gemini-3-pro-preview"
-  val Imagen4 = "imagen-4.0-generate-001"
-  val EmbeddingText004 = "text-embedding-004"
+  val Gemini3Pro        = "gemini-3-pro-preview"
+  val Imagen4           = "imagen-4.0-generate-001"
+  val EmbeddingText004  = "text-embedding-004"
 
   /** Maximum tokens per request (30,720 for Gemini Pro) */
   val MaxTokensPerRequest = 30720
@@ -168,10 +168,10 @@ object GeminiService {
   object Endpoints {
     def generateContent(model: String = DefaultModel): String       = s"models/$model:generateContent"
     def generateContentStream(model: String = DefaultModel): String = s"models/$model:streamGenerateContent"
-      def countTokens(model: String = DefaultModel): String           = s"models/$model:countTokens"
-      def embedContent(model: String = DefaultModel): String          = s"models/$model:embedContent"
-      def batchEmbedContents(model: String = DefaultModel): String    = s"models/$model:batchEmbedContents"
-      def createCachedContent: String                                 = "cachedContents"
-    }
-
+    def countTokens(model: String = DefaultModel): String           = s"models/$model:countTokens"
+    def embedContent(model: String = DefaultModel): String          = s"models/$model:embedContent"
+    def batchEmbedContents(model: String = DefaultModel): String    = s"models/$model:batchEmbedContents"
+    def createCachedContent: String                                 = "cachedContents"
   }
+
+}
