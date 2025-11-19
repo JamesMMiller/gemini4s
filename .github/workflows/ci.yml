@@ -69,23 +69,28 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
-      - name: Calculate Next Version and Tag
+      - name: Calculate Next Version
         id: tag
         run: |
-          # Get the latest tag, default to v0.0.0 if none
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest tag: $LATEST_TAG"
+          # Extract baseVersion from build.sbt (e.g., "0.0")
+          BASE_VERSION=$(grep 'val baseVersion' build.sbt | cut -d '"' -f 2)
+          echo "Base Version: $BASE_VERSION"
+
+          # Get the latest tag for this base version
+          LATEST_TAG=$(git describe --tags --match "v$BASE_VERSION.*" --abbrev=0 2>/dev/null || echo "")
           
-          # Split into parts
-          VERSION=${LATEST_TAG#v}
-          IFS='.' read -r -a PARTS <<< "$VERSION"
-          MAJOR=${PARTS[0]}
-          MINOR=${PARTS[1]}
-          PATCH=${PARTS[2]}
+          if [ -z "$LATEST_TAG" ]; then
+            # No tag exists for this base version, start with .0
+            NEW_TAG="v$BASE_VERSION.0"
+          else
+            # Extract patch version and increment
+            VERSION=${LATEST_TAG#v}
+            IFS='.' read -r -a PARTS <<< "$VERSION"
+            PATCH=${PARTS[2]}
+            NEW_PATCH=$((PATCH + 1))
+            NEW_TAG="v$BASE_VERSION.$NEW_PATCH"
+          fi
           
-          # Increment patch
-          NEW_PATCH=$((PATCH + 1))
-          NEW_TAG="v$MAJOR.$MINOR.$NEW_PATCH"
           echo "New tag: $NEW_TAG"
           
           # Tag locally
