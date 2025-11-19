@@ -167,4 +167,27 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         }
     }
   }
+
+  test("generateContentStream should return a stream of responses") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      service
+        .generateContentStream(
+          contents = List(GeminiService.text("Count from 1 to 5 slowly"))
+        )
+        .compile
+        .toList
+        .map { responses =>
+          assert(responses.nonEmpty)
+          val fullText = responses.flatMap(_.candidates.headOption.flatMap(_.content.parts.headOption).map {
+            case ResponsePart.Text(t) => t
+            case _ => ""
+          }).mkString
+          assert(fullText.nonEmpty)
+        }
+    }
+  }
 }
