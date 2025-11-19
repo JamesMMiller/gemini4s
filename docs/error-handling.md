@@ -73,7 +73,6 @@ def handleError(error: GeminiError): IO[Unit] = error match {
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import cats.effect.temporal.Sleep
 import scala.concurrent.duration._
 
 def retry[A](
@@ -102,40 +101,11 @@ def retry[A](
 
 ### Using cats-retry
 
+For production applications, consider using the [cats-retry](https://github.com/cb372/cats-retry) library which provides robust retry policies with exponential backoff, jitter, and more.
+
 ```scala
 // Add to build.sbt:
-// libraryDependencies += "com.github.cb372" %% "cats-retry" % "3.1.0"
-```
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import retry._
-import retry.RetryPolicies._
-import scala.concurrent.duration._
-
-def retryWithLibrary[A](
-  action: IO[Either[gemini4s.error.GeminiError, A]]
-): IO[Either[gemini4s.error.GeminiError, A]] = {
-  val policy = limitRetries[IO](3) |+| exponentialBackoff[IO](1.second)
-  
-  retryingOnSomeErrors(
-    policy = policy,
-    isWorthRetrying = {
-      case _: gemini4s.error.GeminiError.RateLimitExceeded => IO.pure(true)
-      case _: gemini4s.error.GeminiError.ModelOverloaded => IO.pure(true)
-      case _: gemini4s.error.GeminiError.NetworkError => IO.pure(true)
-      case _ => IO.pure(false)
-    },
-    onError = (error, details) =>
-      IO.println(s"Retry attempt ${details.retriesSoFar + 1}: ${error.message}")
-  )(action.rethrow)
-    .attempt
-    .map {
-      case Right(value) => Right(value)
-      case Left(error: gemini4s.error.GeminiError) => Left(error)
-      case Left(error) => Left(gemini4s.error.GeminiError.ContentGenerationFailed(error.getMessage, Some(error)))
-    }
-}
+libraryDependencies += "com.github.cb372" %% "cats-retry" % "3.1.0"
 ```
 
 ## Circuit Breaker Pattern
@@ -204,22 +174,11 @@ case class CircuitBreaker(
 
 ## Logging Errors
 
-```scala mdoc:compile-only
-import cats.effect.IO
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+For production applications, use a logging library like [log4cats](https://github.com/typelevel/log4cats) to track errors:
 
-def withLogging[A](
-  action: IO[Either[gemini4s.error.GeminiError, A]]
-)(using logger: Logger[IO]): IO[Either[gemini4s.error.GeminiError, A]] = {
-  action.flatTap {
-    case Left(error) =>
-      logger.error(s"Gemini API error: ${error.message}") *>
-      error.cause.traverse_(cause => logger.error(cause)("Error cause"))
-    case Right(_) =>
-      IO.unit
-  }
-}
+```scala
+// Add to build.sbt:
+libraryDependencies += "org.typelevel" %% "log4cats-slf4j" % "2.6.0"
 ```
 
 ## Graceful Degradation

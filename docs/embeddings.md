@@ -126,32 +126,39 @@ import gemini4s.config.GeminiConfig
 
 case class Document(id: String, text: String, embedding: ContentEmbedding)
 
+def cosineSimilarity(a: ContentEmbedding, b: ContentEmbedding): Double = {
+  require(a.values.length == b.values.length, "Embeddings must have same dimension")
+  val dotProduct = a.values.zip(b.values).map { case (x, y) => x * y }.sum
+  val magnitudeA = math.sqrt(a.values.map(x => x * x).sum)
+  val magnitudeB = math.sqrt(b.values.map(x => x * x).sum)
+  dotProduct / (magnitudeA * magnitudeB)
+}
+
 def semanticSearch(
   service: GeminiService[IO],
   documents: List[Document],
   query: String
 )(using GeminiConfig): IO[List[(Document, Double)]] = {
-  for {
-    // Embed the query
-    queryEmbedding <- service.embedContent(
-      content = GeminiService.text(query),
-      taskType = Some(TaskType.RETRIEVAL_QUERY)
-    ).flatMap {
-      case Right(emb) => IO.pure(emb)
-      case Left(error) => IO.raiseError(new RuntimeException(error.message))
-    }
-    
-    // Calculate similarities
-    results = documents.map { doc =>
-      val similarity = cosineSimilarity(queryEmbedding, doc.embedding)
-      (doc, similarity)
-    }.sortBy(-_._2)  // Sort by similarity descending
-    
-  } yield results
+  service.embedContent(
+    content = GeminiService.text(query),
+    taskType = Some(TaskType.RETRIEVAL_QUERY)
+  ).flatMap {
+    case Right(queryEmbedding) =>
+      // Calculate similarities
+      val results: List[(Document, Double)] = documents.map { doc =>
+        val similarity: Double = cosineSimilarity(queryEmbedding, doc.embedding)
+        (doc, similarity)
+      }.sortBy((pair: (Document, Double)) => -pair._2)  // Sort by similarity descending
+      IO.pure(results)
+    case Left(error) =>
+      IO.raiseError(new RuntimeException(error.message))
+  }
 }
 ```
 
 ## Document Clustering
+
+Simplified example (use a proper ML library in production):
 
 ```scala mdoc:compile-only
 import cats.effect.IO
@@ -165,35 +172,23 @@ def clusterDocuments(
   documents: List[String],
   k: Int  // number of clusters
 )(using GeminiConfig): IO[Map[Int, List[String]]] = {
-  for {
-    // Generate embeddings
-    requests = documents.map { doc =>
-      EmbedContentRequest(
-        content = GeminiService.text(doc),
-        model = s"models/${GeminiService.EmbeddingText004}",
-        taskType = Some(TaskType.CLUSTERING)
-      )
-    }
-    
-    embeddings <- service.batchEmbedContents(requests).flatMap {
-      case Right(embs) => IO.pure(embs)
-      case Left(error) => IO.raiseError(new RuntimeException(error.message))
-    }
-    
-    // Simple k-means clustering (simplified)
-    clusters = simpleKMeans(documents.zip(embeddings), k)
-    
-  } yield clusters
-}
-
-def simpleKMeans(
-  docs: List[(String, ContentEmbedding)],
-  k: Int
-): Map[Int, List[String]] = {
-  // Simplified k-means implementation
-  // In production, use a proper ML library
-  docs.zipWithIndex.groupBy(_._2 % k).map {
-    case (cluster, items) => cluster -> items.map(_._1._1)
+  val requests: List[EmbedContentRequest] = documents.map { doc =>
+    EmbedContentRequest(
+      content = GeminiService.text(doc),
+      model = s"models/${GeminiService.EmbeddingText004}",
+      taskType = Some(TaskType.CLUSTERING)
+    )
+  }
+  
+  service.batchEmbedContents(requests).flatMap {
+    case Right(embeddings) =>
+      // Simple clustering: group by index modulo k
+      val clusters: Map[Int, List[String]] = documents.zipWithIndex
+        .groupBy { case (_, idx) => idx % k }
+        .map { case (cluster, items) => cluster -> items.map(_._1) }
+      IO.pure(clusters)
+    case Left(error) =>
+      IO.raiseError(new RuntimeException(error.message))
   }
 }
 ```

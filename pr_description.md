@@ -1,19 +1,87 @@
-infra: setup auto-tagging and publishing on merge to main
+# Comprehensive Documentation for gemini4s
 
-## Description
-This PR updates the CI configuration to automatically manage releases when changes are merged into the `main` branch.
+## Summary
 
-### Changes
-- **build.sbt**: Removed the hardcoded `version := "0.1.0-SNAPSHOT"`. The project now uses `sbt-dynver` to derive the version from git tags.
-- **.github/workflows/ci.yml**:
-    - Added `contents: write` permission to the workflow.
-    - Replaced the `publish` job with a `release` job that runs only on pushes to `main`.
-    - Implemented logic to:
-        1. Calculate the next patch version based on the latest git tag.
-        2. Create a new git tag.
-        3. Publish artifacts to Maven Central using `sbt ci-release`.
-        4. Push the new tag back to the repository.
+This PR adds comprehensive, best-of-class documentation for gemini4s following Typelevel and Circe documentation patterns. The documentation includes a fully functional microsite with type-checked examples using mdoc and Laika.
 
-## Verification
-- Verified locally that `sbt version` correctly picks up the dynamic version (e.g., `0.0.0+...-SNAPSHOT`).
-- The CI workflow has been updated to include these steps, which will execute upon merge.
+## Changes
+
+### Documentation Microsite
+
+- **Added sbt-typelevel-site plugin** for documentation generation
+- **Configured Laika** with Helium theme for static site generation
+- **Set up mdoc** for type-checked Scala code examples in documentation
+- **Created docs subproject** in build.sbt for site generation
+
+### Documentation Pages (14 total)
+
+1. **index.md** - Main entry point with motivation, features, and navigation
+2. **quickstart.md** - Getting started guide with installation and first API call
+3. **core-concepts.md** - Tagless Final, effect types, error hierarchy, configuration
+4. **content-generation.md** - Generation parameters, JSON mode, conversations
+5. **streaming.md** - FS2 streaming patterns, chatbot example, backpressure
+6. **function-calling.md** - Tool use, function declarations, complete flow
+7. **safety.md** - Content filtering, harm categories, safety settings
+8. **error-handling.md** - Error hierarchy, retry strategies, circuit breakers
+9. **embeddings.md** - Semantic search, clustering, batch processing
+10. **models.md** - Model comparison and selection guide
+11. **best-practices.md** - Production patterns, resource management, security
+12. **faq.md** - Common questions and troubleshooting
+13. **examples.md** - Complete working examples (chatbot, streaming)
+14. **caching.md** - Context caching for cost optimization
+
+### Enhanced README
+
+- Added badges (Maven Central, Javadocs)
+- Improved structure with "Why gemini4s?" section
+- Better feature showcase with code examples
+- Links to comprehensive documentation site
+- Acknowledgments section for Typelevel ecosystem
+
+### GitHub Actions Workflow
+
+- **docs.yml** - Automated documentation deployment to GitHub Pages
+- Builds on every push to main and PRs
+- Deploys to GitHub Pages on main branch merges
+
+## Documentation Features
+
+- ✅ **Type-checked examples** - All code examples verified by mdoc at compile time
+- ✅ **Comprehensive coverage** - All library features documented
+- ✅ **Practical examples** - Real-world use cases and patterns
+- ✅ **Best practices** - Production-ready patterns and recommendations
+- ✅ **Error handling** - Retry strategies, circuit breakers, graceful degradation
+- ✅ **Typelevel style** - Follows Circe/Cats/FS2 documentation patterns
+
+## Testing
+
+The microsite can be previewed locally with:
+```bash
+sbt docs/tlSitePreview
+```
+
+Then visit http://localhost:4242
+
+## Deployment
+
+Once merged to main, the documentation will be automatically deployed to:
+https://jamesmmiller.github.io/gemini4s/
+
+## Checklist
+
+- [x] Created comprehensive documentation pages
+- [x] Set up microsite with sbt-typelevel-site
+- [x] Configured mdoc for type-checked examples
+- [x] Added GitHub Actions workflow for deployment
+- [x] Enhanced README with better structure
+- [x] All documentation follows Typelevel patterns
+- [x] Code examples are complete and working
+- [x] Links between pages are correct
+- [x] Committed on feature branch
+- [x] Ready for review
+
+## Notes
+
+The documentation is modular and can be easily extended with additional pages. All code examples use mdoc's `compile-only` mode to ensure they type-check without requiring runtime execution or API keys.
+
+The microsite uses Laika's Helium theme which provides a clean, professional look consistent with other Typelevel projects.

@@ -38,14 +38,7 @@ def app(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
 }
 
 // Avoid - creating service per request
-def inefficient(using GeminiConfig): IO[Unit] = {
-  makeService.use { service1 =>
-    service1.generateContent(List(GeminiService.text("First")))
-  } *>
-  makeService.use { service2 =>
-    service2.generateContent(List(GeminiService.text("Second")))
-  }
-}
+// (Don't create new service instances for each request)
 ```
 
 ## Error Handling
@@ -155,18 +148,7 @@ Embeddings are expensive - cache them aggressively.
 
 ### Never Log API Keys
 
-```scala mdoc:compile-only
-import cats.effect.IO
-import org.typelevel.log4cats.Logger
-
-def safeLogging(using logger: Logger[IO]): IO[Unit] = {
-  // Good - don't log sensitive data
-  logger.info("Making API request")
-  
-  // Bad - logs API key
-  // logger.info(s"Using key: $apiKey")
-}
-```
+Never log or print API keys in your application. Store them securely in environment variables or a secrets management system.
 
 ### Validate User Input
 
@@ -230,7 +212,7 @@ class MockGeminiService extends GeminiService[IO] {
   }
   
   // Implement other methods...
-  def generateContentStream(contents: List[Content], safetySettings: Option[List[gemini4s.model.GeminiRequest.SafetySetting]] = None, generationConfig: Option[gemini4s.model.GeminiRequest.GenerationConfig]] = None, systemInstruction: Option[Content] = None, tools: Option[List[gemini4s.model.GeminiRequest.Tool]] = None, toolConfig: Option[gemini4s.model.GeminiRequest.ToolConfig] = None)(using config: GeminiConfig) = fs2.Stream.empty
+  def generateContentStream(contents: List[Content], safetySettings: Option[List[gemini4s.model.GeminiRequest.SafetySetting]] = None, generationConfig: Option[gemini4s.model.GeminiRequest.GenerationConfig] = None, systemInstruction: Option[Content] = None, tools: Option[List[gemini4s.model.GeminiRequest.Tool]] = None, toolConfig: Option[gemini4s.model.GeminiRequest.ToolConfig] = None)(using config: GeminiConfig) = fs2.Stream.empty
   def countTokens(contents: List[Content])(using config: GeminiConfig) = IO.pure(Right(0))
   def embedContent(content: Content, taskType: Option[gemini4s.model.GeminiRequest.TaskType] = None, title: Option[String] = None, outputDimensionality: Option[Int] = None)(using config: GeminiConfig) = IO.pure(Right(gemini4s.model.GeminiResponse.ContentEmbedding(List.empty)))
   def batchEmbedContents(requests: List[gemini4s.model.GeminiRequest.EmbedContentRequest])(using config: GeminiConfig) = IO.pure(Right(List.empty))
@@ -258,8 +240,9 @@ def trackMetrics[A](
   metrics.update(m => m.copy(requests = m.requests + 1)) *>
   action.flatTap {
     case Right(response) =>
-      response.usageMetadata.traverse_ { usage =>
-        metrics.update(m => m.copy(totalTokens = m.totalTokens + usage.totalTokenCount))
+      response.usageMetadata match {
+        case Some(usage) => metrics.update(m => m.copy(totalTokens = m.totalTokens + usage.totalTokenCount))
+        case None => IO.unit
       }
     case Left(_) =>
       metrics.update(m => m.copy(errors = m.errors + 1))

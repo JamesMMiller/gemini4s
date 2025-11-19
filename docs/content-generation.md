@@ -183,9 +183,10 @@ def multipleCandidates(service: GeminiService[IO])(using GeminiConfig): IO[Unit]
     generationConfig = Some(config)
   ).flatMap {
     case Right(response) =>
-      response.candidates.traverse_ { candidate =>
-        IO.println(s"Candidate: ${candidate.content.parts.head}")
+      response.candidates.foreach { candidate =>
+        println(s"Candidate: ${candidate.content.parts.head}")
       }
+      IO.unit
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
   }
@@ -227,10 +228,12 @@ def checkMetadata(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
     contents = List(GeminiService.text("Hello"))
   ).flatMap {
     case Right(response) =>
-      response.usageMetadata.traverse_ { metadata =>
-        IO.println(s"Prompt tokens: ${metadata.promptTokenCount}") *>
-        IO.println(s"Response tokens: ${metadata.candidatesTokenCount}") *>
-        IO.println(s"Total tokens: ${metadata.totalTokenCount}")
+      response.usageMetadata match {
+        case Some(metadata) =>
+          IO.println(s"Prompt tokens: ${metadata.promptTokenCount}") *>
+          IO.println(s"Response tokens: ${metadata.candidatesTokenCount}") *>
+          IO.println(s"Total tokens: ${metadata.totalTokenCount}")
+        case None => IO.unit
       }
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
