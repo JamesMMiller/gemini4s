@@ -125,4 +125,46 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         }
     }
   }
+
+  test("embedContent should return embeddings") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      service
+        .embedContent(
+          content = GeminiService.text("Hello world")
+        )
+        .map {
+          case Right(embedding) =>
+            assert(embedding.values.nonEmpty)
+          case Left(e) =>
+            fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
+
+  test("batchEmbedContents should return multiple embeddings") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      service
+        .batchEmbedContents(
+          List(
+            EmbedContentRequest(content = GeminiService.text("Hello"), model = s"models/${GeminiService.EmbeddingText004}"),
+            EmbedContentRequest(content = GeminiService.text("World"), model = s"models/${GeminiService.EmbeddingText004}")
+          )
+        )
+        .map {
+          case Right(embeddings) =>
+            assertEquals(embeddings.length, 2)
+            assert(embeddings.forall(_.values.nonEmpty))
+          case Left(e) =>
+            fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
 }

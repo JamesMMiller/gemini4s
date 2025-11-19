@@ -129,6 +129,9 @@ class GeminiServiceSpec extends CatsEffectSuite {
     assertEquals(GeminiService.Endpoints.generateContent(), "models/gemini-2.5-flash:generateContent")
     assertEquals(GeminiService.Endpoints.generateContentStream(), "models/gemini-2.5-flash:streamGenerateContent")
     assertEquals(GeminiService.Endpoints.countTokens(), "models/gemini-2.5-flash:countTokens")
+    assertEquals(GeminiService.Endpoints.embedContent(), "models/gemini-2.5-flash:embedContent")
+    assertEquals(GeminiService.Endpoints.batchEmbedContents(), "models/gemini-2.5-flash:batchEmbedContents")
+    assertEquals(GeminiService.Endpoints.createCachedContent, "cachedContents")
   }
 
   test("Endpoints should handle custom model names") {
@@ -139,5 +142,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
       s"models/$customModel:streamGenerateContent"
     )
     assertEquals(GeminiService.Endpoints.countTokens(customModel), s"models/$customModel:countTokens")
+    assertEquals(GeminiService.Endpoints.embedContent(customModel), s"models/$customModel:embedContent")
+    assertEquals(GeminiService.Endpoints.batchEmbedContents(customModel), s"models/$customModel:batchEmbedContents")
   }
 }
