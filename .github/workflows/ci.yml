@@ -100,5 +100,9 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       
-      - name: Push Tag
-        run: git push origin ${{ steps.tag.outputs.tag }}
+      - name: Push Tag and Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin ${{ steps.tag.outputs.tag }}
+          gh release create ${{ steps.tag.outputs.tag }} --generate-notes
