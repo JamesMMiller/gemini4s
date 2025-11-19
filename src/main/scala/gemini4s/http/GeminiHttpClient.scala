@@ -4,6 +4,7 @@ import cats.effect.Async
 import cats.syntax.all._
 import fs2.Stream
 import io.circe.{ Decoder, Encoder }
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.circe._
 import sttp.model.Uri
@@ -54,7 +55,7 @@ object GeminiHttpClient {
    * Creates a Sttp-based implementation of GeminiHttpClient.
    */
   def make[F[_]: Async](
-      backend: SttpBackend[F, Any]
+      backend: SttpBackend[F, Fs2Streams[F]]
   ): GeminiHttpClient[F] = new GeminiHttpClient[F] {
 
     override def post[Req <: GeminiRequest: Encoder, Res: Decoder](
@@ -81,19 +82,33 @@ object GeminiHttpClient {
     override def postStream[Req <: GeminiRequest: Encoder, Res: Decoder](
         endpoint: String,
         request: Req
-    )(using config: GeminiConfig): Stream[F, Res] =
-      // Note: Streaming implementation requires a streaming-capable backend (like fs2 backend)
-      // For simplicity in this interface, we might need to adjust how we expose streaming
-      // or assume the backend handles it.
-      // With sttp, streaming response handling is backend-specific.
-      // Here we assume a standard request for now as a placeholder or need to use stream-specific request
+    )(using config: GeminiConfig): Stream[F, Res] = {
+      val uri = uri"${config.baseUrl}".addPath(endpoint.split('/')).addParam("key", config.apiKey)
 
-      // To properly support streaming with sttp and fs2, we need to use `asStream` response specification
-      // which requires passing the streams capability.
-      // Since we want to be generic, this is tricky without more context on the backend capabilities.
-      // However, for a "state of the art" library, we should probably require `SttpBackend[F, fs2.Stream[F, Byte]]`.
-
-      Stream.raiseError(new NotImplementedError("Streaming not yet fully implemented for generic backend"))
+      Stream.eval(
+        basicRequest
+          .post(uri)
+          .body(request)
+          .response(asStream(Fs2Streams[F]) { stream =>
+             // Buffer the stream to avoid "Already one subscriber" issues with unicast publishers
+             stream.compile.toVector.map(bytes => Stream.emits(bytes).covary[F])
+          })
+          .send(backend)
+      ).flatMap { response =>
+        response.body match {
+          case Right(stream) =>
+             stream
+              .through(fs2.text.utf8.decode)
+              .through(io.circe.fs2.stringArrayParser)
+              .through(io.circe.fs2.decoder[F, Res])
+          case Left(errorBody) =>
+             Stream.raiseError(GeminiError.InvalidRequest(s"API error: ${response.code} - $errorBody", None))
+        }
+      }.handleErrorWith {
+        case e: GeminiError => Stream.raiseError(e)
+        case e => Stream.raiseError(GeminiError.ConnectionError(e.getMessage, Some(e)))
+      }
+    }
 
   }
 
