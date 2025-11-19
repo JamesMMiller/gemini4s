@@ -93,9 +93,10 @@ import gemini4s.model.GeminiResponse.GenerateContentResponse
 def inspectSafety(response: GenerateContentResponse): IO[Unit] = {
   response.candidates.headOption.flatMap(_.safetyRatings) match {
     case Some(ratings) =>
-      ratings.traverse_ { rating =>
-        IO.println(s"Category: ${rating.category}, Probability: ${rating.probability}")
+      ratings.foreach { rating =>
+        println(s"Category: ${rating.category}, Probability: ${rating.probability}")
       }
+      IO.unit
     case None =>
       IO.println("No safety ratings available")
   }

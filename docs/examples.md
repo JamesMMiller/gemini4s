@@ -68,13 +68,12 @@ object StreamingChat extends IOApp.Simple {
               .map(_.content.parts.headOption)
               .unNone
               .collect { case ResponsePart.Text(text) => text }
-              .evalMap(chunk => IO.print(chunk))
+              .evalTap(chunk => IO.print(chunk))
               .compile
               .foldMonoid
             
-            _ <- IO.println()
-            assistantMessage = Content(parts = List(Part(response)), role = Some("model"))
-            _ <- history.update(_ :+ assistantMessage)
+            _ <- IO.println("")
+            _ <- history.update(_ :+ Content(parts = List(Part(text = response)), role = Some("model")))
             
             _ <- chat(history)
           } yield ()

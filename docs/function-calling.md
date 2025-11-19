@@ -52,6 +52,21 @@ import gemini4s.model.GeminiRequest._
 import gemini4s.config.GeminiConfig
 
 def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  val weatherFunction = FunctionDeclaration(
+    name = "get_weather",
+    description = "Get the current weather in a given location",
+    parameters = Some(Schema(
+      `type` = SchemaType.OBJECT,
+      properties = Some(Map(
+        "location" -> Schema(
+          `type` = SchemaType.STRING,
+          description = Some("The city and state, e.g. San Francisco, CA")
+        )
+      )),
+      required = Some(List("location"))
+    ))
+  )
+  
   val weatherTool = Tool(
     functionDeclarations = Some(List(weatherFunction))
   )
@@ -103,16 +118,17 @@ import io.circe.Json
 import gemini4s.model.GeminiResponse.{GenerateContentResponse, ResponsePart}
 
 def handleFunctionCalls(response: GenerateContentResponse): IO[Unit] = {
-  response.candidates.headOption.map(_.content.parts).getOrElse(List.empty)
-    .traverse_ {
-      case ResponsePart.FunctionCall(data) =>
-        IO.println(s"Function: ${data.name}") *>
-        IO.println(s"Arguments: ${data.args}")
-      case ResponsePart.Text(text) =>
-        IO.println(s"Text: $text")
-      case _ =>
-        IO.unit
-    }
+  val parts = response.candidates.headOption.map(_.content.parts).getOrElse(List.empty)
+  parts.foreach {
+    case ResponsePart.FunctionCall(data) =>
+      println(s"Function: ${data.name}")
+      println(s"Arguments: ${data.args}")
+    case ResponsePart.Text(text) =>
+      println(s"Text: $text")
+    case _ =>
+      ()
+  }
+  IO.unit
 }
 ```
 
@@ -173,17 +189,22 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
             role = Some("function")
           )
           
+          // Note: In a real implementation, you'd need to convert ResponseContent to Content
+          // For simplicity, we'll just show the final response
           service.generateContent(
             contents = List(
               GeminiService.text("What's the weather in London?"),
-              response.candidates.head.content,
               functionResponse
             ),
             tools = Some(List(tool)),
             toolConfig = Some(toolConfig)
           ).flatMap {
             case Right(finalResponse) =>
-              IO.println(finalResponse.candidates.head.content.parts.head)
+              val text = finalResponse.candidates.headOption
+                .flatMap(_.content.parts.headOption)
+                .collect { case ResponsePart.Text(t) => t }
+                .getOrElse("No response")
+              IO.println(text)
             case Left(error) =>
               IO.println(s"Error: ${error.message}")
           }
