@@ -18,14 +18,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContent(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig]
     )(using config: GeminiConfig): IO[Either[GeminiError, GenerateContentResponse]] = {
       // Simulate successful response for test content
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(ResponsePart(text = "Test response")),
+              parts = List(ResponsePart.Text(text = "Test response")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -41,14 +44,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContentStream(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig]
     )(using config: GeminiConfig): Stream[IO, GenerateContentResponse] = {
       // Simulate successful streaming response
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(ResponsePart(text = "Streaming test response")),
+              parts = List(ResponsePart.Text(text = "Streaming test response")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -66,6 +72,36 @@ class GeminiServiceSpec extends CatsEffectSuite {
     )(using config: GeminiConfig): IO[Either[GeminiError, Int]] =
       // Simulate token counting with a fixed value
       IO.pure(Right(42))
+
+    override def embedContent(
+        content: Content,
+        taskType: Option[TaskType],
+        title: Option[String],
+        outputDimensionality: Option[Int]
+    )(using config: GeminiConfig): IO[Either[GeminiError, ContentEmbedding]] =
+      IO.pure(Right(ContentEmbedding(values = List(0.1f, 0.2f))))
+
+    override def batchEmbedContents(
+        requests: List[EmbedContentRequest]
+    )(using config: GeminiConfig): IO[Either[GeminiError, List[ContentEmbedding]]] =
+      IO.pure(Right(List(ContentEmbedding(values = List(0.1f, 0.2f)))))
+
+    override def createCachedContent(
+        model: String,
+        systemInstruction: Option[Content],
+        contents: Option[List[Content]],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig],
+        ttl: Option[String],
+        displayName: Option[String]
+    )(using config: GeminiConfig): IO[Either[GeminiError, CachedContent]] =
+      IO.pure(Right(CachedContent(
+        name = "cachedContents/123",
+        model = model,
+        createTime = "now",
+        updateTime = "now",
+        expireTime = "later"
+      )))
 
   }
 
@@ -93,6 +129,9 @@ class GeminiServiceSpec extends CatsEffectSuite {
     assertEquals(GeminiService.Endpoints.generateContent(), "models/gemini-2.5-flash:generateContent")
     assertEquals(GeminiService.Endpoints.generateContentStream(), "models/gemini-2.5-flash:streamGenerateContent")
     assertEquals(GeminiService.Endpoints.countTokens(), "models/gemini-2.5-flash:countTokens")
+    assertEquals(GeminiService.Endpoints.embedContent(), "models/gemini-2.5-flash:embedContent")
+    assertEquals(GeminiService.Endpoints.batchEmbedContents(), "models/gemini-2.5-flash:batchEmbedContents")
+    assertEquals(GeminiService.Endpoints.createCachedContent, "cachedContents")
   }
 
   test("Endpoints should handle custom model names") {
@@ -103,5 +142,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
       s"models/$customModel:streamGenerateContent"
     )
     assertEquals(GeminiService.Endpoints.countTokens(customModel), s"models/$customModel:countTokens")
+    assertEquals(GeminiService.Endpoints.embedContent(customModel), s"models/$customModel:embedContent")
+    assertEquals(GeminiService.Endpoints.batchEmbedContents(customModel), s"models/$customModel:batchEmbedContents")
   }
 }

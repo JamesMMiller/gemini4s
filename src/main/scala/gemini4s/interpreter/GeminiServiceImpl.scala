@@ -22,12 +22,18 @@ final class GeminiServiceImpl[F[_]: Async](
   override def generateContent(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]],
-      generationConfig: Option[GenerationConfig]
+      generationConfig: Option[GenerationConfig],
+      systemInstruction: Option[Content],
+      tools: Option[List[Tool]],
+      toolConfig: Option[ToolConfig]
   )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
-      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig))
+      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig)),
+      systemInstruction = systemInstruction,
+      tools = tools,
+      toolConfig = toolConfig
     )
 
     httpClient.post[GenerateContent, GenerateContentResponse](
@@ -39,12 +45,18 @@ final class GeminiServiceImpl[F[_]: Async](
   override def generateContentStream(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]],
-      generationConfig: Option[GenerationConfig]
+      generationConfig: Option[GenerationConfig],
+      systemInstruction: Option[Content],
+      tools: Option[List[Tool]],
+      toolConfig: Option[ToolConfig]
   )(using config: GeminiConfig): Stream[F, GenerateContentResponse] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
-      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig))
+      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig)),
+      systemInstruction = systemInstruction,
+      tools = tools,
+      toolConfig = toolConfig
     )
 
     httpClient.postStream[GenerateContent, GenerateContentResponse](
@@ -64,6 +76,66 @@ final class GeminiServiceImpl[F[_]: Async](
         request
       )
       .map(_.map(_.totalTokens))
+  }
+
+  override def embedContent(
+      content: Content,
+      taskType: Option[TaskType],
+      title: Option[String],
+      outputDimensionality: Option[Int]
+  )(using config: GeminiConfig): F[Either[GeminiError, ContentEmbedding]] = {
+    val request = EmbedContentRequest(
+      content = content,
+      model = s"models/${GeminiService.EmbeddingText004}",
+      taskType = taskType,
+      title = title,
+      outputDimensionality = outputDimensionality
+    )
+
+    httpClient
+      .post[EmbedContentRequest, EmbedContentResponse](
+        GeminiService.Endpoints.embedContent(GeminiService.EmbeddingText004),
+        request
+      )
+      .map(_.map(_.embedding))
+  }
+
+  override def batchEmbedContents(
+      requests: List[EmbedContentRequest]
+  )(using config: GeminiConfig): F[Either[GeminiError, List[ContentEmbedding]]] = {
+    val request = BatchEmbedContentsRequest(requests)
+
+    httpClient
+      .post[BatchEmbedContentsRequest, BatchEmbedContentsResponse](
+        GeminiService.Endpoints.batchEmbedContents(GeminiService.EmbeddingText004),
+        request
+      )
+      .map(_.map(_.embeddings))
+  }
+
+  override def createCachedContent(
+      model: String,
+      systemInstruction: Option[Content],
+      contents: Option[List[Content]],
+      tools: Option[List[Tool]],
+      toolConfig: Option[ToolConfig],
+      ttl: Option[String],
+      displayName: Option[String]
+  )(using config: GeminiConfig): F[Either[GeminiError, CachedContent]] = {
+    val request = CreateCachedContentRequest(
+      model = Some(model),
+      systemInstruction = systemInstruction,
+      contents = contents,
+      tools = tools,
+      toolConfig = toolConfig,
+      ttl = ttl,
+      displayName = displayName
+    )
+
+    httpClient.post[CreateCachedContentRequest, CachedContent](
+      GeminiService.Endpoints.createCachedContent,
+      request
+    )
   }
 
 }
