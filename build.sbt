@@ -36,10 +36,12 @@ lazy val root = project
     name := "gemini4s",
 
     // Publishing settings
-    organization := "com.github.jamesmiller",
-    homepage     := Some(url("https://github.com/JamesMMiller/gemini4s")),
-    licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers   := List(
+    organization           := "com.github.jamesmiller",
+    homepage               := Some(url("https://github.com/JamesMMiller/gemini4s")),
+    licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
+    developers             := List(
       Developer(
         "jamesmiller",
         "James Miller",
@@ -47,7 +49,7 @@ lazy val root = project
         url("https://github.com/JamesMMiller")
       )
     ),
-    scmInfo      := Some(
+    scmInfo                := Some(
       ScmInfo(
         url("https://github.com/JamesMMiller/gemini4s"),
         "scm:git:git@github.com:JamesMMiller/gemini4s.git"
