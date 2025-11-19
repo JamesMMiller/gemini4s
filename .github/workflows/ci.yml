@@ -8,7 +8,7 @@ on:
     branches: [ "main" ]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lint:
@@ -41,22 +41,57 @@ jobs:
       - name: Run tests with coverage
         run: sbt clean coverage test coverageReport
 
-  publish:
+  release:
     needs: [lint, test]
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # Only run on push to main, not on tags (to avoid double publishing if we pushed the tag)
+    # But wait, if we push the tag, we want to publish? 
+    # The plan is: merge to main -> calculate version -> tag -> publish -> push tag.
+    # So we only need to run this on push to main.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
           java-version: '11'
           distribution: 'temurin'
           cache: 'sbt'
+      
       - name: Setup sbt
         uses: sbt/setup-sbt@v1
+
+      - name: Configure Git User
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Calculate Next Version and Tag
+        id: tag
+        run: |
+          # Get the latest tag, default to v0.0.0 if none
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          
+          # Split into parts
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r -a PARTS <<< "$VERSION"
+          MAJOR=${PARTS[0]}
+          MINOR=${PARTS[1]}
+          PATCH=${PARTS[2]}
+          
+          # Increment patch
+          NEW_PATCH=$((PATCH + 1))
+          NEW_TAG="v$MAJOR.$MINOR.$NEW_PATCH"
+          echo "New tag: $NEW_TAG"
+          
+          # Tag locally
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
       - name: Publish to Maven Central
         run: sbt ci-release
         env:
@@ -64,3 +99,6 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      
+      - name: Push Tag
+        run: git push origin ${{ steps.tag.outputs.tag }}
