@@ -33,8 +33,7 @@ lazy val root = project
   .in(file("."))
   .settings(
     commonSettings,
-    name    := "gemini4s",
-    version := "0.1.0-SNAPSHOT",
+    name := "gemini4s",
 
     // Publishing settings
     organization := "com.github.jamesmiller",
@@ -56,11 +55,11 @@ lazy val root = project
     ),
 
     // Scoverage settings
-    coverageMinimumStmtTotal := 80,
+    coverageMinimumStmtTotal   := 80,
     coverageMinimumBranchTotal := 90,
-    coverageFailOnMinimum    := true,
-    coverageHighlighting     := true,
-    coverageExcludedPackages := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
+    coverageFailOnMinimum      := true,
+    coverageHighlighting       := true,
+    coverageExcludedPackages   := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
     addCommandAlias("lint", ";scalafixAll --check; testCoverage"),
     addCommandAlias("lintFix", ";scalafixAll"),
     addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
