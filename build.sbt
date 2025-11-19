@@ -46,8 +46,8 @@ lazy val root = project
       Developer(
         "jamesmiller",
         "James Miller",
-        "james@jamesmiller.io",
-        url("https://jamesmiller.io")
+        "james@example.com",
+        url("https://github.com/JamesMMiller")
       )
     ),
     scmInfo                := Some(
