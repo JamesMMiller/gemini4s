@@ -7,8 +7,8 @@ import munit.CatsEffectSuite
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse._
 import gemini4s.model.GeminiResponse
+import gemini4s.model.GeminiResponse._
 
 class GeminiServiceSpec extends CatsEffectSuite {
 
@@ -69,8 +69,8 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
   }
 
-  test("DefaultModel should be gemini-pro") {
-    assertEquals(GeminiService.DefaultModel, "gemini-pro")
+  test("DefaultModel should be gemini-2.5-flash") {
+    assertEquals(GeminiService.DefaultModel, "gemini-2.5-flash")
   }
 
   test("MaxTokensPerRequest should be 30720") {
@@ -90,9 +90,9 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("Endpoints should generate correct paths") {
-    assertEquals(GeminiService.Endpoints.generateContent(), "models/gemini-pro:generateContent")
-    assertEquals(GeminiService.Endpoints.generateContentStream(), "models/gemini-pro:streamGenerateContent")
-    assertEquals(GeminiService.Endpoints.countTokens(), "models/gemini-pro:countTokens")
+    assertEquals(GeminiService.Endpoints.generateContent(), "models/gemini-2.5-flash:generateContent")
+    assertEquals(GeminiService.Endpoints.generateContentStream(), "models/gemini-2.5-flash:streamGenerateContent")
+    assertEquals(GeminiService.Endpoints.countTokens(), "models/gemini-2.5-flash:countTokens")
   }
 
   test("Endpoints should handle custom model names") {

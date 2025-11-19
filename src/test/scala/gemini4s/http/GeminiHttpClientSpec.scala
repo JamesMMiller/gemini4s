@@ -1,11 +1,11 @@
 package gemini4s.http
 
 import cats.effect.IO
-import munit.CatsEffectSuite
-import sttp.client3.testing.SttpBackendStub
-import sttp.client3.impl.cats.implicits._
-import sttp.model.StatusCode
 import io.circe.syntax._
+import munit.CatsEffectSuite
+import sttp.client3.impl.cats.implicits._
+import sttp.client3.testing.SttpBackendStub
+import sttp.model.StatusCode
 
 import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
