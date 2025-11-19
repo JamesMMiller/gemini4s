@@ -95,6 +95,7 @@ jobs:
       - name: Publish to Maven Central
         run: sbt ci-release
         env:
+          CI_COMMIT_TAG: ${{ steps.tag.outputs.tag }}
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
