@@ -21,7 +21,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("generateContent should return a valid response") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service
@@ -41,7 +41,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("countTokens should return a valid count") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service
@@ -60,7 +60,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("generateContent with JSON mode should return valid JSON") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       val jsonConfig = GenerationConfig(responseMimeType = Some("application/json"))
@@ -86,7 +86,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("generateContent with Tools should return function call") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       val weatherTool = Tool(
@@ -107,7 +107,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
       service
         .generateContent(
-          contents = List(GeminiService.text("What is the weather in New York City, NY?")),
+          contents = List(GeminiService.text("What is the weather in Chicago, IL?")),
           tools = Some(List(weatherTool)),
           toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
         )
@@ -129,7 +129,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("embedContent should return embeddings") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service
@@ -148,7 +148,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("batchEmbedContents should return multiple embeddings") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service

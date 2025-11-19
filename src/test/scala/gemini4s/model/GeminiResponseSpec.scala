@@ -137,4 +137,12 @@ class GeminiResponseSpec extends FunSuite {
     val json = Json.obj("unknown" -> Json.fromString("value"))
     assert(json.as[ResponsePart].isLeft)
   }
+
+  test("ResponsePart should handle CodeExecutionResult") {
+    val part: ResponsePart = ResponsePart.CodeExecutionResult(
+      CodeExecutionResultData(outcome = "OK", output = "Result")
+    )
+    val json = part.asJson
+    assertEquals(json.as[ResponsePart], Right(part))
+  }
 }

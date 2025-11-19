@@ -16,7 +16,8 @@ import gemini4s.model.GeminiResponse._
  * Uses GeminiHttpClient for API communication.
  */
 final class GeminiServiceImpl[F[_]: Async](
-    httpClient: GeminiHttpClient[F]
+    httpClient: GeminiHttpClient[F],
+    defaultModel: String = GeminiService.DefaultModel
 ) extends GeminiService[F] {
 
   override def generateContent(
@@ -37,7 +38,7 @@ final class GeminiServiceImpl[F[_]: Async](
     )
 
     httpClient.post[GenerateContent, GenerateContentResponse](
-      GeminiService.Endpoints.generateContent(),
+      GeminiService.Endpoints.generateContent(defaultModel),
       request
     )
   }
@@ -60,7 +61,7 @@ final class GeminiServiceImpl[F[_]: Async](
     )
 
     httpClient.postStream[GenerateContent, GenerateContentResponse](
-      GeminiService.Endpoints.generateContentStream(),
+      GeminiService.Endpoints.generateContentStream(defaultModel),
       request
     )
   }
@@ -72,7 +73,7 @@ final class GeminiServiceImpl[F[_]: Async](
 
     httpClient
       .post[CountTokensRequest, CountTokensResponse](
-        GeminiService.Endpoints.countTokens(),
+        GeminiService.Endpoints.countTokens(defaultModel),
         request
       )
       .map(_.map(_.totalTokens))
@@ -145,5 +146,8 @@ object GeminiServiceImpl {
   /**
    * Creates a new GeminiService instance.
    */
-  def make[F[_]: Async](httpClient: GeminiHttpClient[F]): GeminiService[F] = new GeminiServiceImpl(httpClient)
+  def make[F[_]: Async](
+      httpClient: GeminiHttpClient[F],
+      defaultModel: String = GeminiService.DefaultModel
+  ): GeminiService[F] = new GeminiServiceImpl(httpClient, defaultModel)
 }
