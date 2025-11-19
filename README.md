@@ -113,6 +113,51 @@ service.generateContent(
 )
 ```
 
+#### Tool Use (Function Calling)
+
+Define and use tools within your requests:
+
+```scala
+import gemini4s.model.GeminiRequest._
+
+val weatherTool = Tool(
+  functionDeclarations = Some(List(
+    FunctionDeclaration(
+      name = "get_weather",
+      description = "Get the current weather in a given location",
+      parameters = Some(Schema(
+        `type` = SchemaType.OBJECT,
+        properties = Some(Map(
+          "location" -> Schema(`type` = SchemaType.STRING, description = Some("The city and state, e.g. San Francisco, CA"))
+        )),
+        required = Some(List("location"))
+      ))
+    )
+  ))
+)
+
+service.generateContent(
+  contents = List(Content(parts = List(Part(text = "What is the weather in London?")))),
+  tools = Some(List(weatherTool)),
+  toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
+)
+```
+
+#### JSON Mode
+
+Force the model to output valid JSON:
+
+```scala
+val jsonConfig = GenerationConfig(
+  responseMimeType = Some("application/json")
+)
+
+service.generateContent(
+  contents = List(Content(parts = List(Part(text = "List 5 popular fruits in JSON format")))),
+  generationConfig = Some(jsonConfig)
+)
+```
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).

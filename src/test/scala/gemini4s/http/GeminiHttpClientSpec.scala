@@ -21,7 +21,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       candidates = List(
         Candidate(
           content = ResponseContent(
-            parts = List(ResponsePart(text = "Generated text")),
+            parts = List(ResponsePart.Text(text = "Generated text")),
             role = Some("model")
           ),
           finishReason = Some("STOP"),
@@ -43,7 +43,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
 
     client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isRight)
-      assertEquals(result.map(_.candidates.head.content.parts.head.text), Right("Generated text"))
+      assertEquals(result.map(_.candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text), Right("Generated text"))
     }
   }
 

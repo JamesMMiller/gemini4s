@@ -22,12 +22,18 @@ final class GeminiServiceImpl[F[_]: Async](
   override def generateContent(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]],
-      generationConfig: Option[GenerationConfig]
+      generationConfig: Option[GenerationConfig],
+      systemInstruction: Option[Content],
+      tools: Option[List[Tool]],
+      toolConfig: Option[ToolConfig]
   )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
-      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig))
+      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig)),
+      systemInstruction = systemInstruction,
+      tools = tools,
+      toolConfig = toolConfig
     )
 
     httpClient.post[GenerateContent, GenerateContentResponse](
@@ -39,12 +45,18 @@ final class GeminiServiceImpl[F[_]: Async](
   override def generateContentStream(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]],
-      generationConfig: Option[GenerationConfig]
+      generationConfig: Option[GenerationConfig],
+      systemInstruction: Option[Content],
+      tools: Option[List[Tool]],
+      toolConfig: Option[ToolConfig]
   )(using config: GeminiConfig): Stream[F, GenerateContentResponse] = {
     val request = GenerateContent(
       contents = contents,
       safetySettings = safetySettings,
-      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig))
+      generationConfig = generationConfig.orElse(Some(GeminiService.DefaultGenerationConfig)),
+      systemInstruction = systemInstruction,
+      tools = tools,
+      toolConfig = toolConfig
     )
 
     httpClient.postStream[GenerateContent, GenerateContentResponse](

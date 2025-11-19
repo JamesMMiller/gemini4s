@@ -13,7 +13,7 @@ class GeminiResponseSpec extends FunSuite {
       candidates = List(
         Candidate(
           content = ResponseContent(
-            parts = List(ResponsePart(text = "Generated text")),
+            parts = List(ResponsePart.Text(text = "Generated text")),
             role = Some("model")
           ),
           finishReason = Some("STOP"),
@@ -42,7 +42,7 @@ class GeminiResponseSpec extends FunSuite {
 
     assert(result.isRight)
     val decoded = result.toOption.get
-    assertEquals(decoded.candidates.head.content.parts.head, ResponsePart(text = "Generated text"))
+    assertEquals(decoded.candidates.head.content.parts.head, ResponsePart.Text(text = "Generated text"))
     assertEquals(decoded.candidates.head.finishReason, Some("STOP"))
     assertEquals(decoded.candidates.head.safetyRatings.flatMap(_.headOption.map(_.category)), Some("HARASSMENT"))
     assertEquals(decoded.candidates.head.safetyRatings.flatMap(_.headOption.map(_.probability)), Some("LOW"))
@@ -54,7 +54,7 @@ class GeminiResponseSpec extends FunSuite {
 
   test("ResponseContent should serialize and deserialize correctly") {
     val expected = ResponseContent(
-      parts = List(ResponsePart(text = "Test text")),
+      parts = List(ResponsePart.Text(text = "Test text")),
       role = Some("model")
     )
 
@@ -63,7 +63,7 @@ class GeminiResponseSpec extends FunSuite {
 
     assert(result.isRight)
     val decoded = result.toOption.get
-    assertEquals(decoded.parts, List(ResponsePart(text = "Test text")))
+    assertEquals(decoded.parts, List(ResponsePart.Text(text = "Test text")))
     assertEquals(decoded.role, Some("model"))
   }
 
@@ -97,5 +97,38 @@ class GeminiResponseSpec extends FunSuite {
     assertEquals(decoded.promptTokenCount, 10)
     assertEquals(decoded.candidatesTokenCount, 20)
     assertEquals(decoded.totalTokenCount, 30)
+  }
+
+  test("ResponsePart should handle FunctionCall") {
+    val functionCall = ResponsePart.FunctionCall(FunctionCallData(name = "get_weather", args = Map("location" -> io.circe.Json.fromString("London"))))
+    val json = (functionCall: ResponsePart).asJson.noSpaces
+    assert(json.contains("functionCall"))
+    assert(json.contains("get_weather"))
+
+    val decoded = decode[ResponsePart](json)
+    assertEquals(decoded, Right(functionCall))
+  }
+
+  test("ResponsePart should handle ExecutableCode") {
+    val code = ResponsePart.ExecutableCode(ExecutableCodeData(language = "python", code = "print('hello')"))
+    val json = (code: ResponsePart).asJson.noSpaces
+    assert(json.contains("executableCode"))
+    assert(json.contains("python"))
+
+    val decoded = decode[ResponsePart](json)
+    assertEquals(decoded, Right(code))
+  }
+
+  test("GenerateContentResponse should handle PromptFeedback") {
+    val response = GenerateContentResponse(
+      candidates = List.empty,
+      promptFeedback = Some(PromptFeedback(blockReason = Some("SAFETY")))
+    )
+    val json = response.asJson.noSpaces
+    assert(json.contains("promptFeedback"))
+    assert(json.contains("SAFETY"))
+
+    val decoded = decode[GenerateContentResponse](json)
+    assertEquals(decoded.map(_.promptFeedback.flatMap(_.blockReason)), Right(Some("SAFETY")))
   }
 }

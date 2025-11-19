@@ -9,6 +9,9 @@ import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.model.GeminiRequest._
 
+
+import gemini4s.model.GeminiResponse.ResponsePart
+
 class GeminiIntegrationSpec extends CatsEffectSuite {
 
   // Helper to get API key from env
@@ -51,6 +54,75 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
           case Right(count) => assert(count > 0)
           case Left(e)      =>
             println(s"API Error: ${e.message}")
+            fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
+
+  test("generateContent with JSON mode should return valid JSON") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      val jsonConfig = GenerationConfig(responseMimeType = Some("application/json"))
+
+      service
+        .generateContent(
+          contents = List(GeminiService.text("List 3 fruits in JSON format")),
+          generationConfig = Some(jsonConfig)
+        )
+        .map {
+          case Right(response) =>
+            val text = response.candidates.head.content.parts.head match {
+              case ResponsePart.Text(t) => t
+              case _ => fail("Expected text response")
+            }
+            assert(text.trim.startsWith("{") || text.trim.startsWith("["))
+          case Left(e) =>
+            fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
+
+  test("generateContent with Tools should return function call") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      val weatherTool = Tool(
+        functionDeclarations = Some(List(
+          FunctionDeclaration(
+            name = "get_weather",
+            description = "Get the current weather in a given location",
+            parameters = Some(Schema(
+              `type` = SchemaType.OBJECT,
+              properties = Some(Map(
+                "location" -> Schema(`type` = SchemaType.STRING, description = Some("The city and state, e.g. San Francisco, CA"))
+              )),
+              required = Some(List("location"))
+            ))
+          )
+        ))
+      )
+
+      service
+        .generateContent(
+          contents = List(GeminiService.text("What is the weather in London?")),
+          tools = Some(List(weatherTool)),
+          toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
+        )
+        .map {
+          case Right(response) =>
+            val part = response.candidates.head.content.parts.head
+            part match {
+              case ResponsePart.FunctionCall(data) =>
+                assertEquals(data.name, "get_weather")
+                assert(data.args.contains("location"))
+              case _ => fail(s"Expected FunctionCall, got $part")
+            }
+          case Left(e) =>
             fail(s"API call failed: ${e.message}")
         }
     }

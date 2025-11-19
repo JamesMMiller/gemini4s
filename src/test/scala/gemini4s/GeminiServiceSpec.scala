@@ -18,14 +18,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContent(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig]
     )(using config: GeminiConfig): IO[Either[GeminiError, GenerateContentResponse]] = {
       // Simulate successful response for test content
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(ResponsePart(text = "Test response")),
+              parts = List(ResponsePart.Text(text = "Test response")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
@@ -41,14 +44,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContentStream(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content],
+        tools: Option[List[Tool]],
+        toolConfig: Option[ToolConfig]
     )(using config: GeminiConfig): Stream[IO, GenerateContentResponse] = {
       // Simulate successful streaming response
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
             content = ResponseContent(
-              parts = List(ResponsePart(text = "Streaming test response")),
+              parts = List(ResponsePart.Text(text = "Streaming test response")),
               role = Some("model")
             ),
             finishReason = Some("STOP"),
