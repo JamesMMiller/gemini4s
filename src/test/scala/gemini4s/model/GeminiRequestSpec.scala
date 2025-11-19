@@ -10,7 +10,7 @@ import gemini4s.model.GeminiRequest._
 class GeminiRequestSpec extends FunSuite {
 
   test("Content should serialize to JSON correctly") {
-    val expected = Content(parts = List(Part(text = "Test prompt")))
+    val expected = Content(parts = List(Part.Text(text = "Test prompt")))
     val json     = expected.asJson.noSpaces
     val parsed   = decode[Content](json)
 
@@ -53,7 +53,7 @@ class GeminiRequestSpec extends FunSuite {
 
   test("GenerateContent should serialize to JSON correctly") {
     val expected = GenerateContent(
-      contents = List(Content(parts = List(Part(text = "Test prompt")))),
+      contents = List(Content(parts = List(Part.Text(text = "Test prompt")))),
       safetySettings = Some(
         List(
           SafetySetting(
@@ -77,7 +77,7 @@ class GeminiRequestSpec extends FunSuite {
     val parsed   = decode[GenerateContent](json)
 
     val expectedJson = parse(
-      "{\"contents\":[{\"parts\":[{\"text\":\"Test prompt\"}],\"role\":null}],\"safetySettings\":[{\"category\":\"HARASSMENT\",\"threshold\":\"BLOCK_MEDIUM_AND_ABOVE\"}],\"generationConfig\":{\"temperature\":0.8,\"topK\":10,\"topP\":0.9,\"candidateCount\":2,\"maxOutputTokens\":100,\"stopSequences\":[\".\",\"!\"]}}"
+      "{\"contents\":[{\"parts\":[{\"text\":\"Test prompt\"}],\"role\":null}],\"safetySettings\":[{\"category\":\"HARASSMENT\",\"threshold\":\"BLOCK_MEDIUM_AND_ABOVE\"}],\"generationConfig\":{\"temperature\":0.8,\"topK\":10,\"topP\":0.9,\"candidateCount\":2,\"maxOutputTokens\":100,\"stopSequences\":[\".\",\"!\"]},\"systemInstruction\":null}"
     ).getOrElse(Json.Null)
     assertEquals(parse(json), Right(expectedJson))
     assertEquals(parsed, Right(expected))

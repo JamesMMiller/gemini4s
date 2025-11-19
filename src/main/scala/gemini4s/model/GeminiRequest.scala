@@ -2,6 +2,7 @@ package gemini4s.model
 
 import io.circe._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 
 /**
  * Base trait for all Gemini API requests.
@@ -21,7 +22,8 @@ object GeminiRequest {
   final case class GenerateContent(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]] = None,
-      generationConfig: Option[GenerationConfig] = None
+      generationConfig: Option[GenerationConfig] = None,
+      systemInstruction: Option[Content] = None
   ) extends GeminiRequest
 
   object GenerateContent {
@@ -57,11 +59,28 @@ object GeminiRequest {
   /**
    * A part of the content.
    */
-  final case class Part(text: String)
+  sealed trait Part
 
   object Part {
-    given Encoder[Part] = deriveEncoder
-    given Decoder[Part] = deriveDecoder
+    final case class Text(text: String)           extends Part
+    final case class InlineData(inlineData: Blob) extends Part
+
+    final case class Blob(mimeType: String, data: String)
+
+    object Blob {
+      given Encoder[Blob] = deriveEncoder
+      given Decoder[Blob] = deriveDecoder
+    }
+
+    given Encoder[Part] = Encoder.instance {
+      case Text(text)       => Json.obj("text" -> text.asJson)
+      case InlineData(blob) => Json.obj("inlineData" -> blob.asJson)
+    }
+
+    given Decoder[Part] = Decoder.instance { c =>
+      c.downField("text").as[String].map(Text(_)).orElse(c.downField("inlineData").as[Blob].map(InlineData(_)))
+    }
+
   }
 
   /**

@@ -29,7 +29,8 @@ trait GeminiService[F[_]] {
   def generateContent(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]] = None,
-      generationConfig: Option[GenerationConfig] = None
+      generationConfig: Option[GenerationConfig] = None,
+      systemInstruction: Option[Content] = None
   )(using config: GeminiConfig): F[Either[GeminiError, GenerateContentResponse]]
 
   /**
@@ -38,14 +39,16 @@ trait GeminiService[F[_]] {
    * @param contents The input prompts and their contents
    * @param safetySettings Optional safety settings to control content filtering
    * @param generationConfig Optional configuration for content generation
+   * @param systemInstruction Optional system instructions
    * @param config The API configuration (implicit)
    * @return A stream of [[GenerateContentResponse]] chunks
    */
   def generateContentStream(
       contents: List[Content],
       safetySettings: Option[List[SafetySetting]] = None,
-      generationConfig: Option[GenerationConfig] = None
-  )(using config: GeminiConfig): Stream[F, GenerateContentResponse]
+      generationConfig: Option[GenerationConfig] = None,
+      systemInstruction: Option[Content] = None
+  )(using config: GeminiConfig): Stream[F, Either[GeminiError, GenerateContentResponse]]
 
   /**
    * Counts tokens in the provided content.
@@ -56,7 +59,7 @@ trait GeminiService[F[_]] {
    */
   def countTokens(
       contents: List[Content]
-  )(using config: GeminiConfig): F[Either[GeminiError, Int]]
+  )(using config: GeminiConfig): F[Either[GeminiError, CountTokensResponse]]
 
 }
 
@@ -91,7 +94,17 @@ object GeminiService {
    * @param text The input text
    * @return A Content instance with the text wrapped in a Part
    */
-  def text(text: String): Content = Content(parts = List(Part(text = text)))
+  def text(text: String): Content = Content(parts = List(Part.Text(text)))
+
+  /**
+   * Creates a Content instance from image data.
+   *
+   * @param mimeType The MIME type of the image (e.g., "image/jpeg")
+   * @param base64Data The base64 encoded image data
+   * @return A Content instance with the image wrapped in a Part
+   */
+  def image(mimeType: String, base64Data: String): Content =
+    Content(parts = List(Part.InlineData(Part.Blob(mimeType, base64Data))))
 
   /**
    * API endpoint paths for different operations.

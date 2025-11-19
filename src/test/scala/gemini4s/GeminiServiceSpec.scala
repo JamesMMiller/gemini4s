@@ -18,7 +18,8 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContent(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content]
     )(using config: GeminiConfig): IO[Either[GeminiError, GenerateContentResponse]] = {
       // Simulate successful response for test content
       val response = GenerateContentResponse(
@@ -41,9 +42,9 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def generateContentStream(
         contents: List[Content],
         safetySettings: Option[List[SafetySetting]],
-        generationConfig: Option[GenerationConfig]
-    )(using config: GeminiConfig): Stream[IO, GenerateContentResponse] = {
-      // Simulate successful streaming response
+        generationConfig: Option[GenerationConfig],
+        systemInstruction: Option[Content]
+    )(using config: GeminiConfig): Stream[IO, Either[GeminiError, GenerateContentResponse]] = {
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
@@ -58,14 +59,13 @@ class GeminiServiceSpec extends CatsEffectSuite {
         usageMetadata = None,
         modelVersion = None
       )
-      Stream.emit(response)
+      Stream.emit(Right(response))
     }
 
     override def countTokens(
         contents: List[Content]
-    )(using config: GeminiConfig): IO[Either[GeminiError, Int]] =
-      // Simulate token counting with a fixed value
-      IO.pure(Right(42))
+    )(using config: GeminiConfig): IO[Either[GeminiError, CountTokensResponse]] =
+      IO.pure(Right(CountTokensResponse(42)))
 
   }
 
@@ -86,7 +86,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
   test("text helper should create Content.Text correctly") {
     val content = "test content"
-    assertEquals(GeminiService.text(content), Content(parts = List(Part(text = content))))
+    assertEquals(GeminiService.text(content), Content(parts = List(Part.Text(text = content))))
   }
 
   test("Endpoints should generate correct paths") {

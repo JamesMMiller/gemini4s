@@ -35,28 +35,15 @@ Here's a simple example using `IOApp`:
 ```scala
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import gemini4s.config.GeminiConfig
+import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceLive
-import gemini4s.model.GeminiRequest._
+import gemini4s.config.GeminiConfig
+import gemini4s.service.GeminiService
 
 object Example extends IOApp.Simple {
-  
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    // 1. Create the HTTP client
+    implicit val config: GeminiConfig = GeminiConfig("YOUR_API_KEY")
     val httpClient = GeminiHttpClient.make[IO](backend)
-    
-    // 2. Create the Service
-    val service = GeminiServiceLive.make[IO](httpClient)
-    
-    // 3. Define Configuration
-    implicit val config: GeminiConfig = GeminiConfig("your-api-key")
-    
-    // 4. Use the Service
-    for {
-      response <- service.generateContent(
-        contents = List(Content(parts = List(Part(text = "Tell me a joke about functional programming"))))
-      )
       _ <- response match {
         case Right(result) => 
           IO.println(result.candidates.head.content.parts.head.text)

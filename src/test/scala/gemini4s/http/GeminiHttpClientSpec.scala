@@ -39,7 +39,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .thenRespond(response.asJson.noSpaces)
 
     val client  = GeminiHttpClient.make[IO](ioBackend)
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val request = GenerateContent(contents = List(Content(parts = List(Part.Text("prompt")))))
 
     client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isRight)
@@ -52,7 +52,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .thenRespond("Invalid request", StatusCode.BadRequest)
 
     val client  = GeminiHttpClient.make[IO](ioBackend)
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val request = GenerateContent(contents = List(Content(parts = List(Part.Text("prompt")))))
 
     client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
@@ -64,7 +64,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespondServerError()
 
     val client  = GeminiHttpClient.make[IO](ioBackend)
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val request = GenerateContent(contents = List(Content(parts = List(Part.Text("prompt")))))
 
     client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
