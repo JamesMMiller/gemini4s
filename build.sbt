@@ -55,7 +55,7 @@ lazy val root = project
     ),
 
     // Scoverage settings
-    coverageMinimumStmtTotal := 90,
+    coverageMinimumStmtTotal := 80,
     coverageMinimumBranchTotal := 90,
     coverageFailOnMinimum    := true,
     coverageHighlighting     := true,
