@@ -1,5 +1,6 @@
 package gemini4s.model
 
+import io.circe.Json
 import io.circe.parser._
 import io.circe.syntax._
 import munit.FunSuite
@@ -130,5 +131,10 @@ class GeminiResponseSpec extends FunSuite {
 
     val decoded = decode[GenerateContentResponse](json)
     assertEquals(decoded.map(_.promptFeedback.flatMap(_.blockReason)), Right(Some("SAFETY")))
+  }
+
+  test("ResponsePart should fail to decode invalid JSON") {
+    val json = Json.obj("unknown" -> Json.fromString("value"))
+    assert(json.as[ResponsePart].isLeft)
   }
 }

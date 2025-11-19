@@ -107,7 +107,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
       service
         .generateContent(
-          contents = List(GeminiService.text("What is the weather in London?")),
+          contents = List(GeminiService.text("What is the weather in New York City, NY?")),
           tools = Some(List(weatherTool)),
           toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
         )
