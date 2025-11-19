@@ -124,7 +124,8 @@ lazy val docs = project
     tlSiteApiUrl := Some(url("https://javadoc.io/doc/io.github.jamesmmiller/gemini4s_3")),
 
     // GitHub Pages settings
-    tlSitePublishBranch := Some("gh-pages")
+    tlSitePublishBranch := Some("gh-pages"),
+    tlSiteBaseUrl       := Some(url("https://jamesmmiller.github.io/gemini4s"))
   )
   .dependsOn(root)
 
