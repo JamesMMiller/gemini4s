@@ -8,8 +8,6 @@ import gemini4s.config.GeminiConfig
 import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.model.GeminiRequest._
-
-
 import gemini4s.model.GeminiResponse.ResponsePart
 
 class GeminiIntegrationSpec extends CatsEffectSuite {
