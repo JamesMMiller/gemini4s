@@ -1,125 +1,98 @@
 # gemini4s
 
-A Tagless Final Scala library for the Google Gemini API, built on the Typelevel stack (Cats Effect, FS2, Sttp, Circe).
+**A Tagless Final Scala library for the Google Gemini API**
 
 [![Scala CI](https://github.com/JamesMMiller/gemini4s/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JamesMMiller/gemini4s/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.jamesmmiller/gemini4s_3.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.jamesmmiller/gemini4s_3)
+[![Javadocs](https://javadoc.io/badge/io.github.jamesmmiller/gemini4s_3.svg)](https://javadoc.io/doc/io.github.jamesmmiller/gemini4s_3)
 
-## Features
+gemini4s is a purely functional, type-safe Scala 3 library for interacting with Google's Gemini API. Built on the Typelevel stack (Cats Effect, FS2, Sttp, Circe), it provides a composable and effect-polymorphic interface for content generation, streaming, embeddings, and more.
 
-- **Tagless Final Design**: Maximum flexibility and composability with `F[_]`.
-- **Typelevel Stack**: Built with Cats Effect 3, FS2, Sttp 3, and Circe.
-- **Type-safe API**: Strongly typed request and response models.
-- **Streaming Support**: Native `fs2.Stream` support for real-time content generation.
-- **Comprehensive Error Handling**: Typed error hierarchy.
+## Why gemini4s?
 
-## Getting Started
+- **🎯 Type-Safe**: Strongly typed request and response models catch errors at compile time
+- **🔄 Tagless Final**: Effect-polymorphic design works with IO, ZIO, Monix, or custom effect types
+- **📡 Streaming**: Native FS2 streaming support for real-time content generation
+- **🛡️ Comprehensive Error Handling**: Typed error hierarchy with specific error types
+- **✨ Purely Functional**: Built on Cats Effect 3 for composable, referentially transparent effects
+- **📚 Well-Documented**: Extensive documentation with type-checked examples
 
-### Prerequisites
-
-- Scala 3.6.2
-- JDK 11 or higher
-- Google Cloud API key for Gemini
+## Quick Start
 
 ### Installation
 
-Add the following dependency to your `build.sbt`:
+Add to your `build.sbt`:
 
 ```scala
-libraryDependencies += "io.github.jamesmiller" %% "gemini4s" % "0.1.0"
+libraryDependencies += "io.github.jamesmmiller" %% "gemini4s" % "0.1.0"
 ```
 
-### Basic Usage
-
-Here's a simple example using `IOApp`:
+### Your First API Call
 
 ```scala
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
+import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.GeminiConfig
-import gemini4s.model.GeminiService
 
-object Example extends IOApp.Simple {
+object QuickStart extends IOApp.Simple {
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    implicit val config: GeminiConfig = GeminiConfig("YOUR_API_KEY")
+    given GeminiConfig = GeminiConfig("YOUR_API_KEY")
+    
     val httpClient = GeminiHttpClient.make[IO](backend)
-      _ <- response match {
-        case Right(result) => 
-          IO.println(result.candidates.head.content.parts.head.text)
-        case Left(error) => 
-          IO.println(s"Error: ${error.message}")
-      }
-    } yield ()
+    val service = GeminiServiceImpl.make[IO](httpClient)
+    
+    service.generateContent(
+      contents = List(GeminiService.text("Explain quantum computing in one sentence"))
+    ).flatMap {
+      case Right(result) => 
+        IO.println(result.candidates.head.content.parts.head)
+      case Left(error) => 
+        IO.println(s"Error: ${error.message}")
+    }
   }
 }
 ```
 
-### Advanced Features
+## Features
 
-#### Streaming Content Generation
+### Content Generation
 
-Stream responses in real-time using `fs2.Stream`:
-
-```scala
-import fs2.Stream
-
-def streamContent(prompt: String)(using config: GeminiConfig, service: GeminiService[IO]): IO[Unit] = {
-  val stream = service.generateContentStream(
-    contents = List(Content(parts = List(Part(text = prompt))))
-  )
-  
-  stream
-    .map(_.candidates.head.content.parts.head.text)
-    .evalMap(text => IO.print(text)) // Print chunks as they arrive
-    .compile
-    .drain
-}
-```
-
-#### Safety Settings
-
-Control content safety with customizable settings:
+Generate text with customizable parameters:
 
 ```scala
-val safetySettings = List(
-  SafetySetting(
-    category = HarmCategory.HARASSMENT,
-    threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-  )
+val config = GenerationConfig(
+  temperature = Some(0.7f),
+  maxOutputTokens = Some(1024),
+  topP = Some(0.95f)
 )
 
 service.generateContent(
-  contents = List(Content(parts = List(Part(text = "prompt")))),
-  safetySettings = Some(safetySettings)
+  contents = List(GeminiService.text("Write a haiku about Scala")),
+  generationConfig = Some(config)
 )
 ```
 
-#### Generation Configuration
+### Streaming
 
-Fine-tune generation parameters:
+Stream responses in real-time with FS2:
 
 ```scala
-val genConfig = GenerationConfig(
-  temperature = Some(0.8f),
-  topK = Some(10),
-  candidateCount = Some(1),
-  maxOutputTokens = Some(2048)
+service.generateContentStream(
+  contents = List(GeminiService.text("Count from 1 to 10"))
 )
-
-service.generateContent(
-  contents = List(Content(parts = List(Part(text = "prompt")))),
-  generationConfig = Some(genConfig)
-)
+  .evalMap(response => IO.println(response.candidates.head.content.parts.head))
+  .compile
+  .drain
 ```
 
-#### Tool Use (Function Calling)
+### Function Calling
 
-Define and use tools within your requests:
+Extend Gemini's capabilities with custom functions:
 
 ```scala
-import gemini4s.model.GeminiRequest._
-
 val weatherTool = Tool(
   functionDeclarations = Some(List(
     FunctionDeclaration(
@@ -128,40 +101,65 @@ val weatherTool = Tool(
       parameters = Some(Schema(
         `type` = SchemaType.OBJECT,
         properties = Some(Map(
-          "location" -> Schema(`type` = SchemaType.STRING, description = Some("The city and state, e.g. San Francisco, CA"))
-        )),
-        required = Some(List("location"))
+          "location" -> Schema(`type` = SchemaType.STRING)
+        ))
       ))
     )
   ))
 )
 
 service.generateContent(
-  contents = List(Content(parts = List(Part(text = "What is the weather in London?")))),
-  tools = Some(List(weatherTool)),
-  toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
+  contents = List(GeminiService.text("What's the weather in Tokyo?")),
+  tools = Some(List(weatherTool))
 )
 ```
 
-#### JSON Mode
+### Embeddings
 
-Force the model to output valid JSON:
+Generate embeddings for semantic search:
 
 ```scala
-val jsonConfig = GenerationConfig(
-  responseMimeType = Some("application/json")
-)
-
-service.generateContent(
-  contents = List(Content(parts = List(Part(text = "List 5 popular fruits in JSON format")))),
-  generationConfig = Some(jsonConfig)
+service.embedContent(
+  content = GeminiService.text("Scala is a programming language"),
+  taskType = Some(TaskType.RETRIEVAL_DOCUMENT)
 )
 ```
+
+## Documentation
+
+📖 **[Full Documentation](https://jamesmmiller.github.io/gemini4s/)** - Comprehensive guides and API reference
+
+### Guides
+
+- **[Quick Start](https://jamesmmiller.github.io/gemini4s/quickstart.html)** - Get up and running quickly
+- **[Core Concepts](https://jamesmmiller.github.io/gemini4s/core-concepts.html)** - Understand the library's design
+- **[Content Generation](https://jamesmmiller.github.io/gemini4s/content-generation.html)** - Generate text with parameters
+- **[Streaming](https://jamesmmiller.github.io/gemini4s/streaming.html)** - Real-time content generation
+- **[Function Calling](https://jamesmmiller.github.io/gemini4s/function-calling.html)** - Tool use and function calling
+- **[Embeddings](https://jamesmmiller.github.io/gemini4s/embeddings.html)** - Semantic search and clustering
+- **[Error Handling](https://jamesmmiller.github.io/gemini4s/error-handling.html)** - Retry strategies and patterns
+- **[Best Practices](https://jamesmmiller.github.io/gemini4s/best-practices.html)** - Production-ready patterns
+- **[FAQ](https://jamesmmiller.github.io/gemini4s/faq.html)** - Common questions and troubleshooting
+
+## Available Models
+
+- `gemini-2.5-flash` - Fast, versatile performance (default)
+- `gemini-2.5-pro` - Complex reasoning tasks
+- `gemini-2.5-flash-lite` - Lightweight, high-volume tasks
+- `text-embedding-004` - Text embeddings
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md).
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## License
 
-This project is licensed under the Apache 2.0 License - see the LICENSE file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+Built with the excellent [Typelevel](https://typelevel.org/) ecosystem:
+- [Cats Effect](https://typelevel.org/cats-effect/) - Purely functional effects
+- [FS2](https://fs2.io/) - Functional streaming
+- [Sttp](https://sttp.softwaremill.com/) - HTTP client
+- [Circe](https://circe.github.io/circe/) - JSON library
