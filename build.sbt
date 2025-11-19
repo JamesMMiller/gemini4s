@@ -39,8 +39,7 @@ lazy val root = project
     organization           := "com.github.jamesmiller",
     homepage               := Some(url("https://github.com/JamesMMiller/gemini4s")),
     licenses               := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    sonatypeCredentialHost := "s01.oss.sonatype.org",
-    sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
+    sonatypeCredentialHost := "central.sonatype.com",
     developers             := List(
       Developer(
         "jamesmiller",
