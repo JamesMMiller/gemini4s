@@ -6,7 +6,7 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 import gemini4s.config.GeminiConfig
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceLive
+import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.model.GeminiRequest._
 
 class GeminiIntegrationSpec extends CatsEffectSuite {
@@ -20,7 +20,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   test("generateContent should return a valid response") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceLive.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service
@@ -37,10 +37,56 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     }
   }
 
+  test("generateContent with systemInstruction should behave correctly".ignore) {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      service
+        .generateContent(
+          contents = List(GeminiService.text("Who are you?")),
+          safetySettings = None,
+          generationConfig = None
+        )
+        .map {
+          case Right(response) =>
+            assert(response.candidates.nonEmpty)
+            val text = response.candidates.head.content.parts.map(_.text).mkString
+            assert(text.contains("Gemini4s"))
+          case Left(error)     => fail(s"API call failed: ${error.message}")
+        }
+    }
+  }
+
+  test("generateContent with inlineData (image) should work".ignore) {
+    // 1x1 transparent PNG pixel
+    val base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val httpClient                    = GeminiHttpClient.make[IO](backend)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
+      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+
+      service
+        .generateContent(
+          contents = List(
+            GeminiService.text("What is this image?"),
+            GeminiService.image("image/png", base64Image)
+          ),
+          safetySettings = None,
+          generationConfig = None
+        )
+        .map {
+          case Right(response) => assert(response.candidates.nonEmpty)
+          case Left(error)     => fail(s"API call failed: ${error.message}")
+        }
+    }
+  }
+
   test("countTokens should return a valid count") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceLive.make[IO](httpClient)
+      val service                       = GeminiServiceImpl.make[IO](httpClient)
       implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
 
       service
