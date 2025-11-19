@@ -118,7 +118,9 @@ lazy val docs = project
         )
         .site
         .mainNavigation(
-          appendLinks = Seq(
+          2,
+          false,
+          Seq(
             ThemeNavigationSection(
               "Getting Started",
               TextLink.internal(Root / "quickstart.md", "Quick Start")
