@@ -33,15 +33,13 @@ Specify the model when creating the service:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 
-HttpClientFs2Backend.resource[IO]().map { backend =>
-  val httpClient = GeminiHttpClient.make[IO](backend)
-  
-  // Use Gemini 2.5 Pro
+// Assuming 'httpClient' is available (see Quick Start)
+def createProService(httpClient: GeminiHttpClient[IO]): GeminiService[IO] = {
+  // Use Gemini 2.5 Pro explicitly
   GeminiServiceImpl.make[IO](httpClient, GeminiService.Gemini25Pro)
 }
 ```

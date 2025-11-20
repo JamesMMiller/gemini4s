@@ -177,29 +177,9 @@ val conversation = List(
 
 ## Resource Management
 
-Always use `Resource` for proper cleanup:
+gemini4s relies on `cats.effect.Resource` for safe resource acquisition and release (like HTTP connection pools).
 
-```scala mdoc:compile-only
-import cats.effect.{IO, Resource}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
-import gemini4s.http.GeminiHttpClient
-
-val serviceResource: Resource[IO, GeminiService[IO]] = {
-  HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend)
-    GeminiServiceImpl.make[IO](httpClient)
-  }
-}
-
-// Use it
-serviceResource.use { service =>
-  // service is available here
-  // automatically cleaned up when done
-  IO.unit
-}
-```
+See the **[Quick Start](quickstart.md#basic-setup)** for the standard resource setup pattern.
 
 ## Streaming with FS2
 
