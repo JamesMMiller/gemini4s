@@ -175,11 +175,7 @@ val conversation = List(
 )
 ```
 
-## Resource Management
 
-gemini4s relies on `cats.effect.Resource` for safe resource acquisition and release (like HTTP connection pools).
-
-See the **[Quick Start](quickstart.md#basic-setup)** for the standard resource setup pattern.
 
 ## Streaming with FS2
 
