@@ -98,7 +98,10 @@ lazy val docs = project
     name := "gemini4s-docs",
 
     // mdoc settings for type-checked examples
-    mdocIn := file("docs"),
+    mdocIn        := file("docs"),
+    mdocVariables := Map(
+      "VERSION" -> version.value
+    ),
 
     // Site configuration
     tlSiteHelium := {

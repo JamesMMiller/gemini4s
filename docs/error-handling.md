@@ -198,14 +198,9 @@ def withFallback(
     case Right(response) =>
       IO.pure(response.candidates.head.content.parts.head.toString)
     
-    case Left(_: gemini4s.error.GeminiError.RateLimitExceeded) =>
-      IO.pure("Service temporarily unavailable. Please try again later.")
-    
-    case Left(_: gemini4s.error.GeminiError.SafetyThresholdExceeded) =>
-      IO.pure("Unable to process this request due to content policy.")
-    
-    case Left(error) =>
-      IO.pure(s"An error occurred: ${error.message}")
+    case Left(_) =>
+      // Fallback to a simpler prompt or default value
+      IO.pure("I'm sorry, I couldn't generate a response at this time.")
   }
 }
 ```

@@ -12,13 +12,7 @@ gemini4s is a purely functional, type-safe Scala 3 library for interacting with 
 
 **[Visit the Documentation Microsite](https://jamesmmiller.github.io/gemini4s/)** for comprehensive guides, examples, and API reference.
 
-## Installation
 
-Add to your `build.sbt`:
-
-```scala
-libraryDependencies += "io.github.jamesmmiller" %% "gemini4s" % "0.1.0"
-```
 
 ## Features
 

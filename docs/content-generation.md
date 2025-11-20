@@ -11,6 +11,7 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 
+// Assuming 'service' is available (see Quick Start)
 def basic(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   service.generateContent(
     contents = List(GeminiService.text("Explain photosynthesis"))

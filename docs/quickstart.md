@@ -37,29 +37,23 @@ import gemini4s.config.GeminiConfig
 
 object BasicExample extends IOApp.Simple {
   val run: IO[Unit] = {
-    // Create HTTP backend (manages connection pooling)
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      // Configure with your API key
+      // 1. Configure
       given GeminiConfig = GeminiConfig("YOUR_API_KEY")
       
-      // Create the HTTP client
+      // 2. Create Service
       val httpClient = GeminiHttpClient.make[IO](backend)
-      
-      // Create the service
       val service = GeminiServiceImpl.make[IO](httpClient)
       
-      // Make your first API call
-      for {
-        response <- service.generateContent(
-          contents = List(GeminiService.text("Hello, Gemini!"))
-        )
-        _ <- response match {
-          case Right(result) => 
-            IO.println(result.candidates.head.content.parts.head)
-          case Left(error) => 
-            IO.println(s"Error: ${error.message}")
-        }
-      } yield ()
+      // 3. Use
+      service.generateContent(
+        contents = List(GeminiService.text("Hello, Gemini!"))
+      ).flatMap {
+        case Right(result) => 
+          IO.println(result.candidates.head.content.parts.head)
+        case Left(error) => 
+          IO.println(s"Error: ${error.message}")
+      }
     }
   }
 }

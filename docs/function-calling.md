@@ -52,6 +52,7 @@ import gemini4s.model.GeminiRequest._
 import gemini4s.config.GeminiConfig
 
 def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
     description = "Get the current weather in a given location",
@@ -67,16 +68,19 @@ def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
     ))
   )
   
+  // 2. Create the tool
   val weatherTool = Tool(
     functionDeclarations = Some(List(weatherFunction))
   )
   
+  // 3. Configure usage
   val toolConfig = ToolConfig(
     functionCallingConfig = Some(FunctionCallingConfig(
       mode = Some(FunctionCallingMode.AUTO)
     ))
   )
   
+  // 4. Use in request
   service.generateContent(
     contents = List(GeminiService.text("What's the weather in Tokyo?")),
     tools = Some(List(weatherTool)),

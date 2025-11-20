@@ -4,69 +4,39 @@ Guide to choosing and using different Gemini models.
 
 ## Available Models
 
-gemini4s provides constants for all Gemini models:
+For the most up-to-date list of available models, capabilities, and pricing, please refer to the official **[Gemini Models Documentation](https://ai.google.dev/gemini-api/docs/models/gemini)**.
+
+gemini4s provides constants for common models, but you can also pass any valid model string to the service.
 
 ```scala mdoc:compile-only
 import gemini4s.GeminiService
 
-// Gemini 2.5 models
-val flash = GeminiService.Gemini25Flash        // Default, fast and versatile
-val pro = GeminiService.Gemini25Pro            // Complex reasoning
-val flashLite = GeminiService.Gemini25FlashLite // Lightweight, high-volume
-
-// Embedding model
+// Constants for convenience
+val flash = GeminiService.Gemini25Flash
+val pro = GeminiService.Gemini25Pro
+val flashLite = GeminiService.Gemini25FlashLite
 val embedding = GeminiService.EmbeddingText004
+
+// You can also use string literals for new models not yet in constants
+val futureModel = "models/gemini-3.0-pro"
 ```
-
-## Model Comparison
-
-| Model | Best For | Speed | Cost | Context Window |
-|-------|----------|-------|------|----------------|
-| `gemini-2.5-flash` | General purpose, fast responses | Fast | Low | 1M tokens |
-| `gemini-2.5-pro` | Complex reasoning, analysis | Medium | Medium | 2M tokens |
-| `gemini-2.5-flash-lite` | High-volume, simple tasks | Fastest | Lowest | 1M tokens |
-| `text-embedding-004` | Embeddings | Fast | Low | 2048 tokens |
-
 ## Using Different Models
 
 Specify the model when creating the service:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 
-HttpClientFs2Backend.resource[IO]().map { backend =>
-  val httpClient = GeminiHttpClient.make[IO](backend)
-  
-  // Use Gemini 2.5 Pro
+// Assuming 'httpClient' is available (see Quick Start)
+def createProService(httpClient: GeminiHttpClient[IO]): GeminiService[IO] = {
+  // Use Gemini 2.5 Pro explicitly
   GeminiServiceImpl.make[IO](httpClient, GeminiService.Gemini25Pro)
 }
 ```
 
-## Model Selection Guide
-
-### Use Gemini 2.5 Flash When:
-- Building chatbots or assistants
-- General Q&A applications
-- Content summarization
-- Code generation
-- Most common use cases
-
-### Use Gemini 2.5 Pro When:
-- Complex reasoning tasks
-- Deep analysis required
-- Multi-step problem solving
-- Advanced code understanding
-- Research applications
-
-### Use Gemini 2.5 Flash Lite When:
-- High-volume, simple requests
-- Cost optimization is critical
-- Simple classification tasks
-- Basic text generation
 
 ## Next Steps
 
