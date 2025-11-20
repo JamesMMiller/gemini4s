@@ -100,7 +100,13 @@ lazy val docs = project
     // mdoc settings for type-checked examples
     mdocIn        := file("docs"),
     mdocVariables := Map(
-      "VERSION" -> version.value
+      "VERSION" -> {
+        if (isSnapshot.value) {
+          previousStableVersion.value.getOrElse("0.0.1")
+        } else {
+          version.value
+        }
+      }
     ),
 
     // Site configuration
