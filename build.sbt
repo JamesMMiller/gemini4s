@@ -102,7 +102,10 @@ lazy val docs = project
     mdocVariables := Map(
       "VERSION" -> {
         if (isSnapshot.value) {
-          previousStableVersion.value.getOrElse("0.0.1")
+          // Try to get the last stable version, falling back to git describe, then current version
+          previousStableVersion.value
+            .orElse(scala.util.Try(scala.sys.process.Process("git describe --tags --abbrev=0").!!.trim).toOption)
+            .getOrElse(version.value)
         } else {
           version.value
         }
