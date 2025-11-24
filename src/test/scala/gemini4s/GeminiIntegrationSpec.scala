@@ -28,7 +28,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       service
         .generateContent(
           GenerateContentRequest(
-            ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+            ModelName.Gemini25Flash,
             List(GeminiService.text("Say hello!"))
           )
         )
@@ -51,7 +51,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       service
         .countTokens(
           CountTokensRequest(
-            ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+            ModelName.Gemini25Flash,
             List(GeminiService.text("Hello world"))
           )
         )
@@ -75,7 +75,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       service
         .generateContent(
           GenerateContentRequest(
-            model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+            model = ModelName.Gemini25Flash,
             contents = List(GeminiService.text("List 3 fruits in JSON format")),
             generationConfig = Some(jsonConfig)
           )
@@ -126,7 +126,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       service
         .generateContent(
           GenerateContentRequest(
-            model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+            model = ModelName.Gemini25Flash,
             contents = List(GeminiService.text("What's the weather in Tokyo?")),
             tools = Some(List(weatherTool))
           )
@@ -153,7 +153,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .embedContent(
           EmbedContentRequest(
             content = GeminiService.text("Hello world!"),
-            model = ModelName.EmbeddingText004
+            model = ModelName.EmbeddingText001
           )
         )
         .map {
@@ -170,14 +170,14 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       val service     = GeminiServiceImpl.make[IO](httpClient)
 
       val requests = List(
-        EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingText004),
-        EmbedContentRequest(GeminiService.text("Second text"), ModelName.EmbeddingText004)
+        EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingText001),
+        EmbedContentRequest(GeminiService.text("Second text"), ModelName.EmbeddingText001)
       )
 
       service
         .batchEmbedContents(
           BatchEmbedContentsRequest(
-            model = ModelName.EmbeddingText004,
+            model = ModelName.EmbeddingText001,
             requests = requests
           )
         )
@@ -197,7 +197,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       service
         .generateContentStream(
           GenerateContentRequest(
-            model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+            model = ModelName.Gemini25Flash,
             contents = List(GeminiService.text("Tell me a short story"))
           )
         )
