@@ -63,8 +63,10 @@ import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 
 def stream(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  import gemini4s.model.request.GenerateContentRequest
+  import gemini4s.model.domain.GeminiConstants
   service.generateContentStream(
-    contents = List(GeminiService.text("Hello"))
+    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
   ).compile.drain
 }
 ```
@@ -79,8 +81,10 @@ import gemini4s.GeminiService
 import gemini4s.config.GeminiConfig
 
 def count(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  import gemini4s.model.request.CountTokensRequest
+  import gemini4s.model.domain.GeminiConstants
   service.countTokens(
-    List(GeminiService.text("Your prompt"))
+    CountTokensRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Your prompt")))
   ).flatMap {
     case Right(count) => IO.println(s"Tokens: $count")
     case Left(error) => IO.println(s"Error: ${error.message}")
@@ -137,7 +141,7 @@ See the [Function Calling](function-calling.md) guide for complete examples.
 
 ### Can I use multiple models in the same application?
 
-Yes! Create separate service instances with different models:
+Yes! You can specify the model for each request using the same service instance:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
@@ -145,14 +149,24 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
+import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.GeminiConstants
 
-HttpClientFs2Backend.resource[IO]().map { backend =>
-  val httpClient = GeminiHttpClient.make[IO](backend)
-  
-  val flashService = GeminiServiceImpl.make[IO](httpClient, GeminiService.Gemini25Flash)
-  val proService = GeminiServiceImpl.make[IO](httpClient, GeminiService.Gemini25Pro)
-  
-  (flashService, proService)
+def multipleModels(using config: GeminiConfig): IO[Unit] = {
+  HttpClientFs2Backend.resource[IO]().use { backend =>
+    val httpClient = GeminiHttpClient.make[IO](backend, config)
+    val service = GeminiServiceImpl.make[IO](httpClient)
+    
+    // Use the same service for different models
+    val flashRequest = GenerateContentRequest(GeminiConstants.Gemini25Flash, List(GeminiService.text("Flash")))
+    val proRequest = GenerateContentRequest(GeminiConstants.Gemini25Pro, List(GeminiService.text("Pro")))
+    
+    for {
+      _ <- service.generateContent(flashRequest)
+      _ <- service.generateContent(proRequest)
+    } yield ()
+  }
 }
 ```
 

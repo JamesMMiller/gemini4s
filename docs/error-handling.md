@@ -192,8 +192,10 @@ def withFallback(
   service: GeminiService[IO],
   prompt: String
 )(using GeminiConfig): IO[String] = {
+  import gemini4s.model.request.GenerateContentRequest
+  import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    contents = List(GeminiService.text(prompt))
+    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text(prompt)))
   ).flatMap {
     case Right(response) =>
       IO.pure(response.candidates.head.content.parts.head.toString)
@@ -218,15 +220,19 @@ import gemini4s.config.GeminiConfig
 
 // Bad - ignores errors
 def bad(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  import gemini4s.model.request.GenerateContentRequest
+  import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    contents = List(GeminiService.text("Hello"))
+    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
   ).void  // Loses error information!
 }
 
 // Good - handles errors
 def good(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+  import gemini4s.model.request.GenerateContentRequest
+  import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    contents = List(GeminiService.text("Hello"))
+    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) => IO.println(response)
     case Left(error) => IO.println(s"Error: ${error.message}")
@@ -246,12 +252,14 @@ import gemini4s.config.GeminiConfig
 def composed(
   service: GeminiService[IO]
 )(using GeminiConfig): EitherT[IO, GeminiError, String] = {
+  import gemini4s.model.request.GenerateContentRequest
+  import gemini4s.model.domain.GeminiConstants
   for {
     response1 <- EitherT(service.generateContent(
-      contents = List(GeminiService.text("First"))
+      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("First")))
     ))
     response2 <- EitherT(service.generateContent(
-      contents = List(GeminiService.text("Second"))
+      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Second")))
     ))
   } yield s"${response1.candidates.head} ${response2.candidates.head}"
 }
