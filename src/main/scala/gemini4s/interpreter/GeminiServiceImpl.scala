@@ -5,7 +5,6 @@ import cats.syntax.all._
 import fs2.Stream
 
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._

@@ -9,7 +9,7 @@ import gemini4s.model.domain._
  * Request for text generation using the Gemini API.
  */
 final case class GenerateContentRequest(
-    model: String,
+    model: ModelName,
     contents: List[Content],
     safetySettings: Option[List[SafetySetting]] = None,
     generationConfig: Option[GenerationConfig] = None,

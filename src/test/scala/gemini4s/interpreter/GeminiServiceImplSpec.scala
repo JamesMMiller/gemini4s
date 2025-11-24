@@ -6,7 +6,6 @@ import io.circe.{ Decoder, Encoder }
 import munit.CatsEffectSuite
 
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._
@@ -14,8 +13,6 @@ import gemini4s.model.request._
 import gemini4s.model.response._
 
 class GeminiServiceImplSpec extends CatsEffectSuite {
-
-  given config: GeminiConfig = GeminiConfig("test-key")
 
   class MockHttpClient(
       response: Either[GeminiError, Any] = Right(()),

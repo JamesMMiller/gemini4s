@@ -9,7 +9,7 @@ import gemini4s.model.domain._
  * Request to count tokens for given content.
  */
 final case class CountTokensRequest(
-    model: String,
+    model: ModelName,
     contents: List[Content]
 )
 

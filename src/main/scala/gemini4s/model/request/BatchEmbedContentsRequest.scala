@@ -9,7 +9,7 @@ import gemini4s.model.domain._
  * Request to batch embed contents.
  */
 final case class BatchEmbedContentsRequest(
-    model: String,
+    model: ModelName,
     requests: List[EmbedContentRequest]
 )
 

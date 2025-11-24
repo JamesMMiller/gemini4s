@@ -10,7 +10,7 @@ import sttp.client3.impl.cats.implicits._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.error.GeminiError
 import gemini4s.model.domain._
 import gemini4s.model.request._
@@ -18,7 +18,7 @@ import gemini4s.model.response._
 
 class GeminiHttpClientSpec extends CatsEffectSuite {
 
-  given config: GeminiConfig = GeminiConfig("test-api-key")
+  val apiKey: ApiKey = ApiKey.unsafe("test-api-key")
 
   // Helper to create a backend that satisfies the Fs2Streams requirement
   def createBackend(stub: SttpBackendStub[IO, Any]): SttpBackend[IO, Fs2Streams[IO]] =
@@ -45,9 +45,11 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .whenRequestMatches(_.uri.path.mkString("/").contains("generateContent"))
       .thenRespond(response.asJson.noSpaces)
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), config)
-    val request =
-      GenerateContentRequest("gemini-2.0-flash-lite-preview-02-05", List(Content(parts = List(ContentPart("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart("prompt"))))
+    )
 
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isRight)

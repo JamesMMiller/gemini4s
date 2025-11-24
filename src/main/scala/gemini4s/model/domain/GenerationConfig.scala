@@ -7,13 +7,13 @@ import io.circe.generic.semiauto._
  * Configuration for text generation.
  */
 final case class GenerationConfig(
-    temperature: Option[Float] = None,
-    topK: Option[Int] = None,
-    topP: Option[Float] = None,
+    temperature: Option[Temperature] = None,
+    topK: Option[TopK] = None,
+    topP: Option[TopP] = None,
     candidateCount: Option[Int] = None,
     maxOutputTokens: Option[Int] = None,
     stopSequences: Option[List[String]] = None,
-    responseMimeType: Option[String] = None
+    responseMimeType: Option[MimeType] = None
 )
 
 object GenerationConfig {

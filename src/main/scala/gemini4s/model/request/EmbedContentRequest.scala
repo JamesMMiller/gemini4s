@@ -10,7 +10,7 @@ import gemini4s.model.domain._
  */
 final case class EmbedContentRequest(
     content: Content,
-    model: String,
+    model: ModelName,
     taskType: Option[TaskType] = None,
     title: Option[String] = None,
     outputDimensionality: Option[Int] = None

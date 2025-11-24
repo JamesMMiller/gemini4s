@@ -4,7 +4,6 @@ import cats.effect.IO
 import fs2.Stream
 import munit.CatsEffectSuite
 
-import gemini4s.config.GeminiConfig
 import gemini4s.error.GeminiError
 import gemini4s.model.domain._
 import gemini4s.model.request._

@@ -9,7 +9,7 @@ import sttp.client3._
 import sttp.client3.circe._
 import sttp.model.Uri
 
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.error.GeminiError
 
 /**
@@ -48,19 +48,27 @@ trait GeminiHttpClient[F[_]] {
 
 object GeminiHttpClient {
 
+  /** Default base URL for the Gemini API */
+  val DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta"
+
   /**
    * Creates a Sttp-based implementation of GeminiHttpClient.
+   *
+   * @param backend The Sttp backend
+   * @param apiKey The Gemini API key
+   * @param baseUrl The base URL for API requests (defaults to official Gemini API)
    */
   def make[F[_]: Async](
       backend: SttpBackend[F, Fs2Streams[F]],
-      config: GeminiConfig
+      apiKey: ApiKey,
+      baseUrl: String = DefaultBaseUrl
   ): GeminiHttpClient[F] = new GeminiHttpClient[F] {
 
     override def post[Req: Encoder, Res: Decoder](
         endpoint: String,
         request: Req
     ): F[Either[GeminiError, Res]] = {
-      val uri = uri"${config.baseUrl}".addPath(endpoint.split('/')).addParam("key", config.apiKey)
+      val uri = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
 
       basicRequest
         .post(uri)
@@ -81,7 +89,7 @@ object GeminiHttpClient {
         endpoint: String,
         request: Req
     ): Stream[F, Res] = {
-      val uri = uri"${config.baseUrl}".addPath(endpoint.split('/')).addParam("key", config.apiKey)
+      val uri = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
 
       val req = basicRequest.post(uri).body(request).response(asStreamUnsafe(Fs2Streams[F]))
 
