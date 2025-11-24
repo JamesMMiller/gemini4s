@@ -40,7 +40,7 @@ import cats.syntax.all._
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def example(service: GeminiService[IO]): IO[String] = {
   service.generateContent(
@@ -62,7 +62,7 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def exampleWithEitherT(
   service: GeminiService[IO]
@@ -116,20 +116,17 @@ case class StreamInterrupted(...) extends StreamError
 
 See [Error Handling](error-handling.md) for detailed error handling strategies.
 
-## Configuration
+## API Key
 
-The `GeminiConfig` case class holds API configuration:
+The `ApiKey` case class holds API configuration:
 
 ```scala mdoc:compile-only
 import gemini4s.config.ApiKey
 
-val apiKey = ApiKey.unsafe(
-  apiKey = "your-api-key",
-  baseUrl = "https://generativelanguage.googleapis.com/v1beta" // default
-)
+val apiKey = ApiKey.unsafe("your-api-key")
 ```
 
-Configuration is passed when creating the `GeminiHttpClient`:
+The `GeminiService` is passed the API key when creating it:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
@@ -139,7 +136,7 @@ import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceImpl
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-def makeService(config: GeminiConfig): IO[GeminiService[IO]] = {
+def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     IO.pure(GeminiServiceImpl.make[IO](httpClient))
@@ -200,7 +197,7 @@ FS2 streams are:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def streamExample(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(

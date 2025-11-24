@@ -64,6 +64,7 @@ Controls randomness in the output:
 
 ```scala mdoc:compile-only
 import gemini4s.model.domain.GenerationConfig
+import gemini4s.model.domain.{Temperature, TopK, TopP}
 
 // For factual, consistent responses
 val factual = GenerationConfig(temperature = Some(Temperature.unsafe(0.2f)))
@@ -80,7 +81,7 @@ Control token selection:
 - **topP**: Consider tokens whose cumulative probability is P
 
 ```scala mdoc:compile-only
-import gemini4s.model.domain.GenerationConfig
+import gemini4s.model.domain.{GenerationConfig, Temperature, TopK, TopP}
 
 // More focused (fewer options)
 val focused = GenerationConfig(topK = Some(TopK.unsafe(10)), topP = Some(TopP.unsafe(0.8f)))
@@ -96,7 +97,7 @@ Provide system-level instructions that guide the model's behavior:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
+import gemini4s.model.domain.{Content, ContentPart, GeminiConstants, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 
 def withSystemInstruction(service: GeminiService[IO]): IO[Unit] = {
@@ -124,7 +125,7 @@ Build conversations by providing message history:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
+import gemini4s.model.domain.{Content, ContentPart, GeminiConstants, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 
 def conversation(service: GeminiService[IO]): IO[Unit] = {
@@ -308,7 +309,7 @@ def checkFinishReason(response: GenerateContentResponse): IO[Unit] = {
 Create reusable configurations for common use cases:
 
 ```scala mdoc:compile-only
-import gemini4s.model.domain.GenerationConfig
+import gemini4s.model.domain.{GenerationConfig, Temperature, TopP}
 
 object Configs {
   val factual = GenerationConfig(

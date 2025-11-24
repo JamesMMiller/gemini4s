@@ -40,14 +40,12 @@ import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
 object QuickStart extends IOApp.Simple {
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
     val apiKey = ApiKey.unsafe("YOUR_API_KEY")
-    given ApiKey = apiKey
-    
-    import gemini4s.model.request.GenerateContentRequest
-    import gemini4s.model.domain.GeminiConstants
     
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     val service = GeminiServiceImpl.make[IO](httpClient)

@@ -35,7 +35,7 @@ import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 object BasicExample extends IOApp.Simple {
   val run: IO[Unit] = {
@@ -74,12 +74,12 @@ Don't hardcode your API key! Use environment variables:
 import cats.effect.IO
 import gemini4s.config.ApiKey
 
-val config: IO[GeminiConfig] = IO {
+val apiKey: IO[ApiKey] = IO {
   val apiKey = sys.env.getOrElse(
     "GEMINI_API_KEY",
     throw new RuntimeException("GEMINI_API_KEY not set")
   )
-  GeminiConfig(apiKey)
+  ApiKey.unsafe(apiKey)
 }
 ```
 
@@ -109,9 +109,9 @@ import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
-def makeService(config: GeminiConfig): Resource[IO, GeminiService[IO]] = {
+def makeService(apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().map { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     GeminiServiceImpl.make[IO](httpClient)
@@ -121,7 +121,7 @@ def makeService(config: GeminiConfig): Resource[IO, GeminiService[IO]] = {
 // Use it
 val apiKey = ApiKey.unsafe("YOUR_API_KEY")
 
-makeService(config).use { service =>
+makeService(apiKey).use { service =>
   for {
     response1 <- service.generateContent(
       GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First question")))

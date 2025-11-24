@@ -30,19 +30,6 @@ Visit [Google AI Studio](https://makersuite.google.com/app/apikey) and create an
 
 Use environment variables or a secure configuration management system. Never commit API keys to version control.
 
-### Can I use a custom base URL?
-
-Yes:
-
-```scala mdoc:compile-only
-import gemini4s.config.ApiKey
-
-val apiKey = ApiKey.unsafe(
-  apiKey = "your-key",
-  baseUrl = "https://custom-endpoint.example.com"
-)
-```
-
 ## Usage
 
 ### How do I handle rate limiting?
@@ -61,10 +48,10 @@ Use `generateContentStream`:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
+import gemini4s.model.domain.ModelName
 
 def stream(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
-  import gemini4s.model.domain.GeminiConstants
   service.generateContentStream(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).compile.drain
@@ -79,10 +66,10 @@ Use `countTokens`:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
+import gemini4s.model.domain.ModelName
 
 def count(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.CountTokensRequest
-  import gemini4s.model.domain.GeminiConstants
   service.countTokens(
     CountTokensRequest(ModelName.Gemini25Flash, List(GeminiService.text("Your prompt")))
   ).flatMap {

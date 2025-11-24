@@ -187,6 +187,7 @@ libraryDependencies += "org.typelevel" %% "log4cats-slf4j" % "2.6.0"
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
+import gemini4s.model.domain.ModelName
 
 def withFallback(
   service: GeminiService[IO],
@@ -217,11 +218,11 @@ Never ignore `Either[GeminiError, A]`:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
+import gemini4s.model.domain.ModelName
 
 // Bad - ignores errors
 def bad(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
-  import gemini4s.model.domain.GeminiConstants
   service.generateContent(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).void  // Loses error information!
@@ -230,7 +231,6 @@ def bad(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
 // Good - handles errors
 def good(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
-  import gemini4s.model.domain.GeminiConstants
   service.generateContent(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
@@ -248,12 +248,11 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
 import gemini4s.config.ApiKey
-
+import gemini4s.model.domain.ModelName
 def composed(
   service: GeminiService[IO]
 )(using apiKey: ApiKey): EitherT[IO, GeminiError, String] = {
   import gemini4s.model.request.GenerateContentRequest
-  import gemini4s.model.domain.GeminiConstants
   for {
     response1 <- EitherT(service.generateContent(
       GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First")))
@@ -270,14 +269,15 @@ def composed(
 ```scala mdoc:compile-only
 import cats.effect.IO
 import scala.concurrent.duration._
+import gemini4s.error.GeminiError
 
 def withTimeout[A](
-  action: IO[Either[gemini4s.error.GeminiError, A]],
+  action: IO[Either[GeminiError, A]],
   timeout: FiniteDuration = 30.seconds
-): IO[Either[gemini4s.error.GeminiError, A]] = {
+): IO[Either[GeminiError, A]] = {
   action.timeout(timeout).attempt.map {
     case Right(result) => result
-    case Left(_) => Left(gemini4s.error.GeminiError.TimeoutError())
+    case Left(_) => Left(GeminiError.TimeoutError())
   }
 }
 ```
@@ -288,6 +288,7 @@ Track error rates for alerting:
 
 ```scala mdoc:compile-only
 import cats.effect.{IO, Ref}
+import gemini4s.error.GeminiError
 
 case class ErrorMetrics(
   totalRequests: Long,
@@ -296,8 +297,8 @@ case class ErrorMetrics(
 
 def trackErrors[A](
   metrics: Ref[IO, ErrorMetrics],
-  action: IO[Either[gemini4s.error.GeminiError, A]]
-): IO[Either[gemini4s.error.GeminiError, A]] = {
+  action: IO[Either[GeminiError, A]]
+): IO[Either[GeminiError, A]] = {
   metrics.update(m => m.copy(totalRequests = m.totalRequests + 1)) *>
   action.flatTap {
     case Left(error) =>

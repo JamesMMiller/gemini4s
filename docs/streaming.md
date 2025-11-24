@@ -16,7 +16,7 @@ Streaming is useful when:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def basicStream(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
@@ -38,7 +38,7 @@ import fs2.Stream
 import gemini4s.GeminiService
 import gemini4s.model.response.ResponsePart
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def streamText(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
@@ -65,7 +65,7 @@ import cats.effect.Ref
 import gemini4s.GeminiService
 import gemini4s.model.response.ResponsePart
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def accumulateStream(service: GeminiService[IO]): IO[String] = {
   for {
@@ -96,7 +96,7 @@ import cats.effect.IO
 import fs2.Stream
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def streamWithErrorHandling(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
@@ -121,7 +121,7 @@ import scala.concurrent.duration._
 import gemini4s.GeminiService
 import gemini4s.model.response.ResponsePart
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def streamWithDelay(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
@@ -146,7 +146,7 @@ Build an interactive chatbot with streaming:
 ```scala mdoc:compile-only
 import cats.effect.{IO, Ref}
 import gemini4s.GeminiService
-import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
+import gemini4s.model.domain.{Content, ContentPart, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.response.ResponsePart
 
@@ -195,12 +195,12 @@ Apply generation config to streams:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{GenerationConfig, GeminiConstants}
+import gemini4s.model.domain.{GenerationConfig, Temperature, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 
 def streamWithConfig(service: GeminiService[IO]): IO[Unit] = {
   val config = GenerationConfig(
-    temperature = Some(0.8f),
+    temperature = Some(Temperature.unsafe(0.8f)),
     maxOutputTokens = Some(512)
   )
   
@@ -226,7 +226,7 @@ import cats.effect.{IO, Ref}
 import gemini4s.GeminiService
 import gemini4s.model.response.ResponsePart
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.ModelName
 
 def monitorProgress(service: GeminiService[IO]): IO[Unit] = {
   for {

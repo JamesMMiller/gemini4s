@@ -42,7 +42,7 @@ val blockNone = HarmBlockThreshold.BLOCK_NONE
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold, GeminiConstants}
+import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.config.ApiKey
 
