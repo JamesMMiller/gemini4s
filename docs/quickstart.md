@@ -33,7 +33,7 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.GeminiConstants
 
@@ -41,15 +41,15 @@ object BasicExample extends IOApp.Simple {
   val run: IO[Unit] = {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       // 1. Configure
-      val config = GeminiConfig("YOUR_API_KEY")
+      val apiKey = ApiKey.unsafe("YOUR_API_KEY")
       
       // 2. Create Service
-      val httpClient = GeminiHttpClient.make[IO](backend, config)
+      val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
       val service = GeminiServiceImpl.make[IO](httpClient)
       
       // 3. Use
       val request = GenerateContentRequest(
-        model = GeminiConstants.DefaultModel,
+        model = ModelName.Gemini25Flash,
         contents = List(GeminiService.text("Hello, Gemini!"))
       )
 
@@ -72,7 +72,7 @@ Don't hardcode your API key! Use environment variables:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 val config: IO[GeminiConfig] = IO {
   val apiKey = sys.env.getOrElse(
@@ -107,27 +107,27 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.GeminiConstants
 
 def makeService(config: GeminiConfig): Resource[IO, GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, config)
+    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     GeminiServiceImpl.make[IO](httpClient)
   }
 }
 
 // Use it
-val config = GeminiConfig("YOUR_API_KEY")
+val apiKey = ApiKey.unsafe("YOUR_API_KEY")
 
 makeService(config).use { service =>
   for {
     response1 <- service.generateContent(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("First question")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First question")))
     )
     response2 <- service.generateContent(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Second question")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Second question")))
     )
   } yield ()
 }

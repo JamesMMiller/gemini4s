@@ -20,7 +20,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def basicStream(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Count from 1 to 10")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count from 1 to 10")))
   )
     .evalMap(response => IO.println(response.candidates.head.content.parts.head))
     .compile
@@ -42,7 +42,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def streamText(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Write a short story")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Write a short story")))
   )
     .map(_.candidates.headOption)
     .unNone
@@ -71,7 +71,7 @@ def accumulateStream(service: GeminiService[IO]): IO[String] = {
   for {
     accumulated <- Ref.of[IO, String]("")
     _ <- service.generateContentStream(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Explain quantum computing")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing")))
     )
       .map(_.candidates.headOption)
       .unNone
@@ -100,7 +100,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def streamWithErrorHandling(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   )
     .handleErrorWith { error =>
       Stream.eval(IO.println(s"Stream error: ${error.getMessage}")) >>
@@ -125,7 +125,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def streamWithDelay(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Count to 20")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 20")))
   )
     .map(_.candidates.headOption)
     .unNone
@@ -164,7 +164,7 @@ def chatbot(service: GeminiService[IO]): IO[Unit] = {
           
           _ <- IO.print("Assistant: ")
           response <- service.generateContentStream(
-              GenerateContentRequest(GeminiConstants.DefaultModel, currentHistory)
+              GenerateContentRequest(ModelName.Gemini25Flash, currentHistory)
             )
             .map(_.candidates.headOption)
             .unNone
@@ -206,7 +206,7 @@ def streamWithConfig(service: GeminiService[IO]): IO[Unit] = {
   
   service.generateContentStream(
     GenerateContentRequest(
-      model = GeminiConstants.DefaultModel,
+      model = ModelName.Gemini25Flash,
       contents = List(GeminiService.text("Write a poem")),
       generationConfig = Some(config)
     )
@@ -232,7 +232,7 @@ def monitorProgress(service: GeminiService[IO]): IO[Unit] = {
   for {
     chunkCount <- Ref.of[IO, Int](0)
     _ <- service.generateContentStream(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Explain machine learning")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain machine learning")))
     )
       .map(_.candidates.headOption)
       .unNone

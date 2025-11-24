@@ -50,9 +50,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def useTools(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -84,7 +84,7 @@ def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   // 4. Use in request
   service.generateContent(
     GenerateContentRequest(
-      GeminiConstants.DefaultModel,
+      ModelName.Gemini25Flash,
       List(GeminiService.text("What's the weather in Tokyo?")),
       tools = Some(List(weatherTool)),
       toolConfig = Some(toolConfig)
@@ -151,9 +151,9 @@ import gemini4s.GeminiService
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.response.{ResponsePart, GenerateContentResponse}
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -178,7 +178,7 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   // 2. Initial request
   service.generateContent(
     GenerateContentRequest(
-      GeminiConstants.DefaultModel,
+      ModelName.Gemini25Flash,
       List(GeminiService.text("What's the weather in London?")),
       tools = Some(List(tool)),
       toolConfig = Some(toolConfig)
@@ -207,7 +207,7 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
           // For simplicity, we'll just show the final response
           service.generateContent(
             GenerateContentRequest(
-              GeminiConstants.DefaultModel,
+              ModelName.Gemini25Flash,
               List(
                 GeminiService.text("What's the weather in London?"),
                 functionResponse

@@ -39,22 +39,22 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 object QuickStart extends IOApp.Simple {
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    val config = GeminiConfig("YOUR_API_KEY")
-    given GeminiConfig = config
+    val apiKey = ApiKey.unsafe("YOUR_API_KEY")
+    given ApiKey = apiKey
     
     import gemini4s.model.request.GenerateContentRequest
     import gemini4s.model.domain.GeminiConstants
     
-    val httpClient = GeminiHttpClient.make[IO](backend, config)
+    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     val service = GeminiServiceImpl.make[IO](httpClient)
     
     for {
       response <- service.generateContent(
-        GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Explain quantum computing in one sentence")))
+        GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing in one sentence")))
       )
       _ <- response match {
         case Right(result) => 

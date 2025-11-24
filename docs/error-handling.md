@@ -186,16 +186,16 @@ libraryDependencies += "org.typelevel" %% "log4cats-slf4j" % "2.6.0"
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 def withFallback(
   service: GeminiService[IO],
   prompt: String
-)(using GeminiConfig): IO[String] = {
+)(using apiKey: ApiKey): IO[String] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text(prompt)))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text(prompt)))
   ).flatMap {
     case Right(response) =>
       IO.pure(response.candidates.head.content.parts.head.toString)
@@ -216,23 +216,23 @@ Never ignore `Either[GeminiError, A]`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 // Bad - ignores errors
-def bad(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def bad(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).void  // Loses error information!
 }
 
 // Good - handles errors
-def good(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def good(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) => IO.println(response)
     case Left(error) => IO.println(s"Error: ${error.message}")
@@ -247,19 +247,19 @@ import cats.data.EitherT
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 def composed(
   service: GeminiService[IO]
-)(using GeminiConfig): EitherT[IO, GeminiError, String] = {
+)(using apiKey: ApiKey): EitherT[IO, GeminiError, String] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   for {
     response1 <- EitherT(service.generateContent(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("First")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First")))
     ))
     response2 <- EitherT(service.generateContent(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Second")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Second")))
     ))
   } yield s"${response1.candidates.head} ${response2.candidates.head}"
 }

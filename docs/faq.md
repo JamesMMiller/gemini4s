@@ -35,9 +35,9 @@ Use environment variables or a secure configuration management system. Never com
 Yes:
 
 ```scala mdoc:compile-only
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-val config = GeminiConfig(
+val apiKey = ApiKey.unsafe(
   apiKey = "your-key",
   baseUrl = "https://custom-endpoint.example.com"
 )
@@ -60,13 +60,13 @@ Use `generateContentStream`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def stream(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def stream(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).compile.drain
 }
 ```
@@ -78,13 +78,13 @@ Use `countTokens`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def count(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def count(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.CountTokensRequest
   import gemini4s.model.domain.GeminiConstants
   service.countTokens(
-    CountTokensRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Your prompt")))
+    CountTokensRequest(ModelName.Gemini25Flash, List(GeminiService.text("Your prompt")))
   ).flatMap {
     case Right(count) => IO.println(s"Tokens: $count")
     case Left(error) => IO.println(s"Error: ${error.message}")
@@ -149,13 +149,13 @@ import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.GeminiConstants
 
-def multipleModels(using config: GeminiConfig): IO[Unit] = {
+def multipleModels(using apiKey: ApiKey): IO[Unit] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, config)
+    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     val service = GeminiServiceImpl.make[IO](httpClient)
     
     // Use the same service for different models

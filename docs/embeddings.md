@@ -16,9 +16,9 @@ Embeddings are vector representations of text that capture semantic meaning. Use
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def basicEmbedding(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def basicEmbedding(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.EmbedContentRequest
   import gemini4s.model.domain.GeminiConstants
   service.embedContent(
@@ -42,9 +42,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.request.EmbedContentRequest
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def withTaskType(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def withTaskType(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // For search queries
   service.embedContent(
     EmbedContentRequest(
@@ -84,9 +84,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.{TaskType, GeminiConstants}
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def batchEmbeddings(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def batchEmbeddings(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   val documents = List(
     "Scala is a functional programming language",
     "Cats Effect provides IO monad",
@@ -136,7 +136,7 @@ import gemini4s.GeminiService
 import gemini4s.model.request.EmbedContentRequest
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.response.ContentEmbedding
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 case class Document(id: String, text: String, embedding: ContentEmbedding)
 
@@ -152,7 +152,7 @@ def semanticSearch(
   service: GeminiService[IO],
   documents: List[Document],
   query: String
-)(using GeminiConfig): IO[List[(Document, Double)]] = {
+)(using apiKey: ApiKey): IO[List[(Document, Double)]] = {
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text(query),
@@ -183,13 +183,13 @@ import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.response.ContentEmbedding
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 def clusterDocuments(
   service: GeminiService[IO],
   documents: List[String],
   k: Int  // number of clusters
-)(using GeminiConfig): IO[Map[Int, List[String]]] = {
+)(using apiKey: ApiKey): IO[Map[Int, List[String]]] = {
   val requests: List[EmbedContentRequest] = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
@@ -244,7 +244,7 @@ import gemini4s.GeminiService
 import gemini4s.model.response.ContentEmbedding
 import gemini4s.model.request.EmbedContentRequest
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 case class EmbeddingCache(
   cache: Ref[IO, Map[String, ContentEmbedding]]
@@ -252,7 +252,7 @@ case class EmbeddingCache(
   def getOrCompute(
     service: GeminiService[IO],
     text: String
-  )(using GeminiConfig): IO[ContentEmbedding] = {
+  )(using apiKey: ApiKey): IO[ContentEmbedding] = {
     cache.get.flatMap { cached =>
       cached.get(text) match {
         case Some(embedding) => IO.pure(embedding)
@@ -294,12 +294,12 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
 def efficientEmbedding(
   service: GeminiService[IO],
   texts: List[String]
-)(using GeminiConfig): IO[Unit] = {
+)(using apiKey: ApiKey): IO[Unit] = {
   // Good - batch request
   val requests = texts.map { text =>
     EmbedContentRequest(

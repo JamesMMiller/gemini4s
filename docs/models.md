@@ -29,9 +29,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def useProModel(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def useProModel(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // Use Gemini 2.5 Pro explicitly
   service.generateContent(
     GenerateContentRequest(GeminiConstants.Gemini25Pro, List(GeminiService.text("Complex reasoning task")))

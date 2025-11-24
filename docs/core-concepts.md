@@ -44,7 +44,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def example(service: GeminiService[IO]): IO[String] = {
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) => 
       IO.pure(response.candidates.head.content.parts.head.toString)
@@ -69,7 +69,7 @@ def exampleWithEitherT(
 ): EitherT[IO, GeminiError, String] = {
   for {
     response <- EitherT(service.generateContent(
-      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
     ))
     text = response.candidates.head.content.parts.head.toString
   } yield text
@@ -121,9 +121,9 @@ See [Error Handling](error-handling.md) for detailed error handling strategies.
 The `GeminiConfig` case class holds API configuration:
 
 ```scala mdoc:compile-only
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-val config = GeminiConfig(
+val apiKey = ApiKey.unsafe(
   apiKey = "your-api-key",
   baseUrl = "https://generativelanguage.googleapis.com/v1beta" // default
 )
@@ -134,14 +134,14 @@ Configuration is passed when creating the `GeminiHttpClient`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceImpl
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 def makeService(config: GeminiConfig): IO[GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, config)
+    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
     IO.pure(GeminiServiceImpl.make[IO](httpClient))
   }
 }
@@ -204,7 +204,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def streamExample(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Count to 10")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 10")))
   )
     .map(_.candidates.head.content.parts.head)
     .evalMap(part => IO.println(part))

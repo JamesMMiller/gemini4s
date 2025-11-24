@@ -15,7 +15,7 @@ import gemini4s.model.domain.GeminiConstants
 // Assuming 'service' is available (see Quick Start)
 def basic(service: GeminiService[IO]): IO[Unit] = {
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Explain photosynthesis")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain photosynthesis")))
   ).flatMap {
     case Right(response) =>
       val text = response.candidates.head.content.parts.head
@@ -47,7 +47,7 @@ def withConfig(service: GeminiService[IO]): IO[Unit] = {
   
   service.generateContent(
     GenerateContentRequest(
-      model = GeminiConstants.DefaultModel,
+      model = ModelName.Gemini25Flash,
       contents = List(GeminiService.text("Write a haiku")),
       generationConfig = Some(config)
     )
@@ -109,7 +109,7 @@ def withSystemInstruction(service: GeminiService[IO]): IO[Unit] = {
   
   service.generateContent(
     GenerateContentRequest(
-      model = GeminiConstants.DefaultModel,
+      model = ModelName.Gemini25Flash,
       contents = List(GeminiService.text("How do I learn Scala?")),
       systemInstruction = Some(systemInstruction)
     )
@@ -138,7 +138,7 @@ def conversation(service: GeminiService[IO]): IO[Unit] = {
   )
   
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, history)
+    GenerateContentRequest(ModelName.Gemini25Flash, history)
   ).void
 }
 ```
@@ -160,7 +160,7 @@ def jsonMode(service: GeminiService[IO]): IO[Unit] = {
   
   service.generateContent(
     GenerateContentRequest(
-      model = GeminiConstants.DefaultModel,
+      model = ModelName.Gemini25Flash,
       contents = List(GeminiService.text(
         "List 5 programming languages with their year of creation in JSON format"
       )),
@@ -193,7 +193,7 @@ def multipleCandidates(service: GeminiService[IO]): IO[Unit] = {
   
   service.generateContent(
     GenerateContentRequest(
-      model = GeminiConstants.DefaultModel,
+      model = ModelName.Gemini25Flash,
       contents = List(GeminiService.text("Suggest a name for a cat")),
       generationConfig = Some(config)
     )
@@ -223,7 +223,7 @@ def countTokens(service: GeminiService[IO]): IO[Unit] = {
   val content = GeminiService.text("This is a long prompt...")
   
   service.countTokens(
-    CountTokensRequest(GeminiConstants.DefaultModel, List(content))
+    CountTokensRequest(ModelName.Gemini25Flash, List(content))
   ).flatMap {
     case Right(count) =>
       IO.println(s"Token count: $count")
@@ -245,7 +245,7 @@ import gemini4s.model.domain.GeminiConstants
 
 def checkMetadata(service: GeminiService[IO]): IO[Unit] = {
   service.generateContent(
-    GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) =>
       response.usageMetadata match {

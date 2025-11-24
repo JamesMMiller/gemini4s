@@ -16,9 +16,9 @@ Context caching stores content (like system instructions, documents, or conversa
 ```scala
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def createCache(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def createCache(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   val systemInstruction = GeminiService.text(
     "You are a helpful coding assistant specialized in Scala. " +
     "Always provide type-safe, functional solutions."
