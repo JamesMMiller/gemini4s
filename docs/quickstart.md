@@ -34,21 +34,26 @@ import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.GeminiConstants
 
 object BasicExample extends IOApp.Simple {
   val run: IO[Unit] = {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       // 1. Configure
-      given GeminiConfig = GeminiConfig("YOUR_API_KEY")
+      val config = GeminiConfig("YOUR_API_KEY")
       
       // 2. Create Service
-      val httpClient = GeminiHttpClient.make[IO](backend)
+      val httpClient = GeminiHttpClient.make[IO](backend, config)
       val service = GeminiServiceImpl.make[IO](httpClient)
       
       // 3. Use
-      service.generateContent(
+      val request = GenerateContentRequest(
+        model = GeminiConstants.DefaultModel,
         contents = List(GeminiService.text("Hello, Gemini!"))
-      ).flatMap {
+      )
+
+      service.generateContent(request).flatMap {
         case Right(result) => 
           IO.println(result.candidates.head.content.parts.head)
         case Left(error) => 
@@ -103,24 +108,26 @@ import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.GeminiConstants
 
 def makeService(config: GeminiConfig): Resource[IO, GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend)
+    val httpClient = GeminiHttpClient.make[IO](backend, config)
     GeminiServiceImpl.make[IO](httpClient)
   }
 }
 
 // Use it
-given GeminiConfig = GeminiConfig("YOUR_API_KEY")
+val config = GeminiConfig("YOUR_API_KEY")
 
-makeService(summon[GeminiConfig]).use { service =>
+makeService(config).use { service =>
   for {
     response1 <- service.generateContent(
-      contents = List(GeminiService.text("First question"))
+      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("First question")))
     )
     response2 <- service.generateContent(
-      contents = List(GeminiService.text("Second question"))
+      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Second question")))
     )
   } yield ()
 }

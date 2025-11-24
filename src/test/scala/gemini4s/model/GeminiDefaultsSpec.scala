@@ -2,12 +2,13 @@ package gemini4s.model
 
 import munit.FunSuite
 
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
+import gemini4s.model.request._
 
 class GeminiDefaultsSpec extends FunSuite {
 
-  test("GenerateContent defaults") {
-    val req = GenerateContent(List(Content(List(Part("text")))))
+  test("GenerateContentRequest defaults") {
+    val req = GenerateContentRequest("model", List(Content(List(ContentPart("text")))))
     assertEquals(req.safetySettings, None)
     assertEquals(req.generationConfig, None)
     assertEquals(req.systemInstruction, None)
@@ -16,7 +17,7 @@ class GeminiDefaultsSpec extends FunSuite {
   }
 
   test("EmbedContentRequest defaults") {
-    val req = EmbedContentRequest(Content(List(Part("text"))), "model")
+    val req = EmbedContentRequest(Content(List(ContentPart("text"))), "model")
     assertEquals(req.taskType, None)
     assertEquals(req.title, None)
     assertEquals(req.outputDimensionality, None)
@@ -34,7 +35,7 @@ class GeminiDefaultsSpec extends FunSuite {
   }
 
   test("Content defaults") {
-    val content = Content(List(Part("text")))
+    val content = Content(List(ContentPart("text")))
     assertEquals(content.role, None)
   }
 
@@ -80,4 +81,3 @@ class GeminiDefaultsSpec extends FunSuite {
     assertEquals(schema.required, None)
   }
 }
-

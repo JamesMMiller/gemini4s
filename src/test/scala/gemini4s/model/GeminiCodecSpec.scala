@@ -4,33 +4,35 @@ import io.circe._
 import io.circe.syntax._
 import munit.FunSuite
 
-import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse._
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.model.response._
 
 class GeminiCodecSpec extends FunSuite {
 
   // Requests
 
-  test("GenerateContent codec") {
-    val req = GenerateContent(
-      contents = List(Content(List(Part("text")))),
+  test("GenerateContentRequest codec") {
+    val req = GenerateContentRequest(
+      model = "gemini-2.0-flash-lite-preview-02-05",
+      contents = List(Content(List(ContentPart("text")))),
       safetySettings = Some(List(SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE))),
       generationConfig = Some(GenerationConfig(temperature = Some(0.5f))),
-      systemInstruction = Some(Content(List(Part("system")))),
+      systemInstruction = Some(Content(List(ContentPart("system")))),
       tools = Some(List(Tool(Some(List(FunctionDeclaration("name", "desc", None)))))),
       toolConfig = Some(ToolConfig(Some(FunctionCallingConfig(Some(FunctionCallingMode.AUTO)))))
     )
-    assertEquals(req.asJson.as[GenerateContent], Right(req))
+    assertEquals(req.asJson.as[GenerateContentRequest], Right(req))
   }
 
   test("CountTokensRequest codec") {
-    val req = CountTokensRequest(List(Content(List(Part("text")))))
+    val req = CountTokensRequest("gemini-2.0-flash-lite-preview-02-05", List(Content(List(ContentPart("text")))))
     assertEquals(req.asJson.as[CountTokensRequest], Right(req))
   }
 
   test("EmbedContentRequest codec") {
     val req = EmbedContentRequest(
-      Content(List(Part("text"))),
+      Content(List(ContentPart("text"))),
       "model",
       Some(TaskType.RETRIEVAL_QUERY),
       Some("title"),
@@ -40,15 +42,15 @@ class GeminiCodecSpec extends FunSuite {
   }
 
   test("BatchEmbedContentsRequest codec") {
-    val req = BatchEmbedContentsRequest(List(EmbedContentRequest(Content(List(Part("text"))), "model")))
+    val req = BatchEmbedContentsRequest("model", List(EmbedContentRequest(Content(List(ContentPart("text"))), "model")))
     assertEquals(req.asJson.as[BatchEmbedContentsRequest], Right(req))
   }
 
   test("CreateCachedContentRequest codec") {
     val req = CreateCachedContentRequest(
       model = Some("model"),
-      systemInstruction = Some(Content(List(Part("sys")))),
-      contents = Some(List(Content(List(Part("text"))))),
+      systemInstruction = Some(Content(List(ContentPart("sys")))),
+      contents = Some(List(Content(List(ContentPart("text"))))),
       tools = Some(List(Tool(None))),
       toolConfig = None,
       ttl = Some("3600s"),
@@ -57,34 +59,19 @@ class GeminiCodecSpec extends FunSuite {
     assertEquals(req.asJson.as[CreateCachedContentRequest], Right(req))
   }
 
-  test("GeminiRequest encoder should handle all subtypes") {
-    val req1: GeminiRequest = GenerateContent(List(Content(List(Part("test")))))
-    assert(req1.asJson.asObject.exists(_.contains("contents")))
-
-    val req2: GeminiRequest = CountTokensRequest(List(Content(List(Part("test")))))
-    assert(req2.asJson.asObject.exists(_.contains("contents")))
-
-    val req3: GeminiRequest = EmbedContentRequest(Content(List(Part("test"))), "model")
-    assert(req3.asJson.asObject.exists(_.contains("content")))
-
-    val req4: GeminiRequest = BatchEmbedContentsRequest(List(EmbedContentRequest(Content(List(Part("test"))), "model")))
-    assert(req4.asJson.asObject.exists(_.contains("requests")))
-
-    val req5: GeminiRequest = CreateCachedContentRequest(model = Some("model"))
-    assert(req5.asJson.asObject.exists(_.contains("model")))
-  }
-
   // Responses
 
   test("GenerateContentResponse codec") {
     val res = GenerateContentResponse(
-      candidates = List(Candidate(
-        content = ResponseContent(List(ResponsePart.Text("text"))),
-        finishReason = Some("STOP"),
-        index = Some(0),
-        safetyRatings = Some(List(SafetyRating("category", "probability")))
-      )),
-      usageMetadata = Some(UsageMetadata(1, 2, 3)),
+      candidates = List(
+        Candidate(
+          content = ResponseContent(List(ResponsePart.Text("text"))),
+          finishReason = Some("STOP"),
+          index = Some(0),
+          safetyRatings = Some(List(SafetyRating("category", "probability")))
+        )
+      ),
+      usageMetadata = Some(UsageMetadata(Some(1), Some(2), 3)),
       modelVersion = Some("v1"),
       promptFeedback = Some(PromptFeedback(Some("reason"), Some(List(SafetyRating("cat", "prob")))))
     )
@@ -125,7 +112,7 @@ class GeminiCodecSpec extends FunSuite {
     )
     assertEquals(schema.asJson.as[Schema], Right(schema))
   }
-  
+
   test("FunctionCallData codec") {
     val data = FunctionCallData("name", Map("arg" -> Json.fromString("value")))
     assertEquals(data.asJson.as[FunctionCallData], Right(data))

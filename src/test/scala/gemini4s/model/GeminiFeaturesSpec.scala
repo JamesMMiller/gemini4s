@@ -4,20 +4,21 @@ import io.circe.parser._
 import io.circe.syntax._
 import munit.FunSuite
 
-import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse._
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.model.response._
 
 class GeminiFeaturesSpec extends FunSuite {
 
   test("EmbedContentRequest should encode correctly") {
     val request = EmbedContentRequest(
-      content = Content(parts = List(Part("Hello"))),
+      content = Content(parts = List(ContentPart("Hello"))),
       model = "models/embedding-001",
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
       title = Some("Test Doc"),
       outputDimensionality = Some(768)
     )
-    val json = request.asJson.noSpaces
+    val json    = request.asJson.noSpaces
     assert(json.contains("RETRIEVAL_DOCUMENT"))
     assert(json.contains("Test Doc"))
     assert(json.contains("768"))
@@ -25,32 +26,33 @@ class GeminiFeaturesSpec extends FunSuite {
 
   test("BatchEmbedContentsRequest should encode correctly") {
     val request = BatchEmbedContentsRequest(
+      model = "models/embedding-001",
       requests = List(
-        EmbedContentRequest(content = Content(parts = List(Part("Hello"))), model = "models/embedding-001"),
-        EmbedContentRequest(content = Content(parts = List(Part("World"))), model = "models/embedding-001")
+        EmbedContentRequest(content = Content(parts = List(ContentPart("Hello"))), model = "models/embedding-001"),
+        EmbedContentRequest(content = Content(parts = List(ContentPart("World"))), model = "models/embedding-001")
       )
     )
-    val json = request.asJson
-    val cursor = json.hcursor
-    
+    val json    = request.asJson
+    val cursor  = json.hcursor
+
     assert(cursor.downField("requests").succeeded)
     assert(cursor.downField("requests").values.exists(_.size == 2))
-    
+
     val firstReq = cursor.downField("requests").downArray
     assert(firstReq.downField("model").as[String] == Right("models/embedding-001"))
     assert(firstReq.downField("content").downField("parts").downArray.downField("text").as[String] == Right("Hello"))
   }
 
   test("EmbedContentResponse should decode correctly") {
-    val json = """{"embedding": {"values": [0.1, 0.2, 0.3]}}"""
+    val json   = """{"embedding": {"values": [0.1, 0.2, 0.3]}}"""
     val result = decode[EmbedContentResponse](json)
     assert(result.isRight)
     assertEquals(result.toOption.get.embedding.values, List(0.1f, 0.2f, 0.3f))
   }
 
   test("BatchEmbedContentsResponse should decode correctly") {
-    val json = """{"embeddings": [{"values": [0.1, 0.2]}, {"values": [0.3, 0.4]}]}"""
-    val result = decode[BatchEmbedContentsResponse](json)
+    val json       = """{"embeddings": [{"values": [0.1, 0.2]}, {"values": [0.3, 0.4]}]}"""
+    val result     = decode[BatchEmbedContentsResponse](json)
     assert(result.isRight)
     val embeddings = result.toOption.get.embeddings
     assertEquals(embeddings.length, 2)
@@ -61,18 +63,17 @@ class GeminiFeaturesSpec extends FunSuite {
   test("CreateCachedContentRequest should encode correctly") {
     val request = CreateCachedContentRequest(
       model = Some("models/gemini-pro"),
-      contents = Some(List(Content(parts = List(Part("Cached context"))))),
+      contents = Some(List(Content(parts = List(ContentPart("Cached context"))))),
       ttl = Some("3600s")
     )
-    val json = request.asJson.noSpaces
+    val json    = request.asJson.noSpaces
     assert(json.contains("gemini-pro"))
     assert(json.contains("Cached context"))
     assert(json.contains("3600s"))
   }
 
   test("CachedContent response should decode correctly") {
-    val json =
-      """
+    val json = """
         |{
         |  "name": "cachedContents/123",
         |  "model": "models/gemini-pro",
@@ -83,7 +84,7 @@ class GeminiFeaturesSpec extends FunSuite {
         |}
         |""".stripMargin
 
-    val result = decode[CachedContent](json)
+    val result  = decode[CachedContent](json)
     assert(result.isRight)
     val content = result.toOption.get
     assertEquals(content.name, "cachedContents/123")

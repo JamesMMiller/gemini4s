@@ -11,16 +11,18 @@ import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.GeminiConstants
 
 object SimpleChatbot extends IOApp.Simple {
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    given GeminiConfig = GeminiConfig(sys.env("GEMINI_API_KEY"))
+    val config = GeminiConfig(sys.env("GEMINI_API_KEY"))
     
-    val httpClient = GeminiHttpClient.make[IO](backend)
+    val httpClient = GeminiHttpClient.make[IO](backend, config)
     val service = GeminiServiceImpl.make[IO](httpClient)
     
     service.generateContent(
-      contents = List(GeminiService.text("Hello! How are you?"))
+      GenerateContentRequest(GeminiConstants.DefaultModel, List(GeminiService.text("Hello! How are you?")))
     ).flatMap {
       case Right(response) =>
         IO.println(response.candidates.head.content.parts.head)
@@ -40,14 +42,15 @@ import gemini4s.GeminiService
 import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.GeminiConfig
-import gemini4s.model.GeminiRequest.{Content, Part}
-import gemini4s.model.GeminiResponse.ResponsePart
+import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.response.ResponsePart
 
 object StreamingChat extends IOApp.Simple {
   val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    given GeminiConfig = GeminiConfig(sys.env("GEMINI_API_KEY"))
+    val config = GeminiConfig(sys.env("GEMINI_API_KEY"))
     
-    val httpClient = GeminiHttpClient.make[IO](backend)
+    val httpClient = GeminiHttpClient.make[IO](backend, config)
     val service = GeminiServiceImpl.make[IO](httpClient)
     
     def chat(history: Ref[IO, List[Content]]): IO[Unit] = {
@@ -55,14 +58,16 @@ object StreamingChat extends IOApp.Simple {
         _ <- IO.print("You: ")
         input <- IO.readLine
         _ <- if (input.toLowerCase == "quit") IO.unit else {
-          val userMessage = Content(parts = List(Part(input)), role = Some("user"))
+          val userMessage = Content(parts = List(ContentPart(input)), role = Some("user"))
           
           for {
             _ <- history.update(_ :+ userMessage)
             currentHistory <- history.get
             
             _ <- IO.print("Assistant: ")
-            response <- service.generateContentStream(contents = currentHistory)
+            response <- service.generateContentStream(
+                GenerateContentRequest(GeminiConstants.DefaultModel, currentHistory)
+              )
               .map(_.candidates.headOption)
               .unNone
               .map(_.content.parts.headOption)
@@ -73,7 +78,7 @@ object StreamingChat extends IOApp.Simple {
               .foldMonoid
             
             _ <- IO.println("")
-            _ <- history.update(_ :+ Content(parts = List(Part(text = response)), role = Some("model")))
+            _ <- history.update(_ :+ Content(parts = List(ContentPart(text = response)), role = Some("model")))
             
             _ <- chat(history)
           } yield ()
