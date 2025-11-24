@@ -13,7 +13,7 @@ class GeminiFeaturesSpec extends FunSuite {
   test("EmbedContentRequest should encode correctly") {
     val request = EmbedContentRequest(
       content = Content(parts = List(ContentPart("Hello"))),
-      model = "models/embedding-001",
+      model = ModelName.unsafe("models/embedding-001"),
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
       title = Some("Test Doc"),
       outputDimensionality = Some(768)
@@ -26,10 +26,16 @@ class GeminiFeaturesSpec extends FunSuite {
 
   test("BatchEmbedContentsRequest should encode correctly") {
     val request = BatchEmbedContentsRequest(
-      model = "models/embedding-001",
+      model = ModelName.unsafe("models/embedding-001"),
       requests = List(
-        EmbedContentRequest(content = Content(parts = List(ContentPart("Hello"))), model = "models/embedding-001"),
-        EmbedContentRequest(content = Content(parts = List(ContentPart("World"))), model = "models/embedding-001")
+        EmbedContentRequest(
+          content = Content(parts = List(ContentPart("Hello"))),
+          model = ModelName.unsafe("models/embedding-001")
+        ),
+        EmbedContentRequest(
+          content = Content(parts = List(ContentPart("World"))),
+          model = ModelName.unsafe("models/embedding-001")
+        )
       )
     )
     val json    = request.asJson
@@ -39,8 +45,8 @@ class GeminiFeaturesSpec extends FunSuite {
     assert(cursor.downField("requests").values.exists(_.size == 2))
 
     val firstReq = cursor.downField("requests").downArray
-    assert(firstReq.downField("model").as[String] == Right("models/embedding-001"))
-    assert(firstReq.downField("content").downField("parts").downArray.downField("text").as[String] == Right("Hello"))
+    assert(firstReq.downField("model").as[String].contains("models/embedding-001"))
+    assert(firstReq.downField("content").downField("parts").downArray.downField("text").as[String].contains("Hello"))
   }
 
   test("EmbedContentResponse should decode correctly") {

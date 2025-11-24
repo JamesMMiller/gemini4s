@@ -8,13 +8,13 @@ class GenerationConfigSpec extends FunSuite {
 
   test("GenerationConfig should encode with all fields") {
     val config = GenerationConfig(
-      temperature = Some(0.7f),
-      topK = Some(40),
-      topP = Some(0.95f),
+      temperature = Some(Temperature.unsafe(0.7f)),
+      topK = Some(TopK.unsafe(40)),
+      topP = Some(TopP.unsafe(0.95f)),
       candidateCount = Some(1),
       maxOutputTokens = Some(2048),
       stopSequences = Some(List("STOP")),
-      responseMimeType = Some("text/plain")
+      responseMimeType = Some(MimeType.TextPlain)
     )
 
     val json = config.asJson
@@ -22,7 +22,7 @@ class GenerationConfigSpec extends FunSuite {
   }
 
   test("GenerationConfig should encode with minimal fields") {
-    val config = GenerationConfig(temperature = Some(0.5f))
+    val config = GenerationConfig(temperature = Some(Temperature.unsafe(0.5f)))
     val json   = config.asJson
     assert(json.asObject.isDefined)
   }
@@ -31,7 +31,7 @@ class GenerationConfigSpec extends FunSuite {
     val jsonString = """{"temperature":0.7,"topK":40,"topP":0.95}"""
     val result     = decode[GenerationConfig](jsonString)
     assert(result.isRight)
-    assertEquals(result.map(_.temperature), Right(Some(0.7f)))
+    assertEquals(result.map(_.temperature.map(_.value)), Right(Some(0.7f)))
   }
 
   test("GenerationConfig should handle empty config") {
@@ -42,8 +42,8 @@ class GenerationConfigSpec extends FunSuite {
   }
 
   test("GenerationConfig should handle responseMimeType") {
-    val config = GenerationConfig(responseMimeType = Some("application/json"))
-    assertEquals(config.responseMimeType, Some("application/json"))
+    val config = GenerationConfig(responseMimeType = Some(MimeType.ApplicationJson))
+    assertEquals(config.responseMimeType.map(_.value), Some("application/json"))
   }
 
   test("GenerationConfig should handle stopSequences") {

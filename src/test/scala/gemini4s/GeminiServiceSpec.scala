@@ -88,7 +88,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("DefaultModel should be gemini-2.5-flash") {
-    assertEquals(GeminiConstants.DefaultModel, "gemini-2.5-flash")
+    assertEquals(GeminiConstants.DefaultModel.value, "gemini-2.5-flash")
   }
 
   test("MaxTokensPerRequest should be 30720") {
@@ -117,14 +117,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("Endpoints should handle custom model names") {
-    val customModel = "custom-model"
-    assertEquals(GeminiConstants.Endpoints.generateContent(customModel), s"models/$customModel:generateContent")
+    val customModel = ModelName.unsafe("custom-model")
+    assertEquals(GeminiConstants.Endpoints.generateContent(customModel), s"models/${customModel.value}:generateContent")
     assertEquals(
       GeminiConstants.Endpoints.generateContentStream(customModel),
-      s"models/$customModel:streamGenerateContent"
+      s"models/${customModel.value}:streamGenerateContent"
     )
-    assertEquals(GeminiConstants.Endpoints.countTokens(customModel), s"models/$customModel:countTokens")
-    assertEquals(GeminiConstants.Endpoints.embedContent(customModel), s"models/$customModel:embedContent")
-    assertEquals(GeminiConstants.Endpoints.batchEmbedContents(customModel), s"models/$customModel:batchEmbedContents")
+    assertEquals(GeminiConstants.Endpoints.countTokens(customModel), s"models/${customModel.value}:countTokens")
+    assertEquals(GeminiConstants.Endpoints.embedContent(customModel), s"models/${customModel.value}:embedContent")
+    assertEquals(
+      GeminiConstants.Endpoints.batchEmbedContents(customModel),
+      s"models/${customModel.value}:batchEmbedContents"
+    )
   }
 }

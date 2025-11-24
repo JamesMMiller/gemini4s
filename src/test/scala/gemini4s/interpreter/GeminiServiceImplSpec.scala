@@ -64,7 +64,7 @@ class GeminiServiceImplSpec extends CatsEffectSuite {
     val client           = new MockHttpClient(streamResponse = Stream.emit(expectedResponse))
     val service          = GeminiServiceImpl.make[IO](client)
     val contents         = List(Content(List(ContentPart("test"))))
-    val config           = GenerationConfig(temperature = Some(0.5f))
+    val config           = GenerationConfig(temperature = Some(Temperature.unsafe(0.5f)))
     val request          = GenerateContentRequest(GeminiConstants.DefaultModel, contents, generationConfig = Some(config))
 
     service.generateContentStream(request).compile.toList.map { results =>
