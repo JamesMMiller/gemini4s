@@ -10,7 +10,7 @@ The simplest way to generate content:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
 // Assuming 'service' is available (see Quick Start)
 def basic(service: GeminiService[IO]): IO[Unit] = {
@@ -33,14 +33,14 @@ Control how content is generated with `GenerationConfig`:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{GenerationConfig, GeminiConstants}
+import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
 def withConfig(service: GeminiService[IO]): IO[Unit] = {
   val config = GenerationConfig(
-    temperature = Some(0.7f),      // Creativity (0.0 - 2.0)
-    topK = Some(40),                // Top-k sampling
-    topP = Some(0.95f),             // Nucleus sampling
+    temperature = Some(Temperature.unsafe(0.7f)),      // Creativity (0.0 - 2.0)
+    topK = Some(TopK.unsafe(40)),                // Top-k sampling
+    topP = Some(TopP.unsafe(0.95f)),             // Nucleus sampling
     maxOutputTokens = Some(1024),   // Max response length
     stopSequences = Some(List("\n\n")) // Stop generation at these sequences
   )
@@ -66,10 +66,10 @@ Controls randomness in the output:
 import gemini4s.model.domain.GenerationConfig
 
 // For factual, consistent responses
-val factual = GenerationConfig(temperature = Some(0.2f))
+val factual = GenerationConfig(temperature = Some(Temperature.unsafe(0.2f)))
 
 // For creative writing
-val creative = GenerationConfig(temperature = Some(1.5f))
+val creative = GenerationConfig(temperature = Some(Temperature.unsafe(1.5f)))
 ```
 
 ### Top-K and Top-P
@@ -83,10 +83,10 @@ Control token selection:
 import gemini4s.model.domain.GenerationConfig
 
 // More focused (fewer options)
-val focused = GenerationConfig(topK = Some(10), topP = Some(0.8f))
+val focused = GenerationConfig(topK = Some(TopK.unsafe(10)), topP = Some(TopP.unsafe(0.8f)))
 
 // More diverse (more options)
-val diverse = GenerationConfig(topK = Some(100), topP = Some(0.95f))
+val diverse = GenerationConfig(topK = Some(TopK.unsafe(100)), topP = Some(TopP.unsafe(0.95f)))
 ```
 
 ## System Instructions
@@ -150,12 +150,12 @@ Force the model to output valid JSON:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{GenerationConfig, GeminiConstants}
+import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
 def jsonMode(service: GeminiService[IO]): IO[Unit] = {
   val jsonConfig = GenerationConfig(
-    responseMimeType = Some("application/json")
+    responseMimeType = Some(MimeType.ApplicationJson)
   )
   
   service.generateContent(
@@ -183,7 +183,7 @@ Request multiple response candidates:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.{GenerationConfig, GeminiConstants}
+import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
 def multipleCandidates(service: GeminiService[IO]): IO[Unit] = {
@@ -217,7 +217,7 @@ Count tokens before making a request:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.CountTokensRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
 def countTokens(service: GeminiService[IO]): IO[Unit] = {
   val content = GeminiService.text("This is a long prompt...")
@@ -241,7 +241,7 @@ Access usage metadata from responses:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
 def checkMetadata(service: GeminiService[IO]): IO[Unit] = {
   service.generateContent(
@@ -312,19 +312,19 @@ import gemini4s.model.domain.GenerationConfig
 
 object Configs {
   val factual = GenerationConfig(
-    temperature = Some(0.2f),
-    topP = Some(0.8f),
+    temperature = Some(Temperature.unsafe(0.2f)),
+    topP = Some(TopP.unsafe(0.8f)),
     maxOutputTokens = Some(1024)
   )
   
   val creative = GenerationConfig(
-    temperature = Some(1.2f),
-    topP = Some(0.95f),
+    temperature = Some(Temperature.unsafe(1.2f)),
+    topP = Some(TopP.unsafe(0.95f)),
     maxOutputTokens = Some(2048)
   )
   
   val concise = GenerationConfig(
-    temperature = Some(0.7f),
+    temperature = Some(Temperature.unsafe(0.7f)),
     maxOutputTokens = Some(256)
   )
 }
