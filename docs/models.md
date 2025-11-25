@@ -29,13 +29,17 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def useProModel(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  // Use Gemini 2.5 Pro explicitly
-  service.generateContent(
-    GenerateContentRequest(GeminiConstants.Gemini25Pro, List(GeminiService.text("Complex reasoning task")))
-  ).void
+def useProModel(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
+  
+  GeminiService.make[IO](config).use { service =>
+    // Use Gemini 2.5 Pro explicitly
+    service.generateContent(
+      GenerateContentRequest(GeminiConstants.Gemini25Pro, List(GeminiService.text("Complex reasoning task")))
+    ).void
+  }
 }
 ```
 

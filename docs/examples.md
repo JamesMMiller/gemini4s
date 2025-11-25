@@ -6,28 +6,24 @@ Complete working examples for common use cases.
 
 ```scala
 import cats.effect.{IO, IOApp}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
 import gemini4s.GeminiService
-import gemini4s.http.GeminiHttpClient
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.GeminiConstants
+import gemini4s.model.domain.{GeminiConstants, ModelName}
 
 object SimpleChatbot extends IOApp.Simple {
-  val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    val apiKey = ApiKey.unsafe(sys.env("GEMINI_API_KEY"))
+  val run: IO[Unit] = {
+    val config = GeminiConfig(sys.env.getOrElse("GEMINI_API_KEY", "your-api-key"))
     
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = GeminiService.make[IO](httpClient)
-    
-    service.generateContent(
-      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello! How are you?")))
-    ).flatMap {
-      case Right(response) =>
-        IO.println(response.candidates.head.content.parts.head)
-      case Left(error) =>
-        IO.println(s"Error: ${error.message}")
+    GeminiService.make[IO](config).use { service =>
+      service.generateContent(
+        GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello! How are you?")))
+      ).flatMap {
+        case Right(response) =>
+          IO.println(response.candidates.head.content.parts.head)
+        case Left(error) =>
+          IO.println(s"Error: ${error.message}")
+      }
     }
   }
 }
@@ -37,56 +33,52 @@ object SimpleChatbot extends IOApp.Simple {
 
 ```scala
 import cats.effect.{IO, IOApp, Ref}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
 import gemini4s.GeminiService
-import gemini4s.http.GeminiHttpClient
-import gemini4s.config.ApiKey
-import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
+import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.{Content, ContentPart, GeminiConstants, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.response.ResponsePart
 
 object StreamingChat extends IOApp.Simple {
-  val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    val apiKey = ApiKey.unsafe(sys.env("GEMINI_API_KEY"))
+  val run: IO[Unit] = {
+    val config = GeminiConfig(sys.env.getOrElse("GEMINI_API_KEY", "your-api-key"))
     
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = GeminiService.make[IO](httpClient)
-    
-    def chat(history: Ref[IO, List[Content]]): IO[Unit] = {
-      for {
-        _ <- IO.print("You: ")
-        input <- IO.readLine
-        _ <- if (input.toLowerCase == "quit") IO.unit else {
-          val userMessage = Content(parts = List(ContentPart(input)), role = Some("user"))
-          
-          for {
-            _ <- history.update(_ :+ userMessage)
-            currentHistory <- history.get
+    GeminiService.make[IO](config).use { service =>
+      def chat(history: Ref[IO, List[Content]]): IO[Unit] = {
+        for {
+          _ <- IO.print("You: ")
+          input <- IO.readLine
+          _ <- if (input.toLowerCase == "quit") IO.unit else {
+            val userMessage = Content(parts = List(ContentPart(input)), role = Some("user"))
             
-            _ <- IO.print("Assistant: ")
-            response <- service.generateContentStream(
-                GenerateContentRequest(ModelName.Gemini25Flash, currentHistory)
-              )
-              .map(_.candidates.headOption)
-              .unNone
-              .map(_.content.parts.headOption)
-              .unNone
-              .collect { case ResponsePart.Text(text) => text }
-              .evalTap(chunk => IO.print(chunk))
-              .compile
-              .foldMonoid
-            
-            _ <- IO.println("")
-            _ <- history.update(_ :+ Content(parts = List(ContentPart(text = response)), role = Some("model")))
-            
-            _ <- chat(history)
-          } yield ()
-        }
-      } yield ()
+            for {
+              _ <- history.update(_ :+ userMessage)
+              currentHistory <- history.get
+              
+              _ <- IO.print("Assistant: ")
+              response <- service.generateContentStream(
+                  GenerateContentRequest(ModelName.Gemini25Flash, currentHistory)
+                )
+                .map(_.candidates.headOption)
+                .unNone
+                .map(_.content.parts.headOption)
+                .unNone
+                .collect { case ResponsePart.Text(text) => text }
+                .evalTap(chunk => IO.print(chunk))
+                .compile
+                .foldMonoid
+              
+              _ <- IO.println("")
+              _ <- history.update(_ :+ Content(parts = List(ContentPart(text = response)), role = Some("model")))
+              
+              _ <- chat(history)
+            } yield ()
+          }
+        } yield ()
+      }
+      
+      Ref.of[IO, List[Content]](List.empty).flatMap(chat)
     }
-    
-    Ref.of[IO, List[Content]](List.empty).flatMap(chat)
   }
 }
 ```

@@ -50,46 +50,50 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def useTools(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  // 1. Define the function
-  val weatherFunction = FunctionDeclaration(
-    name = "get_weather",
-    description = "Get the current weather in a given location",
-    parameters = Some(Schema(
-      `type` = SchemaType.OBJECT,
-      properties = Some(Map(
-        "location" -> Schema(
-          `type` = SchemaType.STRING,
-          description = Some("The city and state, e.g. San Francisco, CA")
-        )
-      )),
-      required = Some(List("location"))
-    ))
-  )
+def useTools(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
   
-  // 2. Create the tool
-  val weatherTool = Tool(
-    functionDeclarations = Some(List(weatherFunction))
-  )
-  
-  // 3. Configure usage
-  val toolConfig = ToolConfig(
-    functionCallingConfig = Some(FunctionCallingConfig(
-      mode = Some(FunctionCallingMode.AUTO)
-    ))
-  )
-  
-  // 4. Use in request
-  service.generateContent(
-    GenerateContentRequest(
-      ModelName.Gemini25Flash,
-      List(GeminiService.text("What's the weather in Tokyo?")),
-      tools = Some(List(weatherTool)),
-      toolConfig = Some(toolConfig)
+  GeminiService.make[IO](config).use { service =>
+    // 1. Define the function
+    val weatherFunction = FunctionDeclaration(
+      name = "get_weather",
+      description = "Get the current weather in a given location",
+      parameters = Some(Schema(
+        `type` = SchemaType.OBJECT,
+        properties = Some(Map(
+          "location" -> Schema(
+            `type` = SchemaType.STRING,
+            description = Some("The city and state, e.g. San Francisco, CA")
+          )
+        )),
+        required = Some(List("location"))
+      ))
     )
-  ).void
+    
+    // 2. Create the tool
+    val weatherTool = Tool(
+      functionDeclarations = Some(List(weatherFunction))
+    )
+    
+    // 3. Configure usage
+    val toolConfig = ToolConfig(
+      functionCallingConfig = Some(FunctionCallingConfig(
+        mode = Some(FunctionCallingMode.AUTO)
+      ))
+    )
+    
+    // 4. Use in request
+    service.generateContent(
+      GenerateContentRequest(
+        ModelName.Gemini25Flash,
+        List(GeminiService.text("What's the weather in Tokyo?")),
+        tools = Some(List(weatherTool)),
+        toolConfig = Some(toolConfig)
+      )
+    ).void
+  }
 }
 ```
 
@@ -151,90 +155,90 @@ import gemini4s.GeminiService
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.response.{ResponsePart, GenerateContentResponse}
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  // 1. Define the function
-  val weatherFunction = FunctionDeclaration(
-    name = "get_weather",
-    description = "Get current weather for a location",
-    parameters = Some(Schema(
-      `type` = SchemaType.OBJECT,
-      properties = Some(Map(
-        "location" -> Schema(`type` = SchemaType.STRING)
-      )),
-      required = Some(List("location"))
-    ))
-  )
+def weatherAgent(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
   
-  val tool = Tool(functionDeclarations = Some(List(weatherFunction)))
-  val toolConfig = ToolConfig(
-    functionCallingConfig = Some(FunctionCallingConfig(
-      mode = Some(FunctionCallingMode.AUTO)
-    ))
-  )
-  
-  // 2. Initial request
-  // 2. Initial request
-  service.generateContent(
-    GenerateContentRequest(
-      ModelName.Gemini25Flash,
-      List(GeminiService.text("What's the weather in London?")),
-      tools = Some(List(tool)),
-      toolConfig = Some(toolConfig)
+  GeminiService.make[IO](config).use { service =>
+    // 1. Define the function
+    val weatherFunction = FunctionDeclaration(
+      name = "get_weather",
+      description = "Get current weather for a location",
+      parameters = Some(Schema(
+        `type` = SchemaType.OBJECT,
+        properties = Some(Map(
+          "location" -> Schema(`type` = SchemaType.STRING)
+        )),
+        required = Some(List("location"))
+      ))
     )
-  ).flatMap {
-    case Right(response) =>
-      // 3. Check for function calls
-      response.candidates.headOption.flatMap(_.content.parts.headOption) match {
-        case Some(ResponsePart.FunctionCall(data)) =>
-          // 4. Execute the function
-          val location = data.args.get("location")
-            .flatMap(_.asString)
-            .getOrElse("Unknown")
-          
-          // Simulate API call
-          val weatherData = s"Sunny, 22°C in $location"
-          
-          // 5. Send function result back to model
-          val functionResponse = Content(
-            parts = List(ContentPart(weatherData)),
-            role = Some("function")
-          )
-          
-          // Note: In a real implementation, you'd need to convert ResponseContent to Content
-          // For simplicity, we'll just show the final response
-          // For simplicity, we'll just show the final response
-          service.generateContent(
-            GenerateContentRequest(
-              ModelName.Gemini25Flash,
-              List(
-                GeminiService.text("What's the weather in London?"),
-                functionResponse
-              ),
-              tools = Some(List(tool)),
-              toolConfig = Some(toolConfig)
+    
+    val tool = Tool(functionDeclarations = Some(List(weatherFunction)))
+    val toolConfig = ToolConfig(
+      functionCallingConfig = Some(FunctionCallingConfig(
+        mode = Some(FunctionCallingMode.AUTO)
+      ))
+    )
+    
+    // 2. Initial request
+    service.generateContent(
+      GenerateContentRequest(
+        ModelName.Gemini25Flash,
+        List(GeminiService.text("What's the weather in London?")),
+        tools = Some(List(tool)),
+        toolConfig = Some(toolConfig)
+      )
+    ).flatMap {
+      case Right(response) =>
+        // 3. Check for function calls
+        response.candidates.headOption.flatMap(_.content.parts.headOption) match {
+          case Some(ResponsePart.FunctionCall(data)) =>
+            // 4. Execute the function
+            val location = data.args.get("location")
+              .flatMap(_.asString)
+              .getOrElse("Unknown")
+            
+            // Simulate API call
+            val weatherData = s"Sunny, 22°C in $location"
+            
+            // 5. Send function result back to model
+            val functionResponse = Content(
+              parts = List(ContentPart(weatherData)),
+              role = Some("function")
             )
-          ).flatMap {
-            case Right(finalResponse) =>
-              val text = finalResponse.candidates.headOption
-                .flatMap(_.content.parts.headOption)
-                .collect { case ResponsePart.Text(t) => t }
-                .getOrElse("No response")
-              IO.println(text)
-            case Left(error) =>
-              IO.println(s"Error: ${error.message}")
-          }
-          
-        case Some(ResponsePart.Text(text)) =>
-          IO.println(text)
-          
-        case _ =>
-          IO.println("Unexpected response")
-      }
-      
-    case Left(error) =>
-      IO.println(s"Error: ${error.message}")
+            
+            service.generateContent(
+              GenerateContentRequest(
+                ModelName.Gemini25Flash,
+                List(
+                  GeminiService.text("What's the weather in London?"),
+                  functionResponse
+                ),
+                tools = Some(List(tool)),
+                toolConfig = Some(toolConfig)
+              )
+            ).flatMap {
+              case Right(finalResponse) =>
+                val text = finalResponse.candidates.headOption
+                  .flatMap(_.content.parts.headOption)
+                  .collect { case ResponsePart.Text(t) => t }
+                  .getOrElse("No response")
+                IO.println(text)
+              case Left(error) =>
+                IO.println(s"Error: ${error.message}")
+            }
+            
+          case Some(ResponsePart.Text(text)) =>
+            IO.println(text)
+            
+          case _ =>
+            IO.println("Unexpected response")
+        }
+        
+      case Left(error) =>
+        IO.println(s"Error: ${error.message}")
+    }
   }
 }
 ```
