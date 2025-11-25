@@ -7,7 +7,7 @@ Configure content filtering and safety thresholds to control generated content.
 Gemini filters content across these categories:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.HarmCategory
+import gemini4s.model.domain.HarmCategory
 
 val categories = List(
   HarmCategory.HARASSMENT,
@@ -22,7 +22,7 @@ val categories = List(
 Control how aggressively content is filtered:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.HarmBlockThreshold
+import gemini4s.model.domain.HarmBlockThreshold
 
 // Most permissive - only block high-probability harmful content
 val blockOnlyHigh = HarmBlockThreshold.BLOCK_ONLY_HIGH
@@ -42,10 +42,11 @@ val blockNone = HarmBlockThreshold.BLOCK_NONE
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.{SafetySetting, HarmCategory, HarmBlockThreshold}
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold, ModelName}
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.config.ApiKey
 
-def withSafety(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def withSafety(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   val safetySettings = List(
     SafetySetting(
       category = HarmCategory.HARASSMENT,
@@ -58,8 +59,11 @@ def withSafety(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   )
   
   service.generateContent(
-    contents = List(GeminiService.text("Your prompt here")),
-    safetySettings = Some(safetySettings)
+    GenerateContentRequest(
+      ModelName.Gemini25Flash,
+      List(GeminiService.text("Your prompt here")),
+      safetySettings = Some(safetySettings)
+    )
   ).void
 }
 ```
@@ -70,7 +74,7 @@ Check if content was blocked:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.model.GeminiResponse.GenerateContentResponse
+import gemini4s.model.response.GenerateContentResponse
 
 def checkBlocked(response: GenerateContentResponse): IO[Unit] = {
   response.promptFeedback.flatMap(_.blockReason) match {
@@ -88,7 +92,7 @@ Inspect safety ratings in responses:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.model.GeminiResponse.GenerateContentResponse
+import gemini4s.model.response.GenerateContentResponse
 
 def inspectSafety(response: GenerateContentResponse): IO[Unit] = {
   response.candidates.headOption.flatMap(_.safetyRatings) match {
@@ -108,7 +112,7 @@ def inspectSafety(response: GenerateContentResponse): IO[Unit] = {
 ### Production Applications
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.{SafetySetting, HarmCategory, HarmBlockThreshold}
+import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold}
 
 val productionSafety = List(
   SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE),
@@ -121,7 +125,7 @@ val productionSafety = List(
 ### Research/Development
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.{SafetySetting, HarmCategory, HarmBlockThreshold}
+import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold}
 
 val developmentSafety = List(
   SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_ONLY_HIGH),

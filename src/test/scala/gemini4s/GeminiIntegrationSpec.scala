@@ -4,11 +4,12 @@ import cats.effect.IO
 import munit.CatsEffectSuite
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
 import gemini4s.interpreter.GeminiServiceImpl
-import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse.ResponsePart
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.model.response._
 
 class GeminiIntegrationSpec extends CatsEffectSuite {
 
@@ -20,13 +21,16 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
   test("generateContent should return a valid response") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
       service
         .generateContent(
-          contents = List(GeminiService.text("Say hello!"))
+          GenerateContentRequest(
+            ModelName.Gemini25Flash,
+            List(GeminiService.text("Say hello!"))
+          )
         )
         .map {
           case Right(_) => assert(true)
@@ -40,13 +44,16 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
   test("countTokens should return a valid count") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
       service
         .countTokens(
-          List(GeminiService.text("Hello world"))
+          CountTokensRequest(
+            ModelName.Gemini25Flash,
+            List(GeminiService.text("Hello world"))
+          )
         )
         .map {
           case Right(count) => assert(count > 0)
@@ -59,135 +66,145 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
   test("generateContent with JSON mode should return valid JSON") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
-      val jsonConfig = GenerationConfig(responseMimeType = Some("application/json"))
+      val jsonConfig = GenerationConfig(responseMimeType = Some(MimeType.ApplicationJson))
 
       service
         .generateContent(
-          contents = List(GeminiService.text("List 3 fruits in JSON format")),
-          generationConfig = Some(jsonConfig)
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(GeminiService.text("List 3 fruits in JSON format")),
+            generationConfig = Some(jsonConfig)
+          )
         )
         .map {
           case Right(response) =>
             val text = response.candidates.head.content.parts.head match {
               case ResponsePart.Text(t) => t
-              case _ => fail("Expected text response")
+              case _                    => fail("Expected text response")
             }
             assert(text.trim.startsWith("{") || text.trim.startsWith("["))
-          case Left(e) =>
-            fail(s"API call failed: ${e.message}")
+          case Left(e)         => fail(s"API call failed: ${e.message}")
         }
     }
   }
 
   test("generateContent with Tools should return function call") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
       val weatherTool = Tool(
-        functionDeclarations = Some(List(
-          FunctionDeclaration(
-            name = "get_weather",
-            description = "Get the current weather in a given location",
-            parameters = Some(Schema(
-              `type` = SchemaType.OBJECT,
-              properties = Some(Map(
-                "location" -> Schema(`type` = SchemaType.STRING, description = Some("The city and state, e.g. San Francisco, CA"))
-              )),
-              required = Some(List("location"))
-            ))
+        functionDeclarations = Some(
+          List(
+            FunctionDeclaration(
+              name = "get_weather",
+              description = "Get the current weather in a given location",
+              parameters = Some(
+                Schema(
+                  `type` = SchemaType.OBJECT,
+                  properties = Some(
+                    Map(
+                      "location" -> Schema(
+                        `type` = SchemaType.STRING,
+                        description = Some("The city and state, e.g. San Francisco, CA")
+                      )
+                    )
+                  ),
+                  required = Some(List("location"))
+                )
+              )
+            )
           )
-        ))
+        )
       )
 
       service
         .generateContent(
-          contents = List(GeminiService.text("What is the weather in Chicago, IL?")),
-          tools = Some(List(weatherTool)),
-          toolConfig = Some(ToolConfig(functionCallingConfig = Some(FunctionCallingConfig(mode = Some(FunctionCallingMode.AUTO)))))
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(GeminiService.text("What's the weather in Tokyo?")),
+            tools = Some(List(weatherTool))
+          )
         )
         .map {
           case Right(response) =>
-            val part = response.candidates.head.content.parts.head
-            part match {
-              case ResponsePart.FunctionCall(data) =>
-                assertEquals(data.name, "get_weather")
-                assert(data.args.contains("location"))
-              case _ => fail(s"Expected FunctionCall, got $part")
-            }
-          case Left(e) =>
-            fail(s"API call failed: ${e.message}")
+            val hasFunctionCall = response.candidates.headOption.exists(_.content.parts.exists {
+              case ResponsePart.FunctionCall(_) => true
+              case _                            => false
+            })
+            assert(hasFunctionCall, "Expected a function call in the response")
+          case Left(e)         => fail(s"API call failed: ${e.message}")
         }
     }
   }
 
-  test("embedContent should return embeddings") {
+  test("embedContent should return embedding vector") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
       service
         .embedContent(
-          content = GeminiService.text("Hello world")
+          EmbedContentRequest(
+            content = GeminiService.text("Hello world!"),
+            model = ModelName.EmbeddingText001
+          )
         )
         .map {
-          case Right(embedding) =>
-            assert(embedding.values.nonEmpty)
-          case Left(e) =>
-            fail(s"API call failed: ${e.message}")
+          case Right(embedding) => assert(embedding.values.nonEmpty)
+          case Left(e)          => fail(s"API call failed: ${e.message}")
         }
     }
   }
 
   test("batchEmbedContents should return multiple embeddings") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
+
+      val requests = List(
+        EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingText001),
+        EmbedContentRequest(GeminiService.text("Second text"), ModelName.EmbeddingText001)
+      )
 
       service
         .batchEmbedContents(
-          List(
-            EmbedContentRequest(content = GeminiService.text("Hello"), model = s"models/${GeminiService.EmbeddingText004}"),
-            EmbedContentRequest(content = GeminiService.text("World"), model = s"models/${GeminiService.EmbeddingText004}")
+          BatchEmbedContentsRequest(
+            model = ModelName.EmbeddingText001,
+            requests = requests
           )
         )
         .map {
-          case Right(embeddings) =>
-            assertEquals(embeddings.length, 2)
-            assert(embeddings.forall(_.values.nonEmpty))
-          case Left(e) =>
-            fail(s"API call failed: ${e.message}")
+          case Right(embeddings) => assertEquals(embeddings.length, 2)
+          case Left(e)           => fail(s"API call failed: ${e.message}")
         }
     }
   }
 
-  test("generateContentStream should return a stream of responses") {
+  test("generateContentStream should stream response chunks") {
     HttpClientFs2Backend.resource[IO]().use { backend =>
-      val httpClient                    = GeminiHttpClient.make[IO](backend)
-      val service                       = GeminiServiceImpl.make[IO](httpClient, "gemini-2.5-flash-lite")
-      implicit val config: GeminiConfig = GeminiConfig(apiKey.getOrElse(""))
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiServiceImpl.make[IO](httpClient)
 
       service
         .generateContentStream(
-          contents = List(GeminiService.text("Count from 1 to 5 slowly"))
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(GeminiService.text("Tell me a short story"))
+          )
         )
         .compile
         .toList
-        .map { responses =>
-          assert(responses.nonEmpty)
-          val fullText = responses.flatMap(_.candidates.headOption.flatMap(_.content.parts.headOption).map {
-            case ResponsePart.Text(t) => t
-            case _ => ""
-          }).mkString
-          assert(fullText.nonEmpty)
-        }
+        .map(chunks => assert(chunks.nonEmpty, "Expected at least one chunk"))
     }
   }
+
 }

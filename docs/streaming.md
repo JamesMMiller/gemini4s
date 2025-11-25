@@ -15,11 +15,12 @@ Streaming is useful when:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def basicStream(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def basicStream(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    contents = List(GeminiService.text("Count from 1 to 10"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count from 1 to 10")))
   )
     .evalMap(response => IO.println(response.candidates.head.content.parts.head))
     .compile
@@ -35,12 +36,13 @@ Process text as it arrives:
 import cats.effect.IO
 import fs2.Stream
 import gemini4s.GeminiService
-import gemini4s.model.GeminiResponse.ResponsePart
-import gemini4s.config.GeminiConfig
+import gemini4s.model.response.ResponsePart
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def streamText(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def streamText(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    contents = List(GeminiService.text("Write a short story"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Write a short story")))
   )
     .map(_.candidates.headOption)
     .unNone
@@ -61,14 +63,15 @@ Collect the full response while streaming:
 import cats.effect.IO
 import cats.effect.Ref
 import gemini4s.GeminiService
-import gemini4s.model.GeminiResponse.ResponsePart
-import gemini4s.config.GeminiConfig
+import gemini4s.model.response.ResponsePart
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def accumulateStream(service: GeminiService[IO])(using GeminiConfig): IO[String] = {
+def accumulateStream(service: GeminiService[IO]): IO[String] = {
   for {
     accumulated <- Ref.of[IO, String]("")
     _ <- service.generateContentStream(
-      contents = List(GeminiService.text("Explain quantum computing"))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing")))
     )
       .map(_.candidates.headOption)
       .unNone
@@ -92,11 +95,12 @@ Handle errors gracefully in streams:
 import cats.effect.IO
 import fs2.Stream
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def streamWithErrorHandling(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def streamWithErrorHandling(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    contents = List(GeminiService.text("Hello"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   )
     .handleErrorWith { error =>
       Stream.eval(IO.println(s"Stream error: ${error.getMessage}")) >>
@@ -115,12 +119,13 @@ FS2 handles backpressure automatically, but you can control it:
 import cats.effect.IO
 import scala.concurrent.duration._
 import gemini4s.GeminiService
-import gemini4s.model.GeminiResponse.ResponsePart
-import gemini4s.config.GeminiConfig
+import gemini4s.model.response.ResponsePart
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def streamWithDelay(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def streamWithDelay(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    contents = List(GeminiService.text("Count to 20"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 20")))
   )
     .map(_.candidates.headOption)
     .unNone
@@ -141,24 +146,26 @@ Build an interactive chatbot with streaming:
 ```scala mdoc:compile-only
 import cats.effect.{IO, Ref}
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.{Content, Part}
-import gemini4s.model.GeminiResponse.ResponsePart
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.{Content, ContentPart, ModelName}
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.response.ResponsePart
 
-def chatbot(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def chatbot(service: GeminiService[IO]): IO[Unit] = {
   def chat(history: Ref[IO, List[Content]]): IO[Unit] = {
     for {
       _ <- IO.print("You: ")
       input <- IO.readLine
       _ <- if (input.toLowerCase == "quit") IO.unit else {
-        val userMessage = Content(parts = List(Part(input)), role = Some("user"))
+        val userMessage = Content(parts = List(ContentPart(input)), role = Some("user"))
         
         for {
           _ <- history.update(_ :+ userMessage)
           currentHistory <- history.get
           
           _ <- IO.print("Assistant: ")
-          response <- service.generateContentStream(contents = currentHistory)
+          response <- service.generateContentStream(
+              GenerateContentRequest(ModelName.Gemini25Flash, currentHistory)
+            )
             .map(_.candidates.headOption)
             .unNone
             .map(_.content.parts.headOption)
@@ -169,7 +176,7 @@ def chatbot(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
             .foldMonoid
           
           _ <- IO.println("")
-          _ <- history.update(_ :+ Content(parts = List(Part(text = response)), role = Some("model")))
+          _ <- history.update(_ :+ Content(parts = List(ContentPart(text = response)), role = Some("model")))
           
           _ <- chat(history)
         } yield ()
@@ -188,18 +195,21 @@ Apply generation config to streams:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.GenerationConfig
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.{GenerationConfig, Temperature, ModelName}
+import gemini4s.model.request.GenerateContentRequest
 
-def streamWithConfig(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def streamWithConfig(service: GeminiService[IO]): IO[Unit] = {
   val config = GenerationConfig(
-    temperature = Some(0.8f),
+    temperature = Some(Temperature.unsafe(0.8f)),
     maxOutputTokens = Some(512)
   )
   
   service.generateContentStream(
-    contents = List(GeminiService.text("Write a poem")),
-    generationConfig = Some(config)
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(GeminiService.text("Write a poem")),
+      generationConfig = Some(config)
+    )
   )
     .evalMap(response => IO.println(response.candidates.head.content.parts.head))
     .compile
@@ -214,14 +224,15 @@ Track progress as the stream processes:
 ```scala mdoc:compile-only
 import cats.effect.{IO, Ref}
 import gemini4s.GeminiService
-import gemini4s.model.GeminiResponse.ResponsePart
-import gemini4s.config.GeminiConfig
+import gemini4s.model.response.ResponsePart
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def monitorProgress(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def monitorProgress(service: GeminiService[IO]): IO[Unit] = {
   for {
     chunkCount <- Ref.of[IO, Int](0)
     _ <- service.generateContentStream(
-      contents = List(GeminiService.text("Explain machine learning"))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain machine learning")))
     )
       .map(_.candidates.headOption)
       .unNone

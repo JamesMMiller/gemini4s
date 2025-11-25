@@ -9,9 +9,8 @@ import sttp.client3._
 import sttp.client3.circe._
 import sttp.model.Uri
 
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.error.GeminiError
-import gemini4s.model.GeminiRequest
 
 /**
  * HTTP client algebra for Gemini API.
@@ -26,43 +25,50 @@ trait GeminiHttpClient[F[_]] {
    *
    * @param endpoint The API endpoint path
    * @param request The typed request model
-   * @param config The API configuration
    * @return Response model wrapped in effect F with GeminiError in error channel
    */
-  def post[Req <: GeminiRequest: Encoder, Res: Decoder](
+  def post[Req: Encoder, Res: Decoder](
       endpoint: String,
       request: Req
-  )(using config: GeminiConfig): F[Either[GeminiError, Res]]
+  ): F[Either[GeminiError, Res]]
 
   /**
    * Sends a POST request and streams the response.
    *
    * @param endpoint The API endpoint path
    * @param request The typed request model
-   * @param config The API configuration
    * @return Response chunks as a stream
    */
-  def postStream[Req <: GeminiRequest: Encoder, Res: Decoder](
+  def postStream[Req: Encoder, Res: Decoder](
       endpoint: String,
       request: Req
-  )(using config: GeminiConfig): Stream[F, Res]
+  ): Stream[F, Res]
 
 }
 
 object GeminiHttpClient {
 
+  /** Default base URL for the Gemini API */
+  val DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta"
+
   /**
    * Creates a Sttp-based implementation of GeminiHttpClient.
+   *
+   * @param backend The Sttp backend
+   * @param apiKey The Gemini API key
+   * @param baseUrl The base URL for API requests (defaults to official Gemini API)
    */
   def make[F[_]: Async](
-      backend: SttpBackend[F, Fs2Streams[F]]
+      backend: SttpBackend[F, Fs2Streams[F]],
+      apiKey: ApiKey,
+      baseUrl: String = DefaultBaseUrl
   ): GeminiHttpClient[F] = new GeminiHttpClient[F] {
 
-    override def post[Req <: GeminiRequest: Encoder, Res: Decoder](
+    override def post[Req: Encoder, Res: Decoder](
         endpoint: String,
         request: Req
-    )(using config: GeminiConfig): F[Either[GeminiError, Res]] = {
-      val uri = uri"${config.baseUrl}".addPath(endpoint.split('/')).addParam("key", config.apiKey)
+    ): F[Either[GeminiError, Res]] = {
+      val uri = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
 
       basicRequest
         .post(uri)
@@ -79,35 +85,30 @@ object GeminiHttpClient {
         .handleError(error => Left(GeminiError.ConnectionError(error.getMessage, Some(error))))
     }
 
-    override def postStream[Req <: GeminiRequest: Encoder, Res: Decoder](
+    override def postStream[Req: Encoder, Res: Decoder](
         endpoint: String,
         request: Req
-    )(using config: GeminiConfig): Stream[F, Res] = {
-      val uri = uri"${config.baseUrl}".addPath(endpoint.split('/')).addParam("key", config.apiKey)
+    ): Stream[F, Res] = {
+      val uri = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
 
-      Stream.eval(
-        basicRequest
-          .post(uri)
-          .body(request)
-          .response(asStream(Fs2Streams[F]) { stream =>
-             // Buffer the stream to avoid "Already one subscriber" issues with unicast publishers
-             stream.compile.toVector.map(bytes => Stream.emits(bytes).covary[F])
-          })
-          .send(backend)
-      ).flatMap { response =>
-        response.body match {
-          case Right(stream) =>
-             stream
-              .through(fs2.text.utf8.decode)
-              .through(io.circe.fs2.stringArrayParser)
-              .through(io.circe.fs2.decoder[F, Res])
-          case Left(errorBody) =>
-             Stream.raiseError(GeminiError.InvalidRequest(s"API error: ${response.code} - $errorBody", None))
+      val req = basicRequest.post(uri).body(request).response(asStreamUnsafe(Fs2Streams[F]))
+
+      Stream
+        .eval(backend.send(req))
+        .flatMap { response =>
+          response.body match {
+            case Right(stream)   => stream
+                .through(fs2.text.utf8.decode)
+                .through(io.circe.fs2.stringArrayParser)
+                .through(io.circe.fs2.decoder[F, Res])
+            case Left(errorBody) =>
+              Stream.raiseError(GeminiError.InvalidRequest(s"API error: ${response.code} - $errorBody", None))
+          }
         }
-      }.handleErrorWith {
-        case e: GeminiError => Stream.raiseError(e)
-        case e => Stream.raiseError(GeminiError.ConnectionError(e.getMessage, Some(e)))
-      }
+        .handleErrorWith {
+          case e: GeminiError => Stream.raiseError(e)
+          case e              => Stream.raiseError(GeminiError.ConnectionError(e.getMessage, Some(e)))
+        }
     }
 
   }

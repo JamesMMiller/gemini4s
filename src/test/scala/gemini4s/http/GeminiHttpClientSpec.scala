@@ -10,14 +10,15 @@ import sttp.client3.impl.cats.implicits._
 import sttp.client3.testing.SttpBackendStub
 import sttp.model.StatusCode
 
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 import gemini4s.error.GeminiError
-import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse._
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.model.response._
 
 class GeminiHttpClientSpec extends CatsEffectSuite {
 
-  given config: GeminiConfig = GeminiConfig("test-api-key")
+  val apiKey: ApiKey = ApiKey.unsafe("test-api-key")
 
   // Helper to create a backend that satisfies the Fs2Streams requirement
   def createBackend(stub: SttpBackendStub[IO, Any]): SttpBackend[IO, Fs2Streams[IO]] =
@@ -44,12 +45,18 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .whenRequestMatches(_.uri.path.mkString("/").contains("generateContent"))
       .thenRespond(response.asJson.noSpaces)
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart("prompt"))))
+    )
 
-    client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
+    client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isRight)
-      assertEquals(result.map(_.candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text), Right("Generated text"))
+      assertEquals(
+        result.map(_.candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text),
+        Right("Generated text")
+      )
     }
   }
 
@@ -57,10 +64,11 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest
       .thenRespond("Invalid request", StatusCode.BadRequest)
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request =
+      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
 
-    client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
+    client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
       assert(result.left.exists(_.isInstanceOf[GeminiError.InvalidRequest]))
     }
@@ -69,10 +77,11 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
   test("post should handle network errors") {
     val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespondServerError()
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request =
+      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
 
-    client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
+    client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
       assert(result.left.exists(_.isInstanceOf[GeminiError.InvalidRequest]))
     }
@@ -83,10 +92,11 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       throw new java.net.ConnectException("Connection refused")
     )
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request =
+      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
 
-    client.post[GenerateContent, GenerateContentResponse]("generateContent", request).map { result =>
+    client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
       assert(result.left.exists(_.isInstanceOf[GeminiError.ConnectionError]))
     }
@@ -94,33 +104,39 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
 
   test("postStream should handle successful streaming response") {
     val response1 = GenerateContentResponse(
-      candidates = List(Candidate(ResponseContent(List(ResponsePart.Text("Hello")), Some("model")), Some("STOP"), None, None)),
+      candidates =
+        List(Candidate(ResponseContent(List(ResponsePart.Text("Hello")), Some("model")), Some("STOP"), None, None)),
       usageMetadata = None,
       modelVersion = None
     )
     val response2 = GenerateContentResponse(
-      candidates = List(Candidate(ResponseContent(List(ResponsePart.Text(" World")), Some("model")), Some("STOP"), None, None)),
+      candidates =
+        List(Candidate(ResponseContent(List(ResponsePart.Text(" World")), Some("model")), Some("STOP"), None, None)),
       usageMetadata = None,
       modelVersion = None
     )
-    
+
     val jsonArrayStream = Stream.emit("[").covary[IO] ++
       Stream.emit(response1.asJson.noSpaces) ++
       Stream.emit(",") ++
       Stream.emit(response2.asJson.noSpaces) ++
       Stream.emit("]")
-    
+
     val byteStream = jsonArrayStream.through(fs2.text.utf8.encode)
 
     val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]])
       .whenRequestMatches(_.uri.path.mkString("/").contains("streamGenerateContent"))
       .thenRespond(Right(byteStream))
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request =
+      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
 
-    client.postStream[GenerateContent, GenerateContentResponse]("streamGenerateContent", request)
-      .compile.toList.map { results =>
+    client
+      .postStream[GenerateContentRequest, GenerateContentResponse]("streamGenerateContent", request)
+      .compile
+      .toList
+      .map { results =>
         assertEquals(results.length, 2)
         assertEquals(results(0).candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text, "Hello")
         assertEquals(results(1).candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text, " World")
@@ -128,24 +144,19 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
   }
 
   test("postStream should handle stream errors") {
-    // When using asStream, error response body is read as string and returned as Left(string)
-    // SttpBackendStub should simulate this behavior if we pass Left(string) or set status code?
-    // If we use thenRespond(string, status), SttpBackendStub sets body to string.
-    // And if we use asStream, sttp logic (in client) will see non-2xx and return Left(string).
-    // However, SttpBackendStub doesn't execute full ResponseAs logic unless configured?
-    // Actually SttpBackendStub matches the response to the request's ResponseAs.
-    // If I provide a raw body, it might not match.
-    // Best is to provide explicitly what ResponseAs expects: Either[String, Stream].
-    
-    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]])
-      .whenAnyRequest
+    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest
       .thenRespond(Left("Invalid request"), StatusCode.BadRequest)
 
-    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend))
-    val request = GenerateContent(contents = List(Content(parts = List(Part("prompt")))))
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request =
+      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
 
-    client.postStream[GenerateContent, GenerateContentResponse]("streamGenerateContent", request)
-      .compile.drain.attempt.map { result =>
+    client
+      .postStream[GenerateContentRequest, GenerateContentResponse]("streamGenerateContent", request)
+      .compile
+      .drain
+      .attempt
+      .map { result =>
         assert(result.isLeft)
         assert(result.left.exists(_.isInstanceOf[GeminiError.InvalidRequest]))
       }

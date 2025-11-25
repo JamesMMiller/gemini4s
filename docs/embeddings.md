@@ -16,11 +16,13 @@ Embeddings are vector representations of text that capture semantic meaning. Use
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-def basicEmbedding(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def basicEmbedding(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+  import gemini4s.model.request.EmbedContentRequest
+  import gemini4s.model.domain.GeminiConstants
   service.embedContent(
-    content = GeminiService.text("Scala is a programming language")
+    EmbedContentRequest(GeminiService.text("Scala is a programming language"), GeminiConstants.EmbeddingText001)
   ).flatMap {
     case Right(embedding) =>
       IO.println(s"Embedding dimension: ${embedding.values.length}") *>
@@ -38,27 +40,37 @@ Specify the task type for optimized embeddings:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.TaskType
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.{TaskType, GeminiConstants}
+import gemini4s.model.request.EmbedContentRequest
+import gemini4s.config.ApiKey
 
-def withTaskType(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def withTaskType(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // For search queries
   service.embedContent(
-    content = GeminiService.text("best scala libraries"),
-    taskType = Some(TaskType.RETRIEVAL_QUERY)
+    EmbedContentRequest(
+      content = GeminiService.text("best scala libraries"),
+      model = GeminiConstants.EmbeddingText001,
+      taskType = Some(TaskType.RETRIEVAL_QUERY)
+    )
   ).void
   
   // For documents to be searched
   service.embedContent(
-    content = GeminiService.text("Cats Effect is a library for..."),
-    taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
-    title = Some("Cats Effect Documentation")
+    EmbedContentRequest(
+      content = GeminiService.text("Cats Effect is a library for..."),
+      model = GeminiConstants.EmbeddingText001,
+      taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
+      title = Some("Cats Effect Documentation")
+    )
   ).void
   
   // For similarity comparison
   service.embedContent(
-    content = GeminiService.text("functional programming"),
-    taskType = Some(TaskType.SEMANTIC_SIMILARITY)
+    EmbedContentRequest(
+      content = GeminiService.text("functional programming"),
+      model = GeminiConstants.EmbeddingText001,
+      taskType = Some(TaskType.SEMANTIC_SIMILARITY)
+    )
   ).void
 }
 ```
@@ -70,10 +82,11 @@ Embed multiple texts efficiently:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.{EmbedContentRequest, TaskType}
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
+import gemini4s.model.domain.{TaskType, GeminiConstants}
+import gemini4s.config.ApiKey
 
-def batchEmbeddings(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def batchEmbeddings(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   val documents = List(
     "Scala is a functional programming language",
     "Cats Effect provides IO monad",
@@ -83,12 +96,12 @@ def batchEmbeddings(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = 
   val requests = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
-      model = s"models/${GeminiService.EmbeddingText004}",
+      model = GeminiConstants.EmbeddingText001,
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT)
     )
   }
   
-  service.batchEmbedContents(requests).flatMap {
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).flatMap {
     case Right(embeddings) =>
       IO.println(s"Generated ${embeddings.length} embeddings")
     case Left(error) =>
@@ -102,7 +115,7 @@ def batchEmbeddings(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = 
 Calculate similarity between embeddings:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiResponse.ContentEmbedding
+import gemini4s.model.response.ContentEmbedding
 
 def cosineSimilarity(a: ContentEmbedding, b: ContentEmbedding): Double = {
   require(a.values.length == b.values.length, "Embeddings must have same dimension")
@@ -120,9 +133,10 @@ def cosineSimilarity(a: ContentEmbedding, b: ContentEmbedding): Double = {
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.{EmbedContentRequest, TaskType}
-import gemini4s.model.GeminiResponse.ContentEmbedding
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.EmbedContentRequest
+import gemini4s.model.domain.{TaskType, GeminiConstants}
+import gemini4s.model.response.ContentEmbedding
+import gemini4s.config.ApiKey
 
 case class Document(id: String, text: String, embedding: ContentEmbedding)
 
@@ -138,10 +152,13 @@ def semanticSearch(
   service: GeminiService[IO],
   documents: List[Document],
   query: String
-)(using GeminiConfig): IO[List[(Document, Double)]] = {
+)(using apiKey: ApiKey): IO[List[(Document, Double)]] = {
   service.embedContent(
-    content = GeminiService.text(query),
-    taskType = Some(TaskType.RETRIEVAL_QUERY)
+    EmbedContentRequest(
+      content = GeminiService.text(query),
+      model = GeminiConstants.EmbeddingText001,
+      taskType = Some(TaskType.RETRIEVAL_QUERY)
+    )
   ).flatMap {
     case Right(queryEmbedding) =>
       // Calculate similarities
@@ -163,25 +180,26 @@ Simplified example (use a proper ML library in production):
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.{EmbedContentRequest, TaskType}
-import gemini4s.model.GeminiResponse.ContentEmbedding
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
+import gemini4s.model.domain.{TaskType, GeminiConstants}
+import gemini4s.model.response.ContentEmbedding
+import gemini4s.config.ApiKey
 
 def clusterDocuments(
   service: GeminiService[IO],
   documents: List[String],
   k: Int  // number of clusters
-)(using GeminiConfig): IO[Map[Int, List[String]]] = {
+)(using apiKey: ApiKey): IO[Map[Int, List[String]]] = {
   val requests: List[EmbedContentRequest] = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
-      model = s"models/${GeminiService.EmbeddingText004}",
+      model = GeminiConstants.EmbeddingText001,
       taskType = Some(TaskType.CLUSTERING)
     )
   }
   
-  service.batchEmbedContents(requests).flatMap {
-    case Right(embeddings) =>
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).flatMap {
+    case Right(response) =>
       // Simple clustering: group by index modulo k
       val clusters: Map[Int, List[String]] = documents.zipWithIndex
         .groupBy { case (_, idx) => idx % k }
@@ -198,7 +216,7 @@ def clusterDocuments(
 ### 1. Use Appropriate Task Types
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.TaskType
+import gemini4s.model.domain.TaskType
 
 // For search queries
 val queryTask = TaskType.RETRIEVAL_QUERY
@@ -223,8 +241,10 @@ Embeddings are expensive - cache them:
 ```scala mdoc:compile-only
 import cats.effect.{IO, Ref}
 import gemini4s.GeminiService
-import gemini4s.model.GeminiResponse.ContentEmbedding
-import gemini4s.config.GeminiConfig
+import gemini4s.model.response.ContentEmbedding
+import gemini4s.model.request.EmbedContentRequest
+import gemini4s.model.domain.GeminiConstants
+import gemini4s.config.ApiKey
 
 case class EmbeddingCache(
   cache: Ref[IO, Map[String, ContentEmbedding]]
@@ -232,13 +252,13 @@ case class EmbeddingCache(
   def getOrCompute(
     service: GeminiService[IO],
     text: String
-  )(using GeminiConfig): IO[ContentEmbedding] = {
+  )(using apiKey: ApiKey): IO[ContentEmbedding] = {
     cache.get.flatMap { cached =>
       cached.get(text) match {
         case Some(embedding) => IO.pure(embedding)
         case None =>
           service.embedContent(
-            content = GeminiService.text(text)
+            EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingText001)
           ).flatMap {
             case Right(embedding) =>
               cache.update(_ + (text -> embedding)) *>
@@ -257,7 +277,7 @@ case class EmbeddingCache(
 For better similarity comparison:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiResponse.ContentEmbedding
+import gemini4s.model.response.ContentEmbedding
 
 def normalize(embedding: ContentEmbedding): ContentEmbedding = {
   val magnitude = math.sqrt(embedding.values.map(x => x * x).sum)
@@ -272,24 +292,25 @@ Use batch embeddings for efficiency:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest.EmbedContentRequest
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
+import gemini4s.model.domain.GeminiConstants
+import gemini4s.config.ApiKey
 
 def efficientEmbedding(
   service: GeminiService[IO],
   texts: List[String]
-)(using GeminiConfig): IO[Unit] = {
+)(using apiKey: ApiKey): IO[Unit] = {
   // Good - batch request
   val requests = texts.map { text =>
     EmbedContentRequest(
       content = GeminiService.text(text),
-      model = s"models/${GeminiService.EmbeddingText004}"
+      model = GeminiConstants.EmbeddingText001
     )
   }
-  service.batchEmbedContents(requests).void
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).void
   
   // Avoid - individual requests
-  // texts.traverse(text => service.embedContent(GeminiService.text(text)))
+  // texts.traverse(text => service.embedContent(EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingText001)))
 }
 ```
 

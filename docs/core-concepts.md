@@ -39,10 +39,12 @@ import cats.effect.IO
 import cats.syntax.all._
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def example(service: GeminiService[IO])(using config: gemini4s.config.GeminiConfig): IO[String] = {
+def example(service: GeminiService[IO]): IO[String] = {
   service.generateContent(
-    contents = List(GeminiService.text("Hello"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) => 
       IO.pure(response.candidates.head.content.parts.head.toString)
@@ -59,13 +61,15 @@ import cats.data.EitherT
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.error.GeminiError
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
 def exampleWithEitherT(
   service: GeminiService[IO]
-)(using config: gemini4s.config.GeminiConfig): EitherT[IO, GeminiError, String] = {
+): EitherT[IO, GeminiError, String] = {
   for {
     response <- EitherT(service.generateContent(
-      contents = List(GeminiService.text("Hello"))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
     ))
     text = response.candidates.head.content.parts.head.toString
   } yield text
@@ -112,46 +116,45 @@ case class StreamInterrupted(...) extends StreamError
 
 See [Error Handling](error-handling.md) for detailed error handling strategies.
 
-## Configuration
+## API Key
 
-The `GeminiConfig` case class holds API configuration:
+The `ApiKey` case class holds API configuration:
 
 ```scala mdoc:compile-only
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
 
-val config = GeminiConfig(
-  apiKey = "your-api-key",
-  baseUrl = "https://generativelanguage.googleapis.com/v1beta" // default
-)
+val apiKey = ApiKey.unsafe("your-api-key")
 ```
 
-Configuration is passed implicitly using Scala 3's `given`/`using` syntax:
+The `GeminiService` is passed the API key when creating it:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.config.ApiKey
+import gemini4s.http.GeminiHttpClient
+import gemini4s.interpreter.GeminiServiceImpl
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-def makeRequest(service: GeminiService[IO]): IO[Unit] = {
-  given GeminiConfig = GeminiConfig("your-api-key")
-  
-  service.generateContent(
-    contents = List(GeminiService.text("Hello"))
-  ).void
+def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
+  HttpClientFs2Backend.resource[IO]().use { backend =>
+    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
+    IO.pure(GeminiServiceImpl.make[IO](httpClient))
+  }
 }
 ```
 
 ## Content Model
 
-Content is represented by `Content` and `Part`:
+Content is represented by `Content` and `ContentPart`:
 
 ```scala
 case class Content(
-  parts: List[Part],
+  parts: List[ContentPart],
   role: Option[String] = None
 )
 
-case class Part(text: String)
+case class ContentPart(text: String)
 ```
 
 **Helper method** for simple text:
@@ -160,18 +163,18 @@ case class Part(text: String)
 import gemini4s.GeminiService
 
 val content = GeminiService.text("Hello, world!")
-// Equivalent to: Content(parts = List(Part(text = "Hello, world!")))
+// Equivalent to: Content(parts = List(ContentPart(text = "Hello, world!")))
 ```
 
 **Multi-turn conversations**:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest.{Content, Part}
+import gemini4s.model.domain.{Content, ContentPart}
 
 val conversation = List(
-  Content(parts = List(Part("What is 2+2?")), role = Some("user")),
-  Content(parts = List(Part("4")), role = Some("model")),
-  Content(parts = List(Part("What about 3+3?")), role = Some("user"))
+  Content(parts = List(ContentPart("What is 2+2?")), role = Some("user")),
+  Content(parts = List(ContentPart("4")), role = Some("model")),
+  Content(parts = List(ContentPart("What about 3+3?")), role = Some("user"))
 )
 ```
 
@@ -193,11 +196,12 @@ FS2 streams are:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.GeminiConfig
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.ModelName
 
-def streamExample(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def streamExample(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
-    contents = List(GeminiService.text("Count to 10"))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 10")))
   )
     .map(_.candidates.head.content.parts.head)
     .evalMap(part => IO.println(part))
@@ -213,7 +217,7 @@ See [Streaming](streaming.md) for detailed streaming patterns.
 gemini4s uses enums for type-safe constants:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 // Harm categories
 val category: HarmCategory = HarmCategory.HARASSMENT

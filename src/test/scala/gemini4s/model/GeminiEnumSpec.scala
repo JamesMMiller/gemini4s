@@ -6,12 +6,10 @@ import munit.FunSuite
 
 class GeminiEnumSpec extends FunSuite {
 
-  import GeminiRequest._
+  import gemini4s.model.domain._
 
   test("TaskType should decode valid values") {
-    TaskType.values.foreach { value =>
-      assertEquals(Json.fromString(value.toString).as[TaskType], Right(value))
-    }
+    TaskType.values.foreach(value => assertEquals(Json.fromString(value.toString).as[TaskType], Right(value)))
   }
 
   test("TaskType should fail on invalid values") {
@@ -49,13 +47,10 @@ class GeminiEnumSpec extends FunSuite {
   }
 
   test("SchemaType should decode valid values") {
-    SchemaType.values.foreach { value =>
-      assertEquals(Json.fromString(value.toString).as[SchemaType], Right(value))
-    }
+    SchemaType.values.foreach(value => assertEquals(Json.fromString(value.toString).as[SchemaType], Right(value)))
   }
 
   test("SchemaType should fail on invalid values") {
     assert(Json.fromString("INVALID").as[SchemaType].isLeft)
   }
 }
-

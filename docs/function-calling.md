@@ -18,7 +18,7 @@ The model generates function calls, and you execute them and return results.
 Define a function the model can call:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 val weatherFunction = FunctionDeclaration(
   name = "get_weather",
@@ -48,10 +48,11 @@ Provide tools to the model:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest._
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain._
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.config.ApiKey
 
-def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def useTools(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -82,9 +83,12 @@ def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   
   // 4. Use in request
   service.generateContent(
-    contents = List(GeminiService.text("What's the weather in Tokyo?")),
-    tools = Some(List(weatherTool)),
-    toolConfig = Some(toolConfig)
+    GenerateContentRequest(
+      ModelName.Gemini25Flash,
+      List(GeminiService.text("What's the weather in Tokyo?")),
+      tools = Some(List(weatherTool)),
+      toolConfig = Some(toolConfig)
+    )
   ).void
 }
 ```
@@ -94,7 +98,7 @@ def useTools(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
 Control when the model uses functions:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 // AUTO: Model decides when to call functions
 val autoMode = FunctionCallingConfig(
@@ -119,7 +123,7 @@ Extract and execute function calls:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import io.circe.Json
-import gemini4s.model.GeminiResponse.{GenerateContentResponse, ResponsePart}
+import gemini4s.model.response.{GenerateContentResponse, ResponsePart}
 
 def handleFunctionCalls(response: GenerateContentResponse): IO[Unit] = {
   val parts = response.candidates.headOption.map(_.content.parts).getOrElse(List.empty)
@@ -144,11 +148,12 @@ Full example with function execution:
 import cats.effect.IO
 import io.circe.Json
 import gemini4s.GeminiService
-import gemini4s.model.GeminiRequest._
-import gemini4s.model.GeminiResponse.{ResponsePart, GenerateContentResponse}
-import gemini4s.config.GeminiConfig
+import gemini4s.model.domain._
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.response.{ResponsePart, GenerateContentResponse}
+import gemini4s.config.ApiKey
 
-def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
+def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -170,10 +175,14 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
   )
   
   // 2. Initial request
+  // 2. Initial request
   service.generateContent(
-    contents = List(GeminiService.text("What's the weather in London?")),
-    tools = Some(List(tool)),
-    toolConfig = Some(toolConfig)
+    GenerateContentRequest(
+      ModelName.Gemini25Flash,
+      List(GeminiService.text("What's the weather in London?")),
+      tools = Some(List(tool)),
+      toolConfig = Some(toolConfig)
+    )
   ).flatMap {
     case Right(response) =>
       // 3. Check for function calls
@@ -189,19 +198,23 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
           
           // 5. Send function result back to model
           val functionResponse = Content(
-            parts = List(Part(weatherData)),
+            parts = List(ContentPart(weatherData)),
             role = Some("function")
           )
           
           // Note: In a real implementation, you'd need to convert ResponseContent to Content
           // For simplicity, we'll just show the final response
+          // For simplicity, we'll just show the final response
           service.generateContent(
-            contents = List(
-              GeminiService.text("What's the weather in London?"),
-              functionResponse
-            ),
-            tools = Some(List(tool)),
-            toolConfig = Some(toolConfig)
+            GenerateContentRequest(
+              ModelName.Gemini25Flash,
+              List(
+                GeminiService.text("What's the weather in London?"),
+                functionResponse
+              ),
+              tools = Some(List(tool)),
+              toolConfig = Some(toolConfig)
+            )
           ).flatMap {
             case Right(finalResponse) =>
               val text = finalResponse.candidates.headOption
@@ -231,7 +244,7 @@ def weatherAgent(service: GeminiService[IO])(using GeminiConfig): IO[Unit] = {
 Provide multiple functions:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 val weatherFunction = FunctionDeclaration(
   name = "get_weather",
@@ -267,7 +280,7 @@ val tools = Tool(
 Limit which functions can be called:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 val restrictedConfig = ToolConfig(
   functionCallingConfig = Some(FunctionCallingConfig(
@@ -282,7 +295,7 @@ val restrictedConfig = ToolConfig(
 Define complex parameter schemas:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 val searchFunction = FunctionDeclaration(
   name = "search_database",
@@ -318,7 +331,7 @@ Handle function execution errors:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.model.GeminiRequest.{Content, Part}
+import gemini4s.model.domain.{Content, ContentPart}
 
 def executeFunction(name: String, args: Map[String, io.circe.Json]): IO[Content] = {
   IO.defer {
@@ -328,15 +341,15 @@ def executeFunction(name: String, args: Map[String, io.circe.Json]): IO[Content]
         val location = args.get("location").flatMap(_.asString)
         location match {
           case Some(loc) =>
-            IO.pure(Content(parts = List(Part(s"Weather data for $loc"))))
+            IO.pure(Content(parts = List(ContentPart(s"Weather data for $loc"))))
           case None =>
-            IO.pure(Content(parts = List(Part("Error: location parameter missing"))))
+            IO.pure(Content(parts = List(ContentPart("Error: location parameter missing"))))
         }
       case unknown =>
-        IO.pure(Content(parts = List(Part(s"Error: Unknown function $unknown"))))
+        IO.pure(Content(parts = List(ContentPart(s"Error: Unknown function $unknown"))))
     }
   }.handleErrorWith { error =>
-    IO.pure(Content(parts = List(Part(s"Error executing function: ${error.getMessage}"))))
+    IO.pure(Content(parts = List(ContentPart(s"Error executing function: ${error.getMessage}"))))
   }
 }
 ```
@@ -348,7 +361,7 @@ def executeFunction(name: String, args: Map[String, io.circe.Json]): IO[Content]
 Provide clear, detailed descriptions:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 val goodFunction = FunctionDeclaration(
   name = "calculate_mortgage",
@@ -403,7 +416,7 @@ def validateAndExecute(name: String, args: Map[String, Json]): IO[String] = {
 Each function should do one thing well:
 
 ```scala mdoc:compile-only
-import gemini4s.model.GeminiRequest._
+import gemini4s.model.domain._
 
 // Good - focused functions
 val getWeather = FunctionDeclaration(
