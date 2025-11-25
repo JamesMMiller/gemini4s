@@ -8,18 +8,13 @@ Production-ready patterns and recommendations for using gemini4s.
 
 ```scala mdoc:compile-only
 import cats.effect.{IO, Resource}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.GeminiService
-import gemini4s.http.GeminiHttpClient
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-// Good - automatic cleanup
-def makeService(using apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
-  HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    GeminiService.make[IO](httpClient)
-  }
+// Good - automatic cleanup and simplified setup
+def makeService(apiKey: String): Resource[IO, GeminiService[IO]] = {
+  val config = GeminiConfig(apiKey)
+  GeminiService.make[IO](config)
 }
 ```
 
@@ -43,6 +38,37 @@ def app(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
 
 // Avoid - creating service per request
 // (Don't create new service instances for each request)
+```
+
+## Configuration
+
+### Environment Variables
+
+Don't hardcode your API key! Use environment variables:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.config.GeminiConfig
+
+val config: IO[GeminiConfig] = IO {
+  val apiKey = sys.env.getOrElse(
+    "GEMINI_API_KEY",
+    throw new RuntimeException("GEMINI_API_KEY not set")
+  )
+  GeminiConfig(apiKey)
+}
+```
+
+### Using Typesafe Config
+
+For production applications, use a configuration library like [PureConfig](https://pureconfig.github.io/) or [Ciris](https://ciris.is/).
+
+```scala
+// application.conf
+gemini {
+  api-key = ${?GEMINI_API_KEY}
+  base-url = "https://generativelanguage.googleapis.com/v1beta"
+}
 ```
 
 ## Error Handling
@@ -255,3 +281,4 @@ def trackMetrics[A](
 
 - **[Error Handling](error-handling.md)** - Comprehensive error strategies
 - **[Examples](examples.md)** - Complete working examples
+- **[Core Concepts](core-concepts.md)** - Deep dive into the library's design
