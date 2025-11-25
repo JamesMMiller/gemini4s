@@ -122,10 +122,10 @@ def batchEmbeddings(
   val requests = texts.map { text =>
     EmbedContentRequest(
       content = GeminiService.text(text),
-      model = GeminiConstants.EmbeddingText004
+      model = GeminiConstants.EmbeddingText001
     )
   }
-  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText004, requests)).void
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).void
 }
 ```
 
