@@ -10,15 +10,16 @@ Production-ready patterns and recommendations for using gemini4s.
 import cats.effect.{IO, Resource}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.impl.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 
 // Good - automatic cleanup
 def makeService(using apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
-  HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    GeminiServiceImpl.make[IO](httpClient)
+  HttpClientFs2Backend.resource[IO]().flatMap { backend =>
+    GeminiHttpClient.make[IO](backend, apiKey).map { httpClient =>
+      GeminiServiceImpl.make[IO](httpClient)
+    }
   }
 }
 ```

@@ -1,4 +1,4 @@
-package gemini4s.interpreter
+package gemini4s.impl
 
 import cats.effect.IO
 import fs2.Stream

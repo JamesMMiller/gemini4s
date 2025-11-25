@@ -31,7 +31,7 @@ Here's the minimal setup to start using gemini4s:
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.impl.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -44,20 +44,15 @@ object BasicExample extends IOApp.Simple {
       val apiKey = ApiKey.unsafe("YOUR_API_KEY")
       
       // 2. Create Service
-      val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-      val service = GeminiServiceImpl.make[IO](httpClient)
-      
-      // 3. Use
-      val request = GenerateContentRequest(
-        model = ModelName.Gemini25Flash,
-        contents = List(GeminiService.text("Hello, Gemini!"))
-      )
+      GeminiHttpClient.make[IO](backend, apiKey).use { httpClient =>
+        val service = GeminiServiceImpl.make[IO](httpClient)
 
-      service.generateContent(request).flatMap {
-        case Right(result) => 
-          IO.println(result.candidates.head.content.parts.head)
-        case Left(error) => 
-          IO.println(s"Error: ${error.message}")
+        service.generateContent(
+          GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello world!")))
+        ).flatMap {
+          case Right(response) => IO.println(response.candidates.head.content.parts.head)
+          case Left(error) => IO.println(s"Error: ${error.message}")
+        }
       }
     }
   }
@@ -105,16 +100,17 @@ Create the service once and reuse it:
 import cats.effect.{IO, Resource}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.impl.GeminiServiceImpl
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
 def makeService(apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
-  HttpClientFs2Backend.resource[IO]().map { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    GeminiServiceImpl.make[IO](httpClient)
+  HttpClientFs2Backend.resource[IO]().flatMap { backend =>
+    GeminiHttpClient.make[IO](backend, apiKey).map { httpClient =>
+      GeminiServiceImpl.make[IO](httpClient)
+    }
   }
 }
 

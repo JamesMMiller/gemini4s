@@ -58,11 +58,13 @@ object GeminiHttpClient {
    * @param apiKey The Gemini API key
    * @param baseUrl The base URL for API requests (defaults to official Gemini API)
    */
+  import cats.effect.Resource
+
   def make[F[_]: Async](
       backend: SttpBackend[F, Fs2Streams[F]],
       apiKey: ApiKey,
       baseUrl: String = DefaultBaseUrl
-  ): GeminiHttpClient[F] = new GeminiHttpClient[F] {
+  ): Resource[F, GeminiHttpClient[F]] = Resource.pure(new GeminiHttpClient[F] {
 
     override def post[Req: Encoder, Res: Decoder](
         endpoint: String,
@@ -111,6 +113,6 @@ object GeminiHttpClient {
         }
     }
 
-  }
+  })
 
 }

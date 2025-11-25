@@ -133,13 +133,14 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.impl.GeminiServiceImpl
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    IO.pure(GeminiServiceImpl.make[IO](httpClient))
+    GeminiHttpClient.make[IO](backend, apiKey).use { httpClient =>
+      IO.pure(GeminiServiceImpl.make[IO](httpClient))
+    }
   }
 }
 ```
