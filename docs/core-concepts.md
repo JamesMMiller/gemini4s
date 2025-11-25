@@ -116,32 +116,28 @@ case class StreamInterrupted(...) extends StreamError
 
 See [Error Handling](error-handling.md) for detailed error handling strategies.
 
-## API Key
-
-The `ApiKey` case class holds API configuration:
-
-```scala mdoc:compile-only
-import gemini4s.config.ApiKey
-
-val apiKey = ApiKey.unsafe("your-api-key")
-```
-
-The `Gemini` is passed the API key when creating it:
-
-```scala mdoc:compile-only
-import cats.effect.IO
-import gemini4s.GeminiService
-import gemini4s.config.ApiKey
-import gemini4s.http.GeminiHttpClient
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
-def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
-  HttpClientFs2Backend.resource[IO]().use { backend =>
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    IO.pure(GeminiService.make[IO](httpClient))
-  }
-}
-```
+## Configuration
+ 
+ The `GeminiConfig` case class holds API configuration:
+ 
+ ```scala mdoc:compile-only
+ import gemini4s.config.GeminiConfig
+ 
+ val config = GeminiConfig("your-api-key")
+ ```
+ 
+ The service is created using this configuration:
+ 
+ ```scala mdoc:compile-only
+ import cats.effect.{IO, Resource}
+ import gemini4s.GeminiService
+ import gemini4s.config.GeminiConfig
+ 
+ def makeService(apiKey: String): Resource[IO, GeminiService[IO]] = {
+   val config = GeminiConfig(apiKey)
+   GeminiService.make[IO](config)
+ }
+ ```
 
 ## Content Model
 
