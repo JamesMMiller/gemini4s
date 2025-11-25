@@ -1,9 +1,11 @@
 package gemini4s
 
-import cats.effect.Async
+import cats.effect.{ Async, Resource }
 import cats.syntax.all._
 import fs2.Stream
+import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
+import gemini4s.config.{ ApiKey, GeminiConfig }
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._
@@ -85,7 +87,24 @@ trait GeminiService[F[_]] {
 object GeminiService {
 
   /**
-   * Creates a new Gemini instance.
+   * Creates a new Gemini instance with internal resource management.
+   *
+   * @param config The configuration for the service
+   * @return A Resource containing the GeminiService
+   */
+  def make[F[_]: Async](
+      config: GeminiConfig
+  ): Resource[F, GeminiService[F]] = HttpClientFs2Backend.resource[F]().map { backend =>
+    val httpClient = GeminiHttpClient.make[F](
+      backend,
+      ApiKey.unsafe(config.apiKey),
+      config.baseUrl
+    )
+    new GeminiServiceImpl(httpClient)
+  }
+
+  /**
+   * Creates a new Gemini instance using an existing HTTP client.
    *
    * @param httpClient The HTTP client to use for requests
    */

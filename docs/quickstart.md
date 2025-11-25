@@ -29,33 +29,23 @@ Here's the minimal setup to start using gemini4s:
 
 ```scala mdoc:compile-only
 import cats.effect.{IO, IOApp}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-
 import gemini4s.GeminiService
-import gemini4s.http.GeminiHttpClient
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
-object BasicExample extends IOApp.Simple {
-  val run: IO[Unit] = {
-    HttpClientFs2Backend.resource[IO]().use { backend =>
-      // 1. Configure
-      val apiKey = ApiKey.unsafe("YOUR_API_KEY")
-      
-      // 2. Create Service
-      val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-      val  service: GeminiService[IO] = GeminiService.make[IO](httpClient)
-      
-      // 3. Use
-      val request = GenerateContentRequest(
-        model = ModelName.Gemini25Flash,
-        contents = List(GeminiService.text("Hello, Gemini!"))
-      )
+object QuickStart extends IOApp.Simple {
 
-      service.generateContent(request).flatMap {
-        case Right(result) => 
-          IO.println(result.candidates.head.content.parts.head)
+  val run: IO[Unit] = {
+    val apiKey = sys.env.getOrElse("GEMINI_API_KEY", "your-api-key")
+    val config = GeminiConfig(apiKey)
+
+    GeminiService.make[IO](config).use { service =>
+      service.generateContent(
+        GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing")))
+      ).flatMap {
+        case Right(response) => 
+          IO.println(response.candidates.head.content.parts.head)
         case Left(error) => 
           IO.println(s"Error: ${error.message}")
       }
