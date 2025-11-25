@@ -86,9 +86,25 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
+      - name: Check for Code Changes
+        id: check_changes
+        run: |
+          # Check for changes in src, build.sbt, project, or this workflow file
+          # We use || true to prevent grep from failing if no matches found
+          CHANGES=$(git diff --name-only HEAD^ HEAD | grep -E '^(src/|build\.sbt|project/|\.github/workflows/ci\.yml)' || true)
+          
+          if [ -z "$CHANGES" ]; then
+            echo "No functional code changes detected. Skipping release."
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Functional code changes detected:"
+            echo "$CHANGES"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Calculate Next Version
         id: tag
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.check_changes.outputs.should_release == 'true'
         run: |
           # Extract baseVersion from build.sbt (e.g., "0.0")
           BASE_VERSION=$(grep 'val baseVersion' build.sbt | cut -d '"' -f 2)
@@ -116,10 +132,11 @@ jobs:
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
 
       - name: Push Tag
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.check_changes.outputs.should_release == 'true'
         run: git push origin ${{ steps.tag.outputs.tag }}
 
       - name: Publish
+        if: steps.check_changes.outputs.should_release == 'true'
         env:
           CI_COMMIT_TAG: ${{ steps.tag.outputs.tag }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -129,7 +146,7 @@ jobs:
         run: sbt ci-release
 
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.check_changes.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
