@@ -31,7 +31,7 @@ Here's the minimal setup to start using gemini4s:
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -45,12 +45,12 @@ object BasicExample extends IOApp.Simple {
       
       // 2. Create Service
       val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-      val  service: Gemini[IO] = Gemini.make[IO](httpClient)
+      val  service: GeminiService[IO] = GeminiService.make[IO](httpClient)
       
       // 3. Use
       val request = GenerateContentRequest(
         model = ModelName.Gemini25Flash,
-        contents = List(Gemini.text("Hello, Gemini!"))
+        contents = List(GeminiService.text("Hello, Gemini!"))
       )
 
       service.generateContent(request).flatMap {
@@ -105,16 +105,16 @@ Create the service once and reuse it:
 import cats.effect.{IO, Resource}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
-def makeService(apiKey: ApiKey): Resource[IO, Gemini[IO]] = {
+def makeService(apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().map { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    Gemini.make[IO](httpClient)
+    GeminiService.make[IO](httpClient)
   }
 }
 
@@ -124,10 +124,10 @@ val apiKey = ApiKey.unsafe("YOUR_API_KEY")
 makeService(apiKey).use { service =>
   for {
     response1 <- service.generateContent(
-      GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("First question")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First question")))
     )
     response2 <- service.generateContent(
-      GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Second question")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Second question")))
     )
   } yield ()
 }
@@ -139,7 +139,7 @@ Always handle errors appropriately:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.error.GeminiError
 
 def handleResponse[A](

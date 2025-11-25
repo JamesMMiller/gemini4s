@@ -8,7 +8,7 @@ import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 
-class GeminiCodecSpec extends FunSuite {
+class GeminiServiceCodecSpec extends FunSuite {
 
   // Requests
 

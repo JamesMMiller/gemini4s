@@ -8,7 +8,7 @@ Complete working examples for common use cases.
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -19,10 +19,10 @@ object SimpleChatbot extends IOApp.Simple {
     val apiKey = ApiKey.unsafe(sys.env("GEMINI_API_KEY"))
     
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = Gemini.make[IO](httpClient)
+    val service = GeminiService.make[IO](httpClient)
     
     service.generateContent(
-      GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Hello! How are you?")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello! How are you?")))
     ).flatMap {
       case Right(response) =>
         IO.println(response.candidates.head.content.parts.head)
@@ -39,7 +39,7 @@ object SimpleChatbot extends IOApp.Simple {
 import cats.effect.{IO, IOApp, Ref}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.domain.{Content, ContentPart, GeminiConstants}
@@ -51,7 +51,7 @@ object StreamingChat extends IOApp.Simple {
     val apiKey = ApiKey.unsafe(sys.env("GEMINI_API_KEY"))
     
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = Gemini.make[IO](httpClient)
+    val service = GeminiService.make[IO](httpClient)
     
     def chat(history: Ref[IO, List[Content]]): IO[Unit] = {
       for {

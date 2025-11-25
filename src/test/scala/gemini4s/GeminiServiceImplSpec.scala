@@ -11,7 +11,7 @@ import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 
-class GeminiImplSpec extends CatsEffectSuite {
+class GeminiServiceImplSpec extends CatsEffectSuite {
 
   class MockHttpClient(
       response: Either[GeminiError, Any] = Right(()),
@@ -43,7 +43,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("generateContent should call client with correct request and endpoint") {
     val expectedResponse = GenerateContentResponse(List.empty, None, None)
     val client           = new MockHttpClient(response = Right(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val contents         = List(Content(List(ContentPart("test"))))
     val request          = GenerateContentRequest(GeminiConstants.DefaultModel, contents)
 
@@ -61,7 +61,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("generateContentStream should call client with correct request and endpoint") {
     val expectedResponse = GenerateContentResponse(List.empty, None, None)
     val client           = new MockHttpClient(streamResponse = Stream.emit(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val contents         = List(Content(List(ContentPart("test"))))
     val config           = GenerationConfig(temperature = Some(Temperature.unsafe(0.5f)))
     val request          = GenerateContentRequest(GeminiConstants.DefaultModel, contents, generationConfig = Some(config))
@@ -78,7 +78,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("countTokens should call client with correct request") {
     val expectedResponse = CountTokensResponse(100)
     val client           = new MockHttpClient(response = Right(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val contents         = List(Content(List(ContentPart("test"))))
     val request          = CountTokensRequest(GeminiConstants.DefaultModel, contents)
 
@@ -92,7 +92,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("embedContent should call client with correct request") {
     val expectedResponse = EmbedContentResponse(ContentEmbedding(List(0.1f)))
     val client           = new MockHttpClient(response = Right(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val content          = Content(List(ContentPart("test")))
     val request          = EmbedContentRequest(content, GeminiConstants.EmbeddingText001)
 
@@ -109,7 +109,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("batchEmbedContents should call client with correct request") {
     val expectedResponse = BatchEmbedContentsResponse(List(ContentEmbedding(List(0.1f))))
     val client           = new MockHttpClient(response = Right(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val model            = GeminiConstants.EmbeddingText001
     val requests         = List(EmbedContentRequest(Content(List(ContentPart("test"))), model))
     val batchRequest     = BatchEmbedContentsRequest(model, requests)
@@ -127,7 +127,7 @@ class GeminiImplSpec extends CatsEffectSuite {
   test("createCachedContent should call client with correct request") {
     val expectedResponse = CachedContent("name", "model", "now", "now", "later")
     val client           = new MockHttpClient(response = Right(expectedResponse))
-    val service          = Gemini.make[IO](client)
+    val service          = GeminiService.make[IO](client)
     val request          = CreateCachedContentRequest(
       model = Some("model"),
       contents = Some(List(Content(List(ContentPart("test")))))

@@ -18,7 +18,7 @@ import gemini4s.model.response._
  *
  * @tparam F The effect type (e.g., IO for Cats Effect implementation)
  */
-trait Gemini[F[_]] {
+trait GeminiService[F[_]] {
 
   /**
    * Generates content using the Gemini API.
@@ -82,7 +82,7 @@ trait Gemini[F[_]] {
 
 }
 
-object Gemini {
+object GeminiService {
 
   /**
    * Creates a new Gemini instance.
@@ -91,7 +91,7 @@ object Gemini {
    */
   def make[F[_]: Async](
       httpClient: GeminiHttpClient[F]
-  ): Gemini[F] = new GeminiImpl(httpClient)
+  ): GeminiService[F] = new GeminiServiceImpl(httpClient)
 
   /**
    * Creates a Content instance from text input.
@@ -101,9 +101,9 @@ object Gemini {
    */
   def text(text: String): Content = Content(parts = List(ContentPart(text = text)))
 
-  private final class GeminiImpl[F[_]: Async](
+  private final class GeminiServiceImpl[F[_]: Async](
       httpClient: GeminiHttpClient[F]
-  ) extends Gemini[F] {
+  ) extends GeminiService[F] {
 
     override def generateContent(
         request: GenerateContentRequest

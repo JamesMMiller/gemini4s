@@ -36,8 +36,8 @@ libraryDependencies += "io.github.jamesmmiller" %% "gemini4s" % "@VERSION@"
 ```scala mdoc:compile-only
 import cats.effect.{IO, IOApp}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import gemini4s.Gemini
-import gemini4s.Gemini
+import gemini4s.GeminiService
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -48,11 +48,11 @@ object QuickStart extends IOApp.Simple {
     val apiKey = ApiKey.unsafe("YOUR_API_KEY")
     
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = Gemini.make[IO](httpClient)
+    val service = GeminiService.make[IO](httpClient)
     
     for {
       response <- service.generateContent(
-        GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Explain quantum computing in one sentence")))
+        GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing in one sentence")))
       )
       _ <- response match {
         case Right(result) => 

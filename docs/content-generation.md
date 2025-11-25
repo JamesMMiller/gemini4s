@@ -8,14 +8,14 @@ The simplest way to generate content:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
 // Assuming 'service' is available (see Quick Start)
-def basic(service: Gemini[IO]): IO[Unit] = {
+def basic(service: GeminiService[IO]): IO[Unit] = {
   service.generateContent(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Explain photosynthesis")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain photosynthesis")))
   ).flatMap {
     case Right(response) =>
       val text = response.candidates.head.content.parts.head
@@ -32,11 +32,11 @@ Control how content is generated with `GenerationConfig`:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
-def withConfig(service: Gemini[IO]): IO[Unit] = {
+def withConfig(service: GeminiService[IO]): IO[Unit] = {
   val config = GenerationConfig(
     temperature = Some(Temperature.unsafe(0.7f)),      // Creativity (0.0 - 2.0)
     topK = Some(TopK.unsafe(40)),                // Top-k sampling
@@ -48,7 +48,7 @@ def withConfig(service: Gemini[IO]): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       model = ModelName.Gemini25Flash,
-      contents = List(Gemini.text("Write a haiku")),
+      contents = List(GeminiService.text("Write a haiku")),
       generationConfig = Some(config)
     )
   ).void
@@ -96,11 +96,11 @@ Provide system-level instructions that guide the model's behavior:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.domain.{Content, ContentPart, GeminiConstants, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 
-def withSystemInstruction(service: Gemini[IO]): IO[Unit] = {
+def withSystemInstruction(service: GeminiService[IO]): IO[Unit] = {
   val systemInstruction = Content(
     parts = List(ContentPart(
       "You are a helpful assistant that always responds in a friendly, " +
@@ -111,7 +111,7 @@ def withSystemInstruction(service: Gemini[IO]): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       model = ModelName.Gemini25Flash,
-      contents = List(Gemini.text("How do I learn Scala?")),
+      contents = List(GeminiService.text("How do I learn Scala?")),
       systemInstruction = Some(systemInstruction)
     )
   ).void
@@ -124,11 +124,11 @@ Build conversations by providing message history:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.domain.{Content, ContentPart, GeminiConstants, ModelName}
 import gemini4s.model.request.GenerateContentRequest
 
-def conversation(service: Gemini[IO]): IO[Unit] = {
+def conversation(service: GeminiService[IO]): IO[Unit] = {
   val history = List(
     Content(parts = List(ContentPart("What is Scala?")), role = Some("user")),
     Content(
@@ -150,11 +150,11 @@ Force the model to output valid JSON:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
-def jsonMode(service: Gemini[IO]): IO[Unit] = {
+def jsonMode(service: GeminiService[IO]): IO[Unit] = {
   val jsonConfig = GenerationConfig(
     responseMimeType = Some(MimeType.ApplicationJson)
   )
@@ -162,7 +162,7 @@ def jsonMode(service: Gemini[IO]): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       model = ModelName.Gemini25Flash,
-      contents = List(Gemini.text(
+      contents = List(GeminiService.text(
         "List 5 programming languages with their year of creation in JSON format"
       )),
       generationConfig = Some(jsonConfig)
@@ -183,11 +183,11 @@ Request multiple response candidates:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.domain.{GenerationConfig, GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 import gemini4s.model.request.GenerateContentRequest
 
-def multipleCandidates(service: Gemini[IO]): IO[Unit] = {
+def multipleCandidates(service: GeminiService[IO]): IO[Unit] = {
   val config = GenerationConfig(
     candidateCount = Some(3)  // Get 3 different responses
   )
@@ -195,7 +195,7 @@ def multipleCandidates(service: Gemini[IO]): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       model = ModelName.Gemini25Flash,
-      contents = List(Gemini.text("Suggest a name for a cat")),
+      contents = List(GeminiService.text("Suggest a name for a cat")),
       generationConfig = Some(config)
     )
   ).flatMap {
@@ -216,12 +216,12 @@ Count tokens before making a request:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.request.CountTokensRequest
 import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
-def countTokens(service: Gemini[IO]): IO[Unit] = {
-  val content = Gemini.text("This is a long prompt...")
+def countTokens(service: GeminiService[IO]): IO[Unit] = {
+  val content = GeminiService.text("This is a long prompt...")
   
   service.countTokens(
     CountTokensRequest(ModelName.Gemini25Flash, List(content))
@@ -240,13 +240,13 @@ Access usage metadata from responses:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.Gemini
+import gemini4s.GeminiService
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.{GeminiConstants, ModelName, Temperature, TopK, TopP, MimeType}
 
-def checkMetadata(service: Gemini[IO]): IO[Unit] = {
+def checkMetadata(service: GeminiService[IO]): IO[Unit] = {
   service.generateContent(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) =>
       response.usageMetadata match {
