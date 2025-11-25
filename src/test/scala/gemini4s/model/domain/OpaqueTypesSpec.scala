@@ -1,6 +1,7 @@
 package gemini4s.model.domain
 
 import munit.FunSuite
+
 import gemini4s.config.ApiKey
 
 class OpaqueTypesSpec extends FunSuite {
