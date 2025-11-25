@@ -35,11 +35,11 @@ object GeminiConstants {
    * API endpoint paths for different operations.
    */
   object Endpoints {
-    def generateContent(model: ModelName = DefaultModel): String       = s"models/${model.value}:generateContent"
-    def generateContentStream(model: ModelName = DefaultModel): String = s"models/${model.value}:streamGenerateContent"
-    def countTokens(model: ModelName = DefaultModel): String           = s"models/${model.value}:countTokens"
-    def embedContent(model: ModelName = DefaultModel): String          = s"models/${model.value}:embedContent"
-    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"models/${model.value}:batchEmbedContents"
+    def generateContent(model: ModelName = DefaultModel): String       = s"${model.value}:generateContent"
+    def generateContentStream(model: ModelName = DefaultModel): String = s"${model.value}:streamGenerateContent"
+    def countTokens(model: ModelName = DefaultModel): String           = s"${model.value}:countTokens"
+    def embedContent(model: ModelName = DefaultModel): String          = s"${model.value}:embedContent"
+    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${model.value}:batchEmbedContents"
     def createCachedContent: String                                    = "cachedContents"
   }
 

@@ -11,12 +11,13 @@ opaque type ModelName = String
 object ModelName {
 
   // Predefined model constants
-  val Gemini25Flash: ModelName     = "gemini-2.5-flash"
-  val Gemini25Pro: ModelName       = "gemini-2.5-pro"
-  val Gemini25FlashLite: ModelName = "gemini-2.5-flash-lite"
-  val Gemini3Pro: ModelName        = "gemini-3-pro-preview"
-  val Imagen4: ModelName           = "imagen-4.0-generate-001"
-  val EmbeddingText001: ModelName  = "gemini-embedding-001"
+  // Predefined model constants
+  val Gemini25Flash: ModelName     = "models/gemini-2.5-flash"
+  val Gemini25Pro: ModelName       = "models/gemini-2.5-pro"
+  val Gemini25FlashLite: ModelName = "models/gemini-2.5-flash-lite"
+  val Gemini3Pro: ModelName        = "models/gemini-3-pro-preview"
+  val Imagen4: ModelName           = "models/imagen-4.0-generate-001"
+  val EmbeddingText001: ModelName  = "models/gemini-embedding-001"
 
   // Default model
   val Default: ModelName = Gemini25Flash

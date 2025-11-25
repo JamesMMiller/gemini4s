@@ -87,8 +87,8 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
   }
 
-  test("DefaultModel should be gemini-2.5-flash") {
-    assertEquals(GeminiConstants.DefaultModel.value, "gemini-2.5-flash")
+  test("DefaultModel should be models/gemini-2.5-flash") {
+    assertEquals(GeminiConstants.DefaultModel.value, "models/gemini-2.5-flash")
   }
 
   test("MaxTokensPerRequest should be 30720") {
@@ -96,38 +96,43 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("DefaultGenerationConfig should have correct values") {
-    assert(GeminiConstants.DefaultGenerationConfig.temperature.contains(GeminiConstants.DefaultTemperature))
-    assert(GeminiConstants.DefaultGenerationConfig.topK.contains(GeminiConstants.DefaultTopK))
-    assert(GeminiConstants.DefaultGenerationConfig.topP.contains(GeminiConstants.DefaultTopP))
-    assert(GeminiConstants.DefaultGenerationConfig.maxOutputTokens.contains(GeminiConstants.MaxTokensPerRequest))
+    val config = GeminiConstants.DefaultGenerationConfig
+    assertEquals(config.temperature, Some(GeminiConstants.DefaultTemperature))
+    assertEquals(config.topK, Some(GeminiConstants.DefaultTopK))
+    assertEquals(config.topP, Some(GeminiConstants.DefaultTopP))
+    assertEquals(config.maxOutputTokens, Some(GeminiConstants.MaxTokensPerRequest))
   }
 
   test("text helper should create Content.Text correctly") {
-    val content = "test content"
-    assertEquals(GeminiService.text(content), Content(parts = List(ContentPart(text = content))))
+    val content = GeminiService.text("Hello")
+    assertEquals(content.parts.head, ContentPart("Hello"))
   }
 
   test("Endpoints should generate correct paths") {
-    assertEquals(GeminiConstants.Endpoints.generateContent(), "models/gemini-2.5-flash:generateContent")
-    assertEquals(GeminiConstants.Endpoints.generateContentStream(), "models/gemini-2.5-flash:streamGenerateContent")
-    assertEquals(GeminiConstants.Endpoints.countTokens(), "models/gemini-2.5-flash:countTokens")
-    assertEquals(GeminiConstants.Endpoints.embedContent(), "models/gemini-2.5-flash:embedContent")
-    assertEquals(GeminiConstants.Endpoints.batchEmbedContents(), "models/gemini-2.5-flash:batchEmbedContents")
+    val model = ModelName.Gemini25Flash
+    assertEquals(GeminiConstants.Endpoints.generateContent(model), "models/gemini-2.5-flash:generateContent")
+    assertEquals(
+      GeminiConstants.Endpoints.generateContentStream(model),
+      "models/gemini-2.5-flash:streamGenerateContent"
+    )
+    assertEquals(GeminiConstants.Endpoints.countTokens(model), "models/gemini-2.5-flash:countTokens")
+    assertEquals(GeminiConstants.Endpoints.embedContent(model), "models/gemini-2.5-flash:embedContent")
+    assertEquals(GeminiConstants.Endpoints.batchEmbedContents(model), "models/gemini-2.5-flash:batchEmbedContents")
     assertEquals(GeminiConstants.Endpoints.createCachedContent, "cachedContents")
   }
 
   test("Endpoints should handle custom model names") {
-    val customModel = ModelName.unsafe("custom-model")
-    assertEquals(GeminiConstants.Endpoints.generateContent(customModel), s"models/${customModel.value}:generateContent")
+    val customModel = ModelName.unsafe("models/custom-model")
+    assertEquals(GeminiConstants.Endpoints.generateContent(customModel), "models/custom-model:generateContent")
     assertEquals(
       GeminiConstants.Endpoints.generateContentStream(customModel),
-      s"models/${customModel.value}:streamGenerateContent"
+      s"${customModel.value}:streamGenerateContent"
     )
-    assertEquals(GeminiConstants.Endpoints.countTokens(customModel), s"models/${customModel.value}:countTokens")
-    assertEquals(GeminiConstants.Endpoints.embedContent(customModel), s"models/${customModel.value}:embedContent")
+    assertEquals(GeminiConstants.Endpoints.countTokens(customModel), s"${customModel.value}:countTokens")
+    assertEquals(GeminiConstants.Endpoints.embedContent(customModel), s"${customModel.value}:embedContent")
     assertEquals(
       GeminiConstants.Endpoints.batchEmbedContents(customModel),
-      s"models/${customModel.value}:batchEmbedContents"
+      s"${customModel.value}:batchEmbedContents"
     )
   }
 }

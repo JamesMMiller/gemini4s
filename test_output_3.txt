@@ -1,0 +1,172 @@
+[info] welcome to sbt 1.10.3 (Homebrew Java 17.0.13)
+[info] loading settings for project gemini4s-build-build-build from metals.sbt ...
+[info] loading project definition from /Users/jamesmiller/git/gemini4s/project/project/project
+[info] loading settings for project gemini4s-build-build from metals.sbt ...
+[info] loading project definition from /Users/jamesmiller/git/gemini4s/project/project
+[success] Generated .bloop/gemini4s-build-build.json
+[success] Total time: 1 s, completed 25 Nov 2025, 13:05:52
+[info] loading settings for project gemini4s-build from metals.sbt,plugins.sbt ...
+[info] loading project definition from /Users/jamesmiller/git/gemini4s/project
+[success] Generated .bloop/gemini4s-build.json
+[success] Total time: 1 s, completed 25 Nov 2025, 13:05:53
+[info] loading settings for project root from build.sbt ...
+[info] set scmInfo to https://github.com/JamesMMiller/gemini4s
+[info] set current project to gemini4s (in build file:/Users/jamesmiller/git/gemini4s/)
+[32mgemini4s.http.GeminiHttpClientSpec:[0m
+[32m  + [0m[32mpost should handle successful response[0m [90m0.156s[0m
+[32m  + [0m[32mpost should handle API errors[0m [90m0.003s[0m
+[32m  + [0m[32mpost should handle network errors[0m [90m0.002s[0m
+[32m  + [0m[32mpost should handle connection exceptions[0m [90m0.01s[0m
+[32m  + [0m[32mpostStream should handle successful streaming response[0m [90m0.069s[0m
+[32m  + [0m[32mpostStream should handle stream errors[0m [90m0.003s[0m
+[32mgemini4s.model.domain.ContentSpec:[0m
+[32m  + [0m[32mContent should create with role[0m [90m0.0s[0m
+[32m  + [0m[32mContent should create without role[0m [90m0.001s[0m
+[32m  + [0m[32mContent should handle multiple parts[0m [90m0.0s[0m
+[32m  + [0m[32mContent should handle empty parts list[0m [90m0.0s[0m
+[32mgemini4s.model.response.CountTokensResponseSpec:[0m
+[32m  + [0m[32mCountTokensResponse should decode with only totalTokens[0m [90m0.003s[0m
+[32m  + [0m[32mCountTokensResponse should handle optional candidatesTokenCount[0m [90m0.0s[0m
+[32m  + [0m[32mCountTokensResponse should handle optional cachedContentTokenCount[0m [90m0.001s[0m
+[32m  + [0m[32mCountTokensResponse should handle all fields[0m [90m0.0s[0m
+[32m  + [0m[32mCountTokensResponse should handle missing optional fields gracefully[0m [90m0.001s[0m
+[32mgemini4s.model.GeminiEnumSpec:[0m
+[32m  + [0m[32mTaskType should decode valid values[0m [90m0.002s[0m
+[32m  + [0m[32mTaskType should fail on invalid values[0m [90m0.001s[0m
+[32m  + [0m[32mHarmCategory should decode valid values[0m [90m0.001s[0m
+[32m  + [0m[32mHarmCategory should fail on invalid values[0m [90m0.0s[0m
+[32m  + [0m[32mHarmBlockThreshold should decode valid values[0m [90m0.001s[0m
+[32m  + [0m[32mHarmBlockThreshold should fail on invalid values[0m [90m0.0s[0m
+[32m  + [0m[32mFunctionCallingMode should decode valid values[0m [90m0.001s[0m
+[32m  + [0m[32mFunctionCallingMode should fail on invalid values[0m [90m0.0s[0m
+[32m  + [0m[32mSchemaType should decode valid values[0m [90m0.001s[0m
+[32m  + [0m[32mSchemaType should fail on invalid values[0m [90m0.0s[0m
+[32mgemini4s.error.GeminiErrorSpec:[0m
+[32m  + [0m[32mprovide correct error messages[0m [90m0.002s[0m
+[32m  + [0m[32mhandle causes correctly[0m [90m0.0s[0m
+[32m  + [0m[32mhandle null causes correctly[0m [90m0.0s[0m
+[32m  + [0m[32mcreate errors with smart constructors[0m [90m0.002s[0m
+[32m  + [0m[32mcreate errors with custom messages[0m [90m0.001s[0m
+[32m  + [0m[32mcreate network errors correctly[0m [90m0.001s[0m
+[32m  + [0m[32mcreate stream errors correctly[0m [90m0.0s[0m
+[32m  + [0m[32mmap throwables to GeminiErrors[0m [90m0.002s[0m
+[32m  + [0m[32mmap status codes to appropriate errors[0m [90m0.001s[0m
+[32mgemini4s.model.domain.SafetySettingSpec:[0m
+[32m  + [0m[32mSafetySetting should create with category and threshold[0m [90m0.0s[0m
+[32m  + [0m[32mSafetySetting should handle all harm categories[0m [90m0.001s[0m
+[32m  + [0m[32mSafetySetting should handle all thresholds[0m [90m0.0s[0m
+[32mgemini4s.model.response.GenerateContentResponseSpec:[0m
+[32m  + [0m[32mGenerateContentResponse should decode with optional fields[0m [90m0.001s[0m
+[32m  + [0m[32mGenerateContentResponse should handle usageMetadata[0m [90m0.001s[0m
+[32m  + [0m[32mGenerateContentResponse should handle modelVersion[0m [90m0.0s[0m
+[32m  + [0m[32mGenerateContentResponse should handle promptFeedback[0m [90m0.001s[0m
+[32m  + [0m[32mCandidate should handle all fields[0m [90m0.001s[0m
+[32m  + [0m[32mResponsePart.Text should encode/decode[0m [90m0.0s[0m
+[32m  + [0m[32mResponsePart.FunctionCall should encode/decode[0m [90m0.006s[0m
+[32m  + [0m[32mUsageMetadata should handle optional fields[0m [90m0.0s[0m
+[32m  + [0m[32mUsageMetadata should handle missing optional fields[0m [90m0.0s[0m
+[32mgemini4s.interpreter.GeminiServiceImplSpec:[0m
+[32m  + [0m[32mgenerateContent should call client with correct request and endpoint[0m [90m0.003s[0m
+[32m  + [0m[32mgenerateContentStream should call client with correct request and endpoint[0m [90m0.001s[0m
+[32m  + [0m[32mcountTokens should call client with correct request[0m [90m0.003s[0m
+[32m  + [0m[32membedContent should call client with correct request[0m [90m0.002s[0m
+[32m  + [0m[32mbatchEmbedContents should call client with correct request[0m [90m0.002s[0m
+[32m  + [0m[32mcreateCachedContent should call client with correct request[0m [90m0.001s[0m
+[32mgemini4s.model.GeminiDefaultsSpec:[0m
+[32m  + [0m[32mGenerateContentRequest defaults[0m [90m0.0s[0m
+[32m  + [0m[32mEmbedContentRequest defaults[0m [90m0.001s[0m
+[32m  + [0m[32mCreateCachedContentRequest defaults[0m [90m0.0s[0m
+[32m  + [0m[32mContent defaults[0m [90m0.0s[0m
+[32m  + [0m[32mGenerationConfig defaults[0m [90m0.001s[0m
+[32m  + [0m[32mTool defaults[0m [90m0.0s[0m
+[32m  + [0m[32mToolConfig defaults[0m [90m0.0s[0m
+[32m  + [0m[32mFunctionCallingConfig defaults[0m [90m0.001s[0m
+[32m  + [0m[32mFunctionDeclaration defaults[0m [90m0.0s[0m
+[32m  + [0m[32mSchema defaults[0m [90m0.001s[0m
+[32mgemini4s.model.domain.ToolSpec:[0m
+[32m  + [0m[32mTool should create with function declarations[0m [90m0.001s[0m
+[32m  + [0m[32mTool should create without function declarations[0m [90m0.0s[0m
+[32m  + [0m[32mTool should encode to JSON[0m [90m0.001s[0m
+[32m  + [0m[32mFunctionDeclaration should create with parameters[0m [90m0.0s[0m
+[32m  + [0m[32mFunctionDeclaration should create without parameters[0m [90m0.0s[0m
+[32m  + [0m[32mToolConfig should create with function calling config[0m [90m0.0s[0m
+[32m  + [0m[32mToolConfig should create without function calling config[0m [90m0.0s[0m
+[32m  + [0m[32mFunctionCallingConfig should handle mode[0m [90m0.0s[0m
+[32m  + [0m[32mFunctionCallingConfig should handle allowed function names[0m [90m0.0s[0m
+[32mgemini4s.model.domain.GenerationConfigSpec:[0m
+[32m  + [0m[32mGenerationConfig should encode with all fields[0m [90m0.003s[0m
+[32m  + [0m[32mGenerationConfig should encode with minimal fields[0m [90m0.0s[0m
+[32m  + [0m[32mGenerationConfig should decode from JSON[0m [90m0.002s[0m
+[32m  + [0m[32mGenerationConfig should handle empty config[0m [90m0.0s[0m
+[32m  + [0m[32mGenerationConfig should handle responseMimeType[0m [90m0.0s[0m
+[32m  + [0m[32mGenerationConfig should handle stopSequences[0m [90m0.0s[0m
+[32mgemini4s.model.GeminiFeaturesSpec:[0m
+[32m  + [0m[32mEmbedContentRequest should encode correctly[0m [90m0.001s[0m
+[32m  + [0m[32mBatchEmbedContentsRequest should encode correctly[0m [90m0.0s[0m
+[32m  + [0m[32mEmbedContentResponse should decode correctly[0m [90m0.002s[0m
+[32m  + [0m[32mBatchEmbedContentsResponse should decode correctly[0m [90m0.001s[0m
+[32m  + [0m[32mCreateCachedContentRequest should encode correctly[0m [90m0.001s[0m
+[32m  + [0m[32mCachedContent response should decode correctly[0m [90m0.001s[0m
+[32mgemini4s.model.domain.OpaqueTypesSpec:[0m
+[32m  + [0m[32mApiKey validation[0m [90m0.0s[0m
+[32m  + [0m[32mTemperature validation[0m [90m0.001s[0m
+[32m  + [0m[32mTopK validation[0m [90m0.0s[0m
+[32m  + [0m[32mTopP validation[0m [90m0.001s[0m
+[32m  + [0m[32mMimeType validation[0m [90m0.001s[0m
+[32mgemini4s.GeminiIntegrationSpec:[0m
+[32m  + [0m[32mgenerateContent should return a valid response[0m [90m2.732s[0m
+[32m  + [0m[32mcountTokens should return a valid count[0m [90m0.069s[0m
+[32m  + [0m[32mgenerateContent with JSON mode should return valid JSON[0m [90m0.757s[0m
+[91m==> X [0m[91mgemini4s.GeminiIntegrationSpec[0m.[91mgenerateContent with Tools should return function call[0m  [90m0.949s[0m munit.FailException: /Users/jamesmiller/git/gemini4s/src/test/scala/gemini4s/GeminiIntegrationSpec.scala:140 Expected a function call in the response
+139:            })
+[7m140:            assert(hasFunctionCall, "Expected a function call in the response")[0m
+141:          case Left(e)         => fail(s"API call failed: ${e.message}")
+[90m    at [0m[90mmunit.Assertions.fail[0m[90m([0m[90mAssertions.scala[0m:[90m283[0m[90m)[0m
+[90m    at [0m[90mmunit.Assertions.fail$[0m[90m([0m[90mAssertions.scala[0m:[90m15[0m[90m)[0m
+[90m    at [0m[90mmunit.FunSuite.fail[0m[90m([0m[90mFunSuite.scala[0m:[90m11[0m[90m)[0m
+[90m    at [0m[90mmunit.Assertions.assert$$anonfun$1[0m[90m([0m[90mAssertions.scala[0m:[90m45[0m[90m)[0m
+[90m    at [0m[90mdelay @ sttp.client3.impl.cats.CatsMonadError.eval[0m[90m([0m[90mCatsMonadError.scala[0m:[90m19[0m[90m)[0m
+[90m    at [0m[90mmap @ sttp.client3.impl.cats.CatsMonadError.map[0m[90m([0m[90mCatsMonadError.scala[0m:[90m9[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mmodify @ fs2.internal.Scope.close[0m[90m([0m[90mScope.scala[0m:[90m262[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mrethrow$extension @ fs2.Compiler$Target.compile$$anonfun$1[0m[90m([0m[90mCompiler.scala[0m:[90m157[0m[90m)[0m
+[90m    at [0m[90mget @ fs2.internal.Scope.openScope[0m[90m([0m[90mScope.scala[0m:[90m275[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Compiler$Target.flatMap[0m[90m([0m[90mCompiler.scala[0m:[90m163[0m[90m)[0m
+[90m    at [0m[90mflatMap @ fs2.Pull$.goCloseScope$1$$anonfun$1$$anonfun$3[0m[90m([0m[90mPull.scala[0m:[90m1217[0m[90m)[0m
+[90m    at [0m[90mupdate @ fs2.internal.Scope.releaseChildScope[0m[90m([0m[90mScope.scala[0m:[90m227[0m[90m)[0m
+[32m  + [0m[32membedContent should return embedding vector[0m [90m0.581s[0m
+[32m  + [0m[32mbatchEmbedContents should return multiple embeddings[0m [90m0.453s[0m
+[32m  + [0m[32mgenerateContentStream should stream response chunks[0m [90m8.787s[0m
+[32mgemini4s.GeminiServiceSpec:[0m
+[32m  + [0m[32mDefaultModel should be models/gemini-2.5-flash[0m [90m0.0s[0m
+[32m  + [0m[32mMaxTokensPerRequest should be 30720[0m [90m0.0s[0m
+[32m  + [0m[32mDefaultGenerationConfig should have correct values[0m [90m0.001s[0m
+[32m  + [0m[32mtext helper should create Content.Text correctly[0m [90m0.001s[0m
+[32m  + [0m[32mEndpoints should generate correct paths[0m [90m0.001s[0m
+[32m  + [0m[32mEndpoints should handle custom model names[0m [90m0.001s[0m
+[32mgemini4s.model.GeminiCodecSpec:[0m
+[32m  + [0m[32mGenerateContentRequest codec[0m [90m0.018s[0m
+[32m  + [0m[32mCountTokensRequest codec[0m [90m0.001s[0m
+[32m  + [0m[32mEmbedContentRequest codec[0m [90m0.002s[0m
+[32m  + [0m[32mBatchEmbedContentsRequest codec[0m [90m0.001s[0m
+[32m  + [0m[32mCreateCachedContentRequest codec[0m [90m0.001s[0m
+[32m  + [0m[32mGenerateContentResponse codec[0m [90m0.001s[0m
+[32m  + [0m[32mCountTokensResponse codec[0m [90m0.001s[0m
+[32m  + [0m[32mEmbedContentResponse codec[0m [90m0.001s[0m
+[32m  + [0m[32mBatchEmbedContentsResponse codec[0m [90m0.0s[0m
+[32m  + [0m[32mCachedContent codec[0m [90m0.001s[0m
+[32m  + [0m[32mSchema codec[0m [90m0.001s[0m
+[32m  + [0m[32mFunctionCallData codec[0m [90m0.0s[0m
+[32m  + [0m[32mExecutableCodeData codec[0m [90m0.001s[0m
+[32m  + [0m[32mCodeExecutionResultData codec[0m [90m0.002s[0m
+[error] Failed: Total 115, Failed 1, Errors 0, Passed 114
+[error] Failed tests:
+[error] 	gemini4s.GeminiIntegrationSpec
+[error] (Test / test) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 16 s, completed 25 Nov 2025, 13:06:10
