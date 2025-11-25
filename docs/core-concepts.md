@@ -8,10 +8,10 @@ gemini4s uses the Tagless Final pattern to abstract over effect types. This mean
 
 ```scala mdoc:compile-only
 import cats.effect.Async
-import gemini4s.GeminiService
+import gemini4s.Gemini
 
 // The service is polymorphic in F[_]
-def useService[F[_]: Async](service: GeminiService[F]): F[Unit] = ???
+def useService[F[_]: Async](service: Gemini[F]): F[Unit] = ???
 ```
 
 **Benefits:**
@@ -37,14 +37,14 @@ This gives you:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import cats.syntax.all._
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.error.GeminiError
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
-def example(service: GeminiService[IO]): IO[String] = {
+def example(service: Gemini[IO]): IO[String] = {
   service.generateContent(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Hello")))
   ).flatMap {
     case Right(response) => 
       IO.pure(response.candidates.head.content.parts.head.toString)
@@ -59,17 +59,17 @@ Or use `EitherT` for cleaner composition:
 ```scala mdoc:compile-only
 import cats.data.EitherT
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.error.GeminiError
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
 def exampleWithEitherT(
-  service: GeminiService[IO]
+  service: Gemini[IO]
 ): EitherT[IO, GeminiError, String] = {
   for {
     response <- EitherT(service.generateContent(
-      GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
+      GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Hello")))
     ))
     text = response.candidates.head.content.parts.head.toString
   } yield text
@@ -126,20 +126,19 @@ import gemini4s.config.ApiKey
 val apiKey = ApiKey.unsafe("your-api-key")
 ```
 
-The `GeminiService` is passed the API key when creating it:
+The `Gemini` is passed the API key when creating it:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceImpl
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
+def makeService(apiKey: ApiKey): IO[Gemini[IO]] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    IO.pure(GeminiServiceImpl.make[IO](httpClient))
+    IO.pure(Gemini.make[IO](httpClient))
   }
 }
 ```
@@ -160,9 +159,9 @@ case class ContentPart(text: String)
 **Helper method** for simple text:
 
 ```scala mdoc:compile-only
-import gemini4s.GeminiService
+import gemini4s.Gemini
 
-val content = GeminiService.text("Hello, world!")
+val content = Gemini.text("Hello, world!")
 // Equivalent to: Content(parts = List(ContentPart(text = "Hello, world!")))
 ```
 
@@ -195,13 +194,13 @@ FS2 streams are:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
-def streamExample(service: GeminiService[IO]): IO[Unit] = {
+def streamExample(service: Gemini[IO]): IO[Unit] = {
   service.generateContentStream(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 10")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Count to 10")))
   )
     .map(_.candidates.head.content.parts.head)
     .evalMap(part => IO.println(part))

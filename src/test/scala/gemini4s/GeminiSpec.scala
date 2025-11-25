@@ -9,10 +9,10 @@ import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 
-class GeminiServiceSpec extends CatsEffectSuite {
+class GeminiSpec extends CatsEffectSuite {
 
-  // Test implementation of GeminiService
-  class TestGeminiService extends GeminiService[IO] {
+  // Test implementation of Gemini
+  class TestGemini extends Gemini[IO] {
 
     override def generateContent(
         request: GenerateContentRequest
@@ -104,7 +104,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("text helper should create Content.Text correctly") {
-    val content = GeminiService.text("Hello")
+    val content = Gemini.text("Hello")
     assertEquals(content.parts.head, ContentPart("Hello"))
   }
 

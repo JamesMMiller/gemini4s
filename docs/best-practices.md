@@ -9,16 +9,16 @@ Production-ready patterns and recommendations for using gemini4s.
 ```scala mdoc:compile-only
 import cats.effect.{IO, Resource}
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.Gemini
+import gemini4s.Gemini
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 
 // Good - automatic cleanup
-def makeService(using apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
+def makeService(using apiKey: ApiKey): Resource[IO, Gemini[IO]] = {
   HttpClientFs2Backend.resource[IO]().map { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    GeminiServiceImpl.make[IO](httpClient)
+    Gemini.make[IO](httpClient)
   }
 }
 ```
@@ -27,17 +27,17 @@ def makeService(using apiKey: ApiKey): Resource[IO, GeminiService[IO]] = {
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 import gemini4s.model.domain.ModelName
 
 // Good - reuse service
-def app(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def app(service: Gemini[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.GeminiConstants
   for {
-    _ <- service.generateContent(GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("First"))))
-    _ <- service.generateContent(GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Second"))))
+    _ <- service.generateContent(GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("First"))))
+    _ <- service.generateContent(GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Second"))))
   } yield ()
 }
 
@@ -108,20 +108,20 @@ val productionConfig = GenerationConfig(
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.model.request.EmbedContentRequest
 import gemini4s.config.ApiKey
 
 // Good - batch embeddings
 def batchEmbeddings(
-  service: GeminiService[IO],
+  service: Gemini[IO],
   texts: List[String]
 )(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.domain.GeminiConstants
   import gemini4s.model.request.BatchEmbedContentsRequest
   val requests = texts.map { text =>
     EmbedContentRequest(
-      content = GeminiService.text(text),
+      content = Gemini.text(text),
       model = GeminiConstants.EmbeddingText001
     )
   }
@@ -133,17 +133,17 @@ def batchEmbeddings(
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 
 // Good - stream long responses
 def streamLongContent(
-  service: GeminiService[IO]
+  service: Gemini[IO]
 )(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   import gemini4s.model.domain.{GeminiConstants, ModelName}
   service.generateContentStream(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Write a long article...")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Write a long article...")))
   ).compile.drain
 }
 ```
@@ -195,13 +195,13 @@ val productionSafety = List(
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 import gemini4s.model.domain.Content
 import gemini4s.model.response.GenerateContentResponse
 import gemini4s.error.GeminiError
 
-class MockGeminiService extends GeminiService[IO] {
+class MockGemini extends Gemini[IO] {
   def generateContent(request: gemini4s.model.request.GenerateContentRequest): IO[Either[GeminiError, GenerateContentResponse]] = {
     // Return mock response
     IO.pure(Right(GenerateContentResponse(

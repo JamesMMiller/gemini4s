@@ -1,4 +1,4 @@
-val baseVersion   = "0.1"
+val baseVersion   = "0.2.0"
 val scala3Version = "3.6.2"
 val zioCliVersion = "0.5.0"
 

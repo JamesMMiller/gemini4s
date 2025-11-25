@@ -46,14 +46,14 @@ Use `generateContentStream`:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 import gemini4s.model.domain.ModelName
 
-def stream(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def stream(service: Gemini[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.GenerateContentRequest
   service.generateContentStream(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(Gemini.text("Hello")))
   ).compile.drain
 }
 ```
@@ -64,14 +64,14 @@ Use `countTokens`:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.config.ApiKey
 import gemini4s.model.domain.ModelName
 
-def count(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def count(service: Gemini[IO])(using apiKey: ApiKey): IO[Unit] = {
   import gemini4s.model.request.CountTokensRequest
   service.countTokens(
-    CountTokensRequest(ModelName.Gemini25Flash, List(GeminiService.text("Your prompt")))
+    CountTokensRequest(ModelName.Gemini25Flash, List(Gemini.text("Your prompt")))
   ).flatMap {
     case Right(count) => IO.println(s"Tokens: $count")
     case Left(error) => IO.println(s"Error: ${error.message}")
@@ -133,8 +133,8 @@ Yes! You can specify the model for each request using the same service instance:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
-import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.Gemini
+import gemini4s.Gemini
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -143,11 +143,11 @@ import gemini4s.model.domain.GeminiConstants
 def multipleModels(using apiKey: ApiKey): IO[Unit] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = GeminiServiceImpl.make[IO](httpClient)
+    val service = Gemini.make[IO](httpClient)
     
     // Use the same service for different models
-    val flashRequest = GenerateContentRequest(GeminiConstants.Gemini25Flash, List(GeminiService.text("Flash")))
-    val proRequest = GenerateContentRequest(GeminiConstants.Gemini25Pro, List(GeminiService.text("Pro")))
+    val flashRequest = GenerateContentRequest(GeminiConstants.Gemini25Flash, List(Gemini.text("Flash")))
+    val proRequest = GenerateContentRequest(GeminiConstants.Gemini25Pro, List(Gemini.text("Pro")))
     
     for {
       _ <- service.generateContent(flashRequest)

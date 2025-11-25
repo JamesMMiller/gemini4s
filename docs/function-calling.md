@@ -47,12 +47,12 @@ Provide tools to the model:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.config.ApiKey
 
-def useTools(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def useTools(service: Gemini[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -85,7 +85,7 @@ def useTools(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       ModelName.Gemini25Flash,
-      List(GeminiService.text("What's the weather in Tokyo?")),
+      List(Gemini.text("What's the weather in Tokyo?")),
       tools = Some(List(weatherTool)),
       toolConfig = Some(toolConfig)
     )
@@ -147,13 +147,13 @@ Full example with function execution:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import io.circe.Json
-import gemini4s.GeminiService
+import gemini4s.Gemini
 import gemini4s.model.domain._
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.response.{ResponsePart, GenerateContentResponse}
 import gemini4s.config.ApiKey
 
-def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def weatherAgent(service: Gemini[IO])(using apiKey: ApiKey): IO[Unit] = {
   // 1. Define the function
   val weatherFunction = FunctionDeclaration(
     name = "get_weather",
@@ -179,7 +179,7 @@ def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   service.generateContent(
     GenerateContentRequest(
       ModelName.Gemini25Flash,
-      List(GeminiService.text("What's the weather in London?")),
+      List(Gemini.text("What's the weather in London?")),
       tools = Some(List(tool)),
       toolConfig = Some(toolConfig)
     )
@@ -209,7 +209,7 @@ def weatherAgent(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
             GenerateContentRequest(
               ModelName.Gemini25Flash,
               List(
-                GeminiService.text("What's the weather in London?"),
+                Gemini.text("What's the weather in London?"),
                 functionResponse
               ),
               tools = Some(List(tool)),
