@@ -25,7 +25,7 @@ def createCache(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
   )
   
   service.createCachedContent(
-    model = GeminiService.Gemini25Flash,
+    model = Gemini.Gemini25Flash,
     systemInstruction = Some(systemInstruction),
     ttl = Some("3600s"),  // Cache for 1 hour
     displayName = Some("scala-assistant-context")

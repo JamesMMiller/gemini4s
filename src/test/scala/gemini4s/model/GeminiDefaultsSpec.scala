@@ -5,7 +5,7 @@ import munit.FunSuite
 import gemini4s.model.domain._
 import gemini4s.model.request._
 
-class GeminiDefaultsSpec extends FunSuite {
+class GeminiServiceDefaultsSpec extends FunSuite {
 
   test("GenerateContentRequest defaults") {
     val req = GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart("text")))))

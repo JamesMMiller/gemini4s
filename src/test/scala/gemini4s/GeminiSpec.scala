@@ -11,8 +11,8 @@ import gemini4s.model.response._
 
 class GeminiServiceSpec extends CatsEffectSuite {
 
-  // Test implementation of GeminiService
-  class TestGeminiService extends GeminiService[IO] {
+  // Test implementation of Gemini
+  class TestGemini extends GeminiService[IO] {
 
     override def generateContent(
         request: GenerateContentRequest

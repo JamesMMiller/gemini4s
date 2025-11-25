@@ -35,32 +35,23 @@ libraryDependencies += "io.github.jamesmmiller" %% "gemini4s" % "@VERSION@"
 
 ```scala mdoc:compile-only
 import cats.effect.{IO, IOApp}
-import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
-import gemini4s.http.GeminiHttpClient
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 import gemini4s.model.request.GenerateContentRequest
 import gemini4s.model.domain.ModelName
 
-object QuickStart extends IOApp.Simple {
-  val run: IO[Unit] = HttpClientFs2Backend.resource[IO]().use { backend =>
-    val apiKey = ApiKey.unsafe("YOUR_API_KEY")
+object Example extends IOApp.Simple {
+  val run: IO[Unit] = {
+    val config = GeminiConfig(sys.env.getOrElse("GEMINI_API_KEY", "your-api-key"))
     
-    val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = GeminiServiceImpl.make[IO](httpClient)
-    
-    for {
-      response <- service.generateContent(
+    GeminiService.make[IO](config).use { service =>
+      service.generateContent(
         GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing in one sentence")))
-      )
-      _ <- response match {
-        case Right(result) => 
-          IO.println(result.candidates.head.content.parts.head)
-        case Left(error) => 
-          IO.println(s"Error: ${error.message}")
+      ).flatMap {
+        case Right(response) => IO.println(response.candidates.head.content.parts.head)
+        case Left(error)     => IO.println(s"Error: ${error.message}")
       }
-    } yield ()
+    }
   }
 }
 ```

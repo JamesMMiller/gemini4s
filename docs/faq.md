@@ -134,7 +134,7 @@ Yes! You can specify the model for each request using the same service instance:
 import cats.effect.IO
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.GeminiService
-import gemini4s.interpreter.GeminiServiceImpl
+import gemini4s.GeminiService
 import gemini4s.http.GeminiHttpClient
 import gemini4s.config.ApiKey
 import gemini4s.model.request.GenerateContentRequest
@@ -143,7 +143,7 @@ import gemini4s.model.domain.GeminiConstants
 def multipleModels(using apiKey: ApiKey): IO[Unit] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    val service = GeminiServiceImpl.make[IO](httpClient)
+    val service = GeminiService.make[IO](httpClient)
     
     // Use the same service for different models
     val flashRequest = GenerateContentRequest(GeminiConstants.Gemini25Flash, List(GeminiService.text("Flash")))

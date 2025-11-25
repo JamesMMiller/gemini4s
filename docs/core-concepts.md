@@ -126,20 +126,19 @@ import gemini4s.config.ApiKey
 val apiKey = ApiKey.unsafe("your-api-key")
 ```
 
-The `GeminiService` is passed the API key when creating it:
+The `Gemini` is passed the API key when creating it:
 
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceImpl
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
 def makeService(apiKey: ApiKey): IO[GeminiService[IO]] = {
   HttpClientFs2Backend.resource[IO]().use { backend =>
     val httpClient = GeminiHttpClient.make[IO](backend, apiKey)
-    IO.pure(GeminiServiceImpl.make[IO](httpClient))
+    IO.pure(GeminiService.make[IO](httpClient))
   }
 }
 ```

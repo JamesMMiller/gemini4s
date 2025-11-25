@@ -4,9 +4,9 @@ import cats.effect.IO
 import munit.CatsEffectSuite
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
+import gemini4s.GeminiService
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
-import gemini4s.interpreter.GeminiServiceImpl
 import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
@@ -23,7 +23,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       service
         .generateContent(
@@ -46,7 +46,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       service
         .countTokens(
@@ -68,7 +68,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       val jsonConfig = GenerationConfig(responseMimeType = Some(MimeType.ApplicationJson))
 
@@ -96,7 +96,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       val weatherTool = Tool(
         functionDeclarations = Some(
@@ -147,7 +147,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       service
         .embedContent(
@@ -167,7 +167,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       val requests = List(
         EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingText001),
@@ -192,7 +192,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     HttpClientFs2Backend.resource[IO]().use { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiServiceImpl.make[IO](httpClient)
+      val service     = GeminiService.make[IO](httpClient)
 
       service
         .generateContentStream(

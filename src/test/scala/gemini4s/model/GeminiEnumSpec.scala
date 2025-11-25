@@ -4,7 +4,7 @@ import io.circe._
 import io.circe.syntax._
 import munit.FunSuite
 
-class GeminiEnumSpec extends FunSuite {
+class GeminiServiceEnumSpec extends FunSuite {
 
   import gemini4s.model.domain._
 
