@@ -9,7 +9,7 @@ object GeminiConstants {
   val Gemini25FlashLite: ModelName = ModelName.Gemini25FlashLite
   val Gemini3Pro: ModelName        = ModelName.Gemini3Pro
   val Imagen4: ModelName           = ModelName.Imagen4
-  val EmbeddingText004: ModelName  = ModelName.EmbeddingText001
+  val EmbeddingText001: ModelName  = ModelName.EmbeddingText001
 
   /** Maximum tokens per request (30,720 for Gemini Pro) */
   val MaxTokensPerRequest = 30720
