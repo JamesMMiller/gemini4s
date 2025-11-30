@@ -204,7 +204,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
             
             // 5. Send function result back to model
             val functionResponse = Content(
-              parts = List(ContentPart(weatherData)),
+              parts = List(ContentPart.Text(weatherData)),
               role = Some("function")
             )
             
@@ -345,15 +345,15 @@ def executeFunction(name: String, args: Map[String, io.circe.Json]): IO[Content]
         val location = args.get("location").flatMap(_.asString)
         location match {
           case Some(loc) =>
-            IO.pure(Content(parts = List(ContentPart(s"Weather data for $loc"))))
+            IO.pure(Content(parts = List(ContentPart.Text(s"Weather data for $loc"))))
           case None =>
-            IO.pure(Content(parts = List(ContentPart("Error: location parameter missing"))))
+            IO.pure(Content(parts = List(ContentPart.Text("Error: location parameter missing"))))
         }
       case unknown =>
-        IO.pure(Content(parts = List(ContentPart(s"Error: Unknown function $unknown"))))
+        IO.pure(Content(parts = List(ContentPart.Text(s"Error: Unknown function $unknown"))))
     }
   }.handleErrorWith { error =>
-    IO.pure(Content(parts = List(ContentPart(s"Error executing function: ${error.getMessage}"))))
+    IO.pure(Content(parts = List(ContentPart.Text(s"Error executing function: ${error.getMessage}"))))
   }
 }
 ```

@@ -71,7 +71,7 @@ class GeminiServiceCodecSpec extends FunSuite {
     val res = GenerateContentResponse(
       candidates = List(
         Candidate(
-          content = ResponseContent(List(ResponsePart.Text("text"))),
+          content = Some(ResponseContent(List(ResponsePart.Text("text")))),
           finishReason = Some("STOP"),
           index = Some(0),
           safetyRatings = Some(List(SafetyRating("category", "probability")))

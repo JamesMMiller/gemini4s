@@ -28,9 +28,11 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     val response = GenerateContentResponse(
       candidates = List(
         Candidate(
-          content = ResponseContent(
-            parts = List(ResponsePart.Text(text = "Generated text")),
-            role = Some("model")
+          content = Some(
+            ResponseContent(
+              parts = List(ResponsePart.Text(text = "Generated text")),
+              role = Some("model")
+            )
           ),
           finishReason = Some("STOP"),
           index = None,
@@ -54,7 +56,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isRight)
       assertEquals(
-        result.map(_.candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text),
+        result.map(_.candidates.head.content.flatMap(_.parts.headOption).get.asInstanceOf[ResponsePart.Text].text),
         Right("Generated text")
       )
     }
@@ -110,14 +112,26 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
 
   test("postStream should handle successful streaming response") {
     val response1 = GenerateContentResponse(
-      candidates =
-        List(Candidate(ResponseContent(List(ResponsePart.Text("Hello")), Some("model")), Some("STOP"), None, None)),
+      candidates = List(
+        Candidate(
+          content = Some(ResponseContent(List(ResponsePart.Text("Hello")), Some("model"))),
+          finishReason = Some("STOP"),
+          index = None,
+          safetyRatings = None
+        )
+      ),
       usageMetadata = None,
       modelVersion = None
     )
     val response2 = GenerateContentResponse(
-      candidates =
-        List(Candidate(ResponseContent(List(ResponsePart.Text(" World")), Some("model")), Some("STOP"), None, None)),
+      candidates = List(
+        Candidate(
+          content = Some(ResponseContent(List(ResponsePart.Text(" World")), Some("model"))),
+          finishReason = Some("STOP"),
+          index = None,
+          safetyRatings = None
+        )
+      ),
       usageMetadata = None,
       modelVersion = None
     )
@@ -146,8 +160,14 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .toList
       .map { results =>
         assertEquals(results.length, 2)
-        assertEquals(results(0).candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text, "Hello")
-        assertEquals(results(1).candidates.head.content.parts.head.asInstanceOf[ResponsePart.Text].text, " World")
+        assertEquals(
+          results(0).candidates.head.content.flatMap(_.parts.headOption).get.asInstanceOf[ResponsePart.Text].text,
+          "Hello"
+        )
+        assertEquals(
+          results(1).candidates.head.content.flatMap(_.parts.headOption).get.asInstanceOf[ResponsePart.Text].text,
+          " World"
+        )
       }
   }
 

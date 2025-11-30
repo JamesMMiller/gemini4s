@@ -40,7 +40,7 @@ class GenerateContentResponseSpec extends FunSuite {
 
   test("Candidate should handle all fields") {
     val candidate = Candidate(
-      content = ResponseContent(List(ResponsePart.Text("test"))),
+      content = Some(ResponseContent(List(ResponsePart.Text("test")))),
       finishReason = Some("STOP"),
       index = Some(0),
       safetyRatings = Some(List(SafetyRating("cat", "prob")))

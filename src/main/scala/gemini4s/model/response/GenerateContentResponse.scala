@@ -36,7 +36,7 @@ object PromptFeedback {
  * A candidate response from the model.
  */
 final case class Candidate(
-    content: ResponseContent,
+    content: Option[ResponseContent] = None,
     finishReason: Option[String] = None,
     index: Option[Int] = None,
     safetyRatings: Option[List[SafetyRating]] = None

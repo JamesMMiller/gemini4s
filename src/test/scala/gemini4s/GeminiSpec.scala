@@ -21,9 +21,11 @@ class GeminiServiceSpec extends CatsEffectSuite {
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
-            content = ResponseContent(
-              parts = List(ResponsePart.Text(text = "Test response")),
-              role = Some("model")
+            content = Some(
+              ResponseContent(
+                parts = List(ResponsePart.Text(text = "Test response")),
+                role = Some("model")
+              )
             ),
             finishReason = Some("STOP"),
             safetyRatings = None
@@ -42,9 +44,11 @@ class GeminiServiceSpec extends CatsEffectSuite {
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
-            content = ResponseContent(
-              parts = List(ResponsePart.Text(text = "Streaming test response")),
-              role = Some("model")
+            content = Some(
+              ResponseContent(
+                parts = List(ResponsePart.Text(text = "Streaming test response")),
+                role = Some("model")
+              )
             ),
             finishReason = Some("STOP"),
             safetyRatings = None

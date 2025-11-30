@@ -47,7 +47,7 @@ def example(service: GeminiService[IO]): IO[String] = {
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
   ).flatMap {
     case Right(response) => 
-      IO.pure(response.candidates.head.content.parts.head.toString)
+      IO.pure(response.candidates.head.content.flatMap(_.parts.headOption).map(_.toString).getOrElse(""))
     case Left(error) => 
       IO.raiseError(new RuntimeException(error.message))
   }
@@ -71,7 +71,7 @@ def exampleWithEitherT(
     response <- EitherT(service.generateContent(
       GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Hello")))
     ))
-    text = response.candidates.head.content.parts.head.toString
+    text = response.candidates.head.content.flatMap(_.parts.headOption).map(_.toString).getOrElse("")
   } yield text
 }
 ```
@@ -167,9 +167,9 @@ val content = GeminiService.text("Hello, world!")
 import gemini4s.model.domain.{Content, ContentPart}
 
 val conversation = List(
-  Content(parts = List(ContentPart("What is 2+2?")), role = Some("user")),
-  Content(parts = List(ContentPart("4")), role = Some("model")),
-  Content(parts = List(ContentPart("What about 3+3?")), role = Some("user"))
+  Content(parts = List(ContentPart.Text("What is 2+2?")), role = Some("user")),
+  Content(parts = List(ContentPart.Text("4")), role = Some("model")),
+  Content(parts = List(ContentPart.Text("What about 3+3?")), role = Some("user"))
 )
 ```
 
@@ -198,7 +198,7 @@ def streamExample(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count to 10")))
   )
-    .map(_.candidates.head.content.parts.head)
+    .map(_.candidates.head.content.flatMap(_.parts.headOption))
     .evalMap(part => IO.println(part))
     .compile
     .drain

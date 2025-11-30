@@ -18,7 +18,7 @@ def basic(service: GeminiService[IO]): IO[Unit] = {
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain photosynthesis")))
   ).flatMap {
     case Right(response) =>
-      val text = response.candidates.head.content.parts.head
+      val text = response.candidates.head.content.flatMap(_.parts.headOption)
       IO.println(text)
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
@@ -102,7 +102,7 @@ import gemini4s.model.request.GenerateContentRequest
 
 def withSystemInstruction(service: GeminiService[IO]): IO[Unit] = {
   val systemInstruction = Content(
-    parts = List(ContentPart(
+    parts = List(ContentPart.Text(
       "You are a helpful assistant that always responds in a friendly, " +
       "encouraging tone. Keep responses concise."
     ))
@@ -130,12 +130,12 @@ import gemini4s.model.request.GenerateContentRequest
 
 def conversation(service: GeminiService[IO]): IO[Unit] = {
   val history = List(
-    Content(parts = List(ContentPart("What is Scala?")), role = Some("user")),
+    Content(parts = List(ContentPart.Text("What is Scala?")), role = Some("user")),
     Content(
-      parts = List(ContentPart("Scala is a programming language...")),
+      parts = List(ContentPart.Text("Scala is a programming language...")),
       role = Some("model")
     ),
-    Content(parts = List(ContentPart("What are its main features?")), role = Some("user"))
+    Content(parts = List(ContentPart.Text("What are its main features?")), role = Some("user"))
   )
   
   service.generateContent(
@@ -169,7 +169,7 @@ def jsonMode(service: GeminiService[IO]): IO[Unit] = {
     )
   ).flatMap {
     case Right(response) =>
-      val json = response.candidates.head.content.parts.head
+      val json = response.candidates.head.content.flatMap(_.parts.headOption)
       IO.println(s"JSON response: $json")
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
@@ -201,7 +201,7 @@ def multipleCandidates(service: GeminiService[IO]): IO[Unit] = {
   ).flatMap {
     case Right(response) =>
       response.candidates.foreach { candidate =>
-        println(s"Candidate: ${candidate.content.parts.head}")
+        println(s"Candidate: ${candidate.content.flatMap(_.parts.headOption).getOrElse("No content")}")
       }
       IO.unit
     case Left(error) =>

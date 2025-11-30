@@ -82,9 +82,9 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         )
         .map {
           case Right(response) =>
-            val text = response.candidates.head.content.parts.head match {
-              case ResponsePart.Text(t) => t
-              case _                    => fail("Expected text response")
+            val text = response.candidates.head.content.flatMap(_.parts.headOption) match {
+              case Some(ResponsePart.Text(t)) => t
+              case _                          => fail("Expected text response")
             }
             assert(text.trim.startsWith("{") || text.trim.startsWith("["))
           case Left(e)         => fail(s"API call failed: ${e.message}")
@@ -134,10 +134,12 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         )
         .map {
           case Right(response) =>
-            val hasFunctionCall = response.candidates.headOption.exists(_.content.parts.exists {
-              case ResponsePart.FunctionCall(_) => true
-              case _                            => false
-            })
+            val hasFunctionCall = response.candidates.headOption
+              .flatMap(_.content)
+              .exists(_.parts.exists {
+                case ResponsePart.FunctionCall(_) => true
+                case _                            => false
+              })
             assert(hasFunctionCall, "Expected a function call in the response")
           case Left(e)         => fail(s"API call failed: ${e.message}")
         }
@@ -228,9 +230,9 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         )
         .map {
           case Right(response) =>
-            val text = response.candidates.head.content.parts.head match {
-              case ResponsePart.Text(t) => t
-              case _                    => fail("Expected text response")
+            val text = response.candidates.head.content.flatMap(_.parts.headOption) match {
+              case Some(ResponsePart.Text(t)) => t
+              case _                          => fail("Expected text response")
             }
             assert(text.nonEmpty)
           case Left(e)         => fail(s"API call failed: ${e.message}")

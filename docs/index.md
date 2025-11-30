@@ -44,7 +44,7 @@ object Example extends IOApp.Simple {
       service.generateContent(
         GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing in one sentence")))
       ).flatMap {
-        case Right(response) => IO.println(response.candidates.head.content.parts.head)
+        case Right(response) => IO.println(response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("No content"))
         case Left(error)     => IO.println(s"Error: ${error.message}")
       }
     }

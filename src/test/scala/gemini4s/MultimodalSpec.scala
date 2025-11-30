@@ -70,4 +70,28 @@ class MultimodalSpec extends FunSuite {
     assertEquals(json.asString, Some("http://example.com"))
     assertEquals(json.as[ContentPart.FileUri], Right(uri))
   }
+
+  test("GeminiService.image helper should create correct ContentPart") {
+    val base64   = "base64data"
+    val mimeType = "image/png"
+    val content  = GeminiService.image(base64, mimeType)
+    content.parts.head match {
+      case ContentPart.InlineData(m, d) =>
+        assertEquals(m.value, mimeType)
+        assertEquals(d.value, base64)
+      case _                            => fail("Expected InlineData")
+    }
+  }
+
+  test("GeminiService.file helper should create correct ContentPart") {
+    val uri      = "http://example.com"
+    val mimeType = "application/pdf"
+    val content  = GeminiService.file(uri, mimeType)
+    content.parts.head match {
+      case ContentPart.FileData(m, u) =>
+        assertEquals(m.value, mimeType)
+        assertEquals(u.value, uri)
+      case _                          => fail("Expected FileData")
+    }
+  }
 }
