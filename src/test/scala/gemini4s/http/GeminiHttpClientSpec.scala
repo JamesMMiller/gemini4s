@@ -48,7 +48,7 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
     val request = GenerateContentRequest(
       ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
-      List(Content(parts = List(ContentPart("prompt"))))
+      List(Content(parts = List(ContentPart.Text("prompt"))))
     )
 
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
@@ -65,8 +65,10 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .thenRespond("Invalid request", StatusCode.BadRequest)
 
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
-    val request =
-      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
 
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
@@ -78,8 +80,10 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespondServerError()
 
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
-    val request =
-      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
 
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
@@ -93,8 +97,10 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
     )
 
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
-    val request =
-      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
 
     client.post[GenerateContentRequest, GenerateContentResponse]("generateContent", request).map { result =>
       assert(result.isLeft)
@@ -129,8 +135,10 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .thenRespond(Right(byteStream))
 
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
-    val request =
-      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
 
     client
       .postStream[GenerateContentRequest, GenerateContentResponse]("streamGenerateContent", request)
@@ -148,8 +156,10 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
       .thenRespond(Left("Invalid request"), StatusCode.BadRequest)
 
     val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
-    val request =
-      GenerateContentRequest(ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"), List(Content(parts = List(ContentPart("prompt")))))
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
 
     client
       .postStream[GenerateContentRequest, GenerateContentResponse]("streamGenerateContent", request)

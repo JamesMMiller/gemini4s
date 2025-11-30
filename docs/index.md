@@ -69,6 +69,7 @@ object Example extends IOApp.Simple {
 - **[Examples](examples.md)** - Complete working examples
 - **[Best Practices](best-practices.md)** - Production-ready patterns
 - **[FAQ](faq.md)** - Common questions and troubleshooting
+- **[Roadmap](roadmap.md)** - Future development plans
 
 ## API Reference
 

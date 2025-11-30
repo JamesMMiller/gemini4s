@@ -12,7 +12,7 @@ class GeminiServiceFeaturesSpec extends FunSuite {
 
   test("EmbedContentRequest should encode correctly") {
     val request = EmbedContentRequest(
-      content = Content(parts = List(ContentPart("Hello"))),
+      content = Content(parts = List(ContentPart.Text("Hello"))),
       model = ModelName.unsafe("models/embedding-001"),
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
       title = Some("Test Doc"),
@@ -29,11 +29,11 @@ class GeminiServiceFeaturesSpec extends FunSuite {
       model = ModelName.unsafe("models/embedding-001"),
       requests = List(
         EmbedContentRequest(
-          content = Content(parts = List(ContentPart("Hello"))),
+          content = Content(parts = List(ContentPart.Text("Hello"))),
           model = ModelName.unsafe("models/embedding-001")
         ),
         EmbedContentRequest(
-          content = Content(parts = List(ContentPart("World"))),
+          content = Content(parts = List(ContentPart.Text("World"))),
           model = ModelName.unsafe("models/embedding-001")
         )
       )
@@ -69,7 +69,7 @@ class GeminiServiceFeaturesSpec extends FunSuite {
   test("CreateCachedContentRequest should encode correctly") {
     val request = CreateCachedContentRequest(
       model = Some("models/gemini-pro"),
-      contents = Some(List(Content(parts = List(ContentPart("Cached context"))))),
+      contents = Some(List(Content(parts = List(ContentPart.Text("Cached context"))))),
       ttl = Some("3600s")
     )
     val json    = request.asJson.noSpaces

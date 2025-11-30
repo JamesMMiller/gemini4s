@@ -105,7 +105,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
   test("text helper should create Content.Text correctly") {
     val content = GeminiService.text("Hello")
-    assertEquals(content.parts.head, ContentPart("Hello"))
+    assertEquals(content.parts.head, ContentPart.Text("Hello"))
   }
 
   test("Endpoints should generate correct paths") {

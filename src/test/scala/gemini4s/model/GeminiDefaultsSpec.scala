@@ -8,7 +8,7 @@ import gemini4s.model.request._
 class GeminiServiceDefaultsSpec extends FunSuite {
 
   test("GenerateContentRequest defaults") {
-    val req = GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart("text")))))
+    val req = GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart.Text("text")))))
     assertEquals(req.safetySettings, None)
     assertEquals(req.generationConfig, None)
     assertEquals(req.systemInstruction, None)
@@ -17,7 +17,7 @@ class GeminiServiceDefaultsSpec extends FunSuite {
   }
 
   test("EmbedContentRequest defaults") {
-    val req = EmbedContentRequest(Content(List(ContentPart("text"))), ModelName.unsafe("model"))
+    val req = EmbedContentRequest(Content(List(ContentPart.Text("text"))), ModelName.unsafe("model"))
     assertEquals(req.taskType, None)
     assertEquals(req.title, None)
     assertEquals(req.outputDimensionality, None)
@@ -35,7 +35,7 @@ class GeminiServiceDefaultsSpec extends FunSuite {
   }
 
   test("Content defaults") {
-    val content = Content(List(ContentPart("text")))
+    val content = Content(List(ContentPart.Text("test")))
     assertEquals(content.role, None)
   }
 

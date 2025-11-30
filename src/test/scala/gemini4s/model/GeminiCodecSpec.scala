@@ -15,10 +15,10 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("GenerateContentRequest codec") {
     val req = GenerateContentRequest(
       model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
-      contents = List(Content(List(ContentPart("text")))),
+      contents = List(Content(List(ContentPart.Text("test")))),
       safetySettings = Some(List(SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE))),
       generationConfig = Some(GenerationConfig(temperature = Some(Temperature.unsafe(0.5f)))),
-      systemInstruction = Some(Content(List(ContentPart("system")))),
+      systemInstruction = Some(Content(List(ContentPart.Text("system")))),
       tools = Some(List(Tool(Some(List(FunctionDeclaration("name", "desc", None)))))),
       toolConfig = Some(ToolConfig(Some(FunctionCallingConfig(Some(FunctionCallingMode.AUTO)))))
     )
@@ -28,14 +28,14 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("CountTokensRequest codec") {
     val req = CountTokensRequest(
       ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
-      List(Content(List(ContentPart("text"))))
+      List(Content(List(ContentPart.Text("text"))))
     )
     assertEquals(req.asJson.as[CountTokensRequest], Right(req))
   }
 
   test("EmbedContentRequest codec") {
     val req = EmbedContentRequest(
-      Content(List(ContentPart("text"))),
+      Content(List(ContentPart.Text("text"))),
       ModelName.unsafe("model"),
       Some(TaskType.RETRIEVAL_QUERY),
       Some("title"),
@@ -47,7 +47,7 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("BatchEmbedContentsRequest codec") {
     val req = BatchEmbedContentsRequest(
       ModelName.unsafe("model"),
-      List(EmbedContentRequest(Content(List(ContentPart("text"))), ModelName.unsafe("model")))
+      List(EmbedContentRequest(Content(List(ContentPart.Text("text"))), ModelName.unsafe("model")))
     )
     assertEquals(req.asJson.as[BatchEmbedContentsRequest], Right(req))
   }
@@ -55,8 +55,8 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("CreateCachedContentRequest codec") {
     val req = CreateCachedContentRequest(
       model = Some("model"),
-      systemInstruction = Some(Content(List(ContentPart("sys")))),
-      contents = Some(List(Content(List(ContentPart("text"))))),
+      systemInstruction = Some(Content(List(ContentPart.Text("sys")))),
+      contents = Some(List(Content(List(ContentPart.Text("text"))))),
       tools = Some(List(Tool(None))),
       toolConfig = None,
       ttl = Some("3600s"),
