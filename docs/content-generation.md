@@ -26,6 +26,64 @@ def basic(service: GeminiService[IO]): IO[Unit] = {
 }
 ```
 
+## Multimodal Input
+
+Gemini models support multimodal input, allowing you to include images and files alongside text.
+
+### Images
+
+Use the `GeminiService.image` helper to include images (Base64 encoded):
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.{Content, ContentPart, ModelName, MimeType}
+
+def describeImage(service: GeminiService[IO]): IO[Unit] = {
+  // Base64 encoded image data
+  val base64Image = "..." 
+  val imagePart = GeminiService.image(base64Image, "image/jpeg")
+  val textPart = GeminiService.text("What is in this image?")
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(Content(parts = imagePart.parts ++ textPart.parts))
+    )
+  ).flatMap {
+    case Right(response) =>
+      val text = response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("No content")
+      IO.println(text)
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
+### Files
+
+Use the `GeminiService.file` helper to include files via URI (e.g., from Google Cloud Storage or File API):
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.{Content, ContentPart, ModelName, MimeType}
+
+def analyzeFile(service: GeminiService[IO]): IO[Unit] = {
+  val filePart = GeminiService.file("https://example.com/document.pdf", "application/pdf")
+  val textPart = GeminiService.text("Summarize this document")
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(Content(parts = filePart.parts ++ textPart.parts))
+    )
+  ).void
+}
+```
+
 ## Generation Configuration
 
 Control how content is generated with `GenerationConfig`:

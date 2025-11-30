@@ -8,18 +8,13 @@ import gemini4s.model.domain._
 class MultimodalSpec extends FunSuite {
 
   test("ContentPart.InlineData should encode correctly") {
-    val part: ContentPart =
-      ContentPart.InlineData(ContentPart.MimeType("image/jpeg"), ContentPart.Base64Data("base64data"))
-    val json              = part.asJson.noSpaces
-    assert(json.contains("inlineData"))
-    assert(json.contains("mimeType"))
-    assert(json.contains("image/jpeg"))
-    assert(json.contains("data"))
-    assert(json.contains("base64data"))
+    val part: ContentPart = ContentPart.InlineData(MimeType.unsafe("image/jpeg"), ContentPart.Base64Data("base64data"))
+    val json              = part.asJson
+    assertEquals(json.as[ContentPart], Right(part))
   }
 
   test("ContentPart.FileData should encode correctly") {
-    val part: ContentPart = ContentPart.FileData(ContentPart.MimeType("image/png"), ContentPart.FileUri("uri"))
+    val part: ContentPart = ContentPart.FileData(MimeType.unsafe("image/png"), ContentPart.FileUri("uri"))
     val json              = part.asJson.noSpaces
     assert(json.contains("fileData"))
     assert(json.contains("mimeType"))
@@ -50,11 +45,11 @@ class MultimodalSpec extends FunSuite {
     }
   }
 
-  test("MimeType codec should work") {
-    val mimeType = ContentPart.MimeType("application/json")
+  test("MimeType codec") {
+    val mimeType = MimeType.unsafe("application/json")
     val json     = mimeType.asJson
     assertEquals(json.asString, Some("application/json"))
-    assertEquals(json.as[ContentPart.MimeType], Right(mimeType))
+    assertEquals(json.as[MimeType], Right(mimeType))
   }
 
   test("Base64Data codec should work") {

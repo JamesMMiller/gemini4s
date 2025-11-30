@@ -46,7 +46,7 @@ def streamText(service: GeminiService[IO]): IO[Unit] = {
   )
     .map(_.candidates.headOption)
     .unNone
-    .map(_.content.parts.headOption)
+    .map(_.content.flatMap(_.parts.headOption))
     .unNone
     .collect { case ResponsePart.Text(text) => text }
     .evalMap(text => IO.print(text))  // Print without newlines
@@ -75,7 +75,7 @@ def accumulateStream(service: GeminiService[IO]): IO[String] = {
     )
       .map(_.candidates.headOption)
       .unNone
-      .map(_.content.parts.headOption)
+      .map(_.content.flatMap(_.parts.headOption))
       .unNone
       .collect { case ResponsePart.Text(text) => text }
       .evalTap(chunk => accumulated.update(_ + chunk))
@@ -129,7 +129,7 @@ def streamWithDelay(service: GeminiService[IO]): IO[Unit] = {
   )
     .map(_.candidates.headOption)
     .unNone
-    .map(_.content.parts.headOption)
+    .map(_.content.flatMap(_.parts.headOption))
     .unNone
     .collect { case ResponsePart.Text(text) => text }
     .metered(100.millis)  // Slow down processing
@@ -168,7 +168,7 @@ def chatbot(service: GeminiService[IO]): IO[Unit] = {
             )
             .map(_.candidates.headOption)
             .unNone
-            .map(_.content.parts.headOption)
+            .map(_.content.flatMap(_.parts.headOption))
             .unNone
             .collect { case ResponsePart.Text(text) => text }
             .evalTap(chunk => IO.print(chunk))
@@ -236,7 +236,7 @@ def monitorProgress(service: GeminiService[IO]): IO[Unit] = {
     )
       .map(_.candidates.headOption)
       .unNone
-      .map(_.content.parts.headOption)
+      .map(_.content.flatMap(_.parts.headOption))
       .unNone
       .collect { case ResponsePart.Text(text) => text }
       .evalTap(_ => chunkCount.update(_ + 1))

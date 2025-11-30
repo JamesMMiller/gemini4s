@@ -133,4 +133,33 @@ class GeminiServiceCodecSpec extends FunSuite {
     val data = CodeExecutionResultData("ok", "output")
     assertEquals(data.asJson.as[CodeExecutionResultData], Right(data))
   }
+
+  test("ContentPart codec") {
+    val text: ContentPart = ContentPart.Text("text")
+    assertEquals(text.asJson.as[ContentPart], Right(text))
+
+    val inline: ContentPart = ContentPart.InlineData(MimeType.unsafe("image/jpeg"), ContentPart.Base64Data("base64"))
+    assertEquals(inline.asJson.as[ContentPart], Right(inline))
+
+    val file: ContentPart = ContentPart.FileData(MimeType.unsafe("application/pdf"), ContentPart.FileUri("uri"))
+    assertEquals(file.asJson.as[ContentPart], Right(file))
+  }
+
+  test("SafetySetting codec") {
+    val setting = SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE)
+    assertEquals(setting.asJson.as[SafetySetting], Right(setting))
+  }
+
+  test("GenerationConfig codec") {
+    val config = GenerationConfig(
+      temperature = Some(Temperature.unsafe(0.5f)),
+      topK = Some(TopK.unsafe(10)),
+      topP = Some(TopP.unsafe(0.9f)),
+      candidateCount = Some(1),
+      maxOutputTokens = Some(100),
+      stopSequences = Some(List("stop")),
+      responseMimeType = Some(MimeType.unsafe("text/plain"))
+    )
+    assertEquals(config.asJson.as[GenerationConfig], Right(config))
+  }
 }

@@ -11,15 +11,6 @@ sealed trait ContentPart
 
 object ContentPart {
 
-  opaque type MimeType = String
-
-  object MimeType {
-    def apply(value: String): MimeType        = value
-    extension (a: MimeType) def value: String = a
-    given Encoder[MimeType]                   = Encoder.encodeString
-    given Decoder[MimeType]                   = Decoder.decodeString
-  }
-
   opaque type Base64Data = String
 
   object Base64Data {

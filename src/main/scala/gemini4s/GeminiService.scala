@@ -128,7 +128,7 @@ object GeminiService {
    * @return A Content instance with the image wrapped in a Part
    */
   def image(base64: String, mimeType: String): Content =
-    Content(parts = List(ContentPart.InlineData(ContentPart.MimeType(mimeType), ContentPart.Base64Data(base64))))
+    Content(parts = List(ContentPart.InlineData(MimeType.unsafe(mimeType), ContentPart.Base64Data(base64))))
 
   /**
    * Helper to create a Content object with a file URI.
@@ -139,7 +139,7 @@ object GeminiService {
    *   The MIME type of the file.
    */
   def file(uri: String, mimeType: String): Content =
-    Content(parts = List(ContentPart.FileData(ContentPart.MimeType(mimeType), ContentPart.FileUri(uri))))
+    Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), ContentPart.FileUri(uri))))
 
   private final class GeminiServiceImpl[F[_]: Async](
       httpClient: GeminiHttpClient[F]

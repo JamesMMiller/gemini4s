@@ -130,7 +130,7 @@ import io.circe.Json
 import gemini4s.model.response.{GenerateContentResponse, ResponsePart}
 
 def handleFunctionCalls(response: GenerateContentResponse): IO[Unit] = {
-  val parts = response.candidates.headOption.map(_.content.parts).getOrElse(List.empty)
+  val parts = response.candidates.headOption.flatMap(_.content).map(_.parts).getOrElse(List.empty)
   parts.foreach {
     case ResponsePart.FunctionCall(data) =>
       println(s"Function: ${data.name}")
@@ -192,7 +192,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
     ).flatMap {
       case Right(response) =>
         // 3. Check for function calls
-        response.candidates.headOption.flatMap(_.content.parts.headOption) match {
+        response.candidates.headOption.flatMap(_.content).flatMap(_.parts.headOption) match {
           case Some(ResponsePart.FunctionCall(data)) =>
             // 4. Execute the function
             val location = data.args.get("location")
@@ -221,7 +221,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
             ).flatMap {
               case Right(finalResponse) =>
                 val text = finalResponse.candidates.headOption
-                  .flatMap(_.content.parts.headOption)
+                  .flatMap(_.content).flatMap(_.parts.headOption)
                   .collect { case ResponsePart.Text(t) => t }
                   .getOrElse("No response")
                 IO.println(text)

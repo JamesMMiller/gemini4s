@@ -64,8 +64,8 @@ lazy val root = project
     ),
 
     // Scoverage settings
-    coverageMinimumStmtTotal   := 70,
-    coverageMinimumBranchTotal := 70,
+    coverageMinimumStmtTotal   := 80,
+    coverageMinimumBranchTotal := 90,
     coverageFailOnMinimum      := true,
     coverageHighlighting       := true,
     coverageExcludedPackages   := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",
@@ -74,8 +74,10 @@ lazy val root = project
     addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
 
     // Load .env file for tests
-    Test / fork    := true,
-    Test / envVars := {
+    Test / parallelExecution := false,
+    Test / fork              := true,
+    run / fork               := true,
+    Test / envVars           := {
       val envFile = file(".env")
       if (envFile.exists()) {
         val props = new java.util.Properties()
