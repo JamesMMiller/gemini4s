@@ -44,27 +44,31 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain.{SafetySetting, HarmCategory, HarmBlockThreshold, ModelName}
 import gemini4s.model.request.GenerateContentRequest
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def withSafety(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  val safetySettings = List(
-    SafetySetting(
-      category = HarmCategory.HARASSMENT,
-      threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    ),
-    SafetySetting(
-      category = HarmCategory.HATE_SPEECH,
-      threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    )
-  )
+def withSafety(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
   
-  service.generateContent(
-    GenerateContentRequest(
-      ModelName.Gemini25Flash,
-      List(GeminiService.text("Your prompt here")),
-      safetySettings = Some(safetySettings)
+  GeminiService.make[IO](config).use { service =>
+    val safetySettings = List(
+      SafetySetting(
+        category = HarmCategory.HARASSMENT,
+        threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+      ),
+      SafetySetting(
+        category = HarmCategory.HATE_SPEECH,
+        threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+      )
     )
-  ).void
+    
+    service.generateContent(
+      GenerateContentRequest(
+        ModelName.Gemini25Flash,
+        List(GeminiService.text("Your prompt here")),
+        safetySettings = Some(safetySettings)
+      )
+    ).void
+  }
 }
 ```
 

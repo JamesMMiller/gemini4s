@@ -16,24 +16,29 @@ Context caching stores content (like system instructions, documents, or conversa
 ```scala
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
+import gemini4s.model.domain.ModelName
 
-def createCache(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  val systemInstruction = GeminiService.text(
-    "You are a helpful coding assistant specialized in Scala. " +
-    "Always provide type-safe, functional solutions."
-  )
+def createCache(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
   
-  service.createCachedContent(
-    model = Gemini.Gemini25Flash,
-    systemInstruction = Some(systemInstruction),
-    ttl = Some("3600s"),  // Cache for 1 hour
-    displayName = Some("scala-assistant-context")
-  ).flatMap {
-    case Right(cached) =>
-      IO.println(s"Created cache: ${cached.name}")
-    case Left(error) =>
-      IO.println(s"Error: ${error.message}")
+  GeminiService.make[IO](config).use { service =>
+    val systemInstruction = GeminiService.text(
+      "You are a helpful coding assistant specialized in Scala. " +
+      "Always provide type-safe, functional solutions."
+    )
+    
+    service.createCachedContent(
+      model = ModelName.Gemini25Flash,
+      systemInstruction = Some(systemInstruction),
+      ttl = Some("3600s"),  // Cache for 1 hour
+      displayName = Some("scala-assistant-context")
+    ).flatMap {
+      case Right(cached) =>
+        IO.println(s"Created cache: ${cached.name}")
+      case Left(error) =>
+        IO.println(s"Error: ${error.message}")
+    }
   }
 }
 ```

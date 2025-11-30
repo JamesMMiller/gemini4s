@@ -1,25 +1,21 @@
 # gemini4s
 
-**A Tagless Final Scala library for the Google Gemini API**
+**The Typelevel Scala Client for Google Gemini**
 
-gemini4s is a purely functional, type-safe Scala 3 library for interacting with Google's Gemini API. Built on the Typelevel stack (Cats Effect, FS2, Sttp, Circe), it provides a composable and effect-polymorphic interface for content generation, streaming, embeddings, and more.
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.jamesmmiller/gemini4s_3.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.jamesmmiller/gemini4s_3)
+[![CI](https://github.com/JamesMMiller/gemini4s/actions/workflows/ci.yml/badge.svg)](https://github.com/JamesMMiller/gemini4s/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/JamesMMiller/gemini4s/blob/main/LICENSE)
 
-## Why gemini4s?
+gemini4s is a **purely functional**, **type-safe**, and **idiomatic** Scala 3 library for the Google Gemini API. Built on the Typelevel stack (Cats Effect, FS2, Sttp, Circe), it brings the power of Gemini to your Scala applications with a developer experience you'll love.
 
-### Tagless Final Design
-gemini4s follows the Tagless Final pattern, allowing you to abstract over effect types (`F[_]`). This means you can use it with any effect type that has an `Async` instance - typically Cats Effect's `IO`, but also ZIO, Monix, or custom effect types.
+## Key Features
 
-### Type-Safe API
-All requests and responses are strongly typed with case classes and enums, catching errors at compile time rather than runtime. The API models closely follow the official Gemini API specification.
-
-### Streaming Support
-Native FS2 streaming support for real-time content generation. Process responses as they arrive without waiting for the complete response.
-
-### Purely Functional
-Built on Cats Effect 3 for composable, referentially transparent effects. All side effects are properly tracked in the type system.
-
-### Comprehensive Error Handling
-Typed error hierarchy with specific error types for different failure modes (authentication, rate limiting, content safety, network issues, etc.).
+- 🚀 **Tagless Final**: Abstract over effect types (`IO`, `ZIO`, `Task`, etc.)
+- 🛡️ **Type-Safe**: Strongly typed models for requests, responses, and configuration
+- 🌊 **Streaming**: Native FS2 streaming for real-time responses
+- 🧩 **Composable**: Built on Cats Effect 3 for seamless integration
+- 🛡️ **Robust**: Comprehensive error handling and retry strategies
+- 🛠️ **Feature Complete**: Supports content generation, embeddings, function calling, caching, and more
 
 ## Quick Start
 

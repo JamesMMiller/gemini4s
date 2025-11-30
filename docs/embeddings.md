@@ -16,19 +16,24 @@ Embeddings are vector representations of text that capture semantic meaning. Use
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def basicEmbedding(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
-  import gemini4s.model.request.EmbedContentRequest
-  import gemini4s.model.domain.GeminiConstants
-  service.embedContent(
-    EmbedContentRequest(GeminiService.text("Scala is a programming language"), GeminiConstants.EmbeddingText001)
-  ).flatMap {
-    case Right(embedding) =>
-      IO.println(s"Embedding dimension: ${embedding.values.length}") *>
-      IO.println(s"First few values: ${embedding.values.take(5)}")
-    case Left(error) =>
-      IO.println(s"Error: ${error.message}")
+def basicEmbedding(apiKey: String): IO[Unit] = {
+  val config = GeminiConfig(apiKey)
+  
+  GeminiService.make[IO](config).use { service =>
+    import gemini4s.model.request.EmbedContentRequest
+    import gemini4s.model.domain.GeminiConstants
+    
+    service.embedContent(
+      EmbedContentRequest(GeminiService.text("Scala is a programming language"), GeminiConstants.EmbeddingText001)
+    ).flatMap {
+      case Right(embedding) =>
+        IO.println(s"Embedding dimension: ${embedding.values.length}") *>
+        IO.println(s"First few values: ${embedding.values.take(5)}")
+      case Left(error) =>
+        IO.println(s"Error: ${error.message}")
+    }
   }
 }
 ```
@@ -42,9 +47,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.request.EmbedContentRequest
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def withTaskType(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def withTaskType(service: GeminiService[IO]): IO[Unit] = {
   // For search queries
   service.embedContent(
     EmbedContentRequest(
@@ -84,9 +89,9 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.{TaskType, GeminiConstants}
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
-def batchEmbeddings(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+def batchEmbeddings(service: GeminiService[IO]): IO[Unit] = {
   val documents = List(
     "Scala is a functional programming language",
     "Cats Effect provides IO monad",
@@ -136,7 +141,7 @@ import gemini4s.GeminiService
 import gemini4s.model.request.EmbedContentRequest
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.response.ContentEmbedding
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
 case class Document(id: String, text: String, embedding: ContentEmbedding)
 
@@ -152,7 +157,7 @@ def semanticSearch(
   service: GeminiService[IO],
   documents: List[Document],
   query: String
-)(using apiKey: ApiKey): IO[List[(Document, Double)]] = {
+): IO[List[(Document, Double)]] = {
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text(query),
@@ -183,13 +188,13 @@ import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.{TaskType, GeminiConstants}
 import gemini4s.model.response.ContentEmbedding
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
 def clusterDocuments(
   service: GeminiService[IO],
   documents: List[String],
   k: Int  // number of clusters
-)(using apiKey: ApiKey): IO[Map[Int, List[String]]] = {
+): IO[Map[Int, List[String]]] = {
   val requests: List[EmbedContentRequest] = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
@@ -244,7 +249,7 @@ import gemini4s.GeminiService
 import gemini4s.model.response.ContentEmbedding
 import gemini4s.model.request.EmbedContentRequest
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
 case class EmbeddingCache(
   cache: Ref[IO, Map[String, ContentEmbedding]]
@@ -252,7 +257,7 @@ case class EmbeddingCache(
   def getOrCompute(
     service: GeminiService[IO],
     text: String
-  )(using apiKey: ApiKey): IO[ContentEmbedding] = {
+  ): IO[ContentEmbedding] = {
     cache.get.flatMap { cached =>
       cached.get(text) match {
         case Some(embedding) => IO.pure(embedding)
@@ -294,12 +299,12 @@ import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.request.{EmbedContentRequest, BatchEmbedContentsRequest}
 import gemini4s.model.domain.GeminiConstants
-import gemini4s.config.ApiKey
+import gemini4s.config.GeminiConfig
 
 def efficientEmbedding(
   service: GeminiService[IO],
   texts: List[String]
-)(using apiKey: ApiKey): IO[Unit] = {
+): IO[Unit] = {
   // Good - batch request
   val requests = texts.map { text =>
     EmbedContentRequest(
