@@ -15,10 +15,10 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("GenerateContentRequest codec") {
     val req = GenerateContentRequest(
       model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
-      contents = List(Content(List(ContentPart("text")))),
+      contents = List(Content(List(ContentPart.Text("test")))),
       safetySettings = Some(List(SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE))),
       generationConfig = Some(GenerationConfig(temperature = Some(Temperature.unsafe(0.5f)))),
-      systemInstruction = Some(Content(List(ContentPart("system")))),
+      systemInstruction = Some(Content(List(ContentPart.Text("system")))),
       tools = Some(List(Tool(Some(List(FunctionDeclaration("name", "desc", None)))))),
       toolConfig = Some(ToolConfig(Some(FunctionCallingConfig(Some(FunctionCallingMode.AUTO)))))
     )
@@ -28,14 +28,14 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("CountTokensRequest codec") {
     val req = CountTokensRequest(
       ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
-      List(Content(List(ContentPart("text"))))
+      List(Content(List(ContentPart.Text("text"))))
     )
     assertEquals(req.asJson.as[CountTokensRequest], Right(req))
   }
 
   test("EmbedContentRequest codec") {
     val req = EmbedContentRequest(
-      Content(List(ContentPart("text"))),
+      Content(List(ContentPart.Text("text"))),
       ModelName.unsafe("model"),
       Some(TaskType.RETRIEVAL_QUERY),
       Some("title"),
@@ -47,7 +47,7 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("BatchEmbedContentsRequest codec") {
     val req = BatchEmbedContentsRequest(
       ModelName.unsafe("model"),
-      List(EmbedContentRequest(Content(List(ContentPart("text"))), ModelName.unsafe("model")))
+      List(EmbedContentRequest(Content(List(ContentPart.Text("text"))), ModelName.unsafe("model")))
     )
     assertEquals(req.asJson.as[BatchEmbedContentsRequest], Right(req))
   }
@@ -55,8 +55,8 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("CreateCachedContentRequest codec") {
     val req = CreateCachedContentRequest(
       model = Some("model"),
-      systemInstruction = Some(Content(List(ContentPart("sys")))),
-      contents = Some(List(Content(List(ContentPart("text"))))),
+      systemInstruction = Some(Content(List(ContentPart.Text("sys")))),
+      contents = Some(List(Content(List(ContentPart.Text("text"))))),
       tools = Some(List(Tool(None))),
       toolConfig = None,
       ttl = Some("3600s"),
@@ -71,7 +71,7 @@ class GeminiServiceCodecSpec extends FunSuite {
     val res = GenerateContentResponse(
       candidates = List(
         Candidate(
-          content = ResponseContent(List(ResponsePart.Text("text"))),
+          content = Some(ResponseContent(List(ResponsePart.Text("text")))),
           finishReason = Some("STOP"),
           index = Some(0),
           safetyRatings = Some(List(SafetyRating("category", "probability")))
@@ -132,5 +132,34 @@ class GeminiServiceCodecSpec extends FunSuite {
   test("CodeExecutionResultData codec") {
     val data = CodeExecutionResultData("ok", "output")
     assertEquals(data.asJson.as[CodeExecutionResultData], Right(data))
+  }
+
+  test("ContentPart codec") {
+    val text: ContentPart = ContentPart.Text("text")
+    assertEquals(text.asJson.as[ContentPart], Right(text))
+
+    val inline: ContentPart = ContentPart.InlineData(MimeType.unsafe("image/jpeg"), ContentPart.Base64Data("base64"))
+    assertEquals(inline.asJson.as[ContentPart], Right(inline))
+
+    val file: ContentPart = ContentPart.FileData(MimeType.unsafe("application/pdf"), ContentPart.FileUri("uri"))
+    assertEquals(file.asJson.as[ContentPart], Right(file))
+  }
+
+  test("SafetySetting codec") {
+    val setting = SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE)
+    assertEquals(setting.asJson.as[SafetySetting], Right(setting))
+  }
+
+  test("GenerationConfig codec") {
+    val config = GenerationConfig(
+      temperature = Some(Temperature.unsafe(0.5f)),
+      topK = Some(TopK.unsafe(10)),
+      topP = Some(TopP.unsafe(0.9f)),
+      candidateCount = Some(1),
+      maxOutputTokens = Some(100),
+      stopSequences = Some(List("stop")),
+      responseMimeType = Some(MimeType.unsafe("text/plain"))
+    )
+    assertEquals(config.asJson.as[GenerationConfig], Right(config))
   }
 }

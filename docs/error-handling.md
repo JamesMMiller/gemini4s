@@ -199,7 +199,7 @@ def withFallback(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text(prompt)))
   ).flatMap {
     case Right(response) =>
-      IO.pure(response.candidates.head.content.parts.head.toString)
+      IO.pure(response.candidates.head.content.flatMap(_.parts.headOption).map(_.toString).getOrElse(""))
     
     case Left(_) =>
       // Fallback to a simpler prompt or default value

@@ -18,11 +18,69 @@ def basic(service: GeminiService[IO]): IO[Unit] = {
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain photosynthesis")))
   ).flatMap {
     case Right(response) =>
-      val text = response.candidates.head.content.parts.head
+      val text = response.candidates.head.content.flatMap(_.parts.headOption)
       IO.println(text)
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
   }
+}
+```
+
+## Multimodal Input
+
+Gemini models support multimodal input, allowing you to include images and files alongside text.
+
+### Images
+
+Use the `GeminiService.image` helper to include images (Base64 encoded):
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.{Content, ContentPart, ModelName, MimeType}
+
+def describeImage(service: GeminiService[IO]): IO[Unit] = {
+  // Base64 encoded image data
+  val base64Image = "..." 
+  val imagePart = GeminiService.image(base64Image, "image/jpeg")
+  val textPart = GeminiService.text("What is in this image?")
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(Content(parts = imagePart.parts ++ textPart.parts))
+    )
+  ).flatMap {
+    case Right(response) =>
+      val text = response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("No content")
+      IO.println(text)
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
+### Files
+
+Use the `GeminiService.file` helper to include files via URI (e.g., from Google Cloud Storage or File API):
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.{Content, ContentPart, ModelName, MimeType}
+
+def analyzeFile(service: GeminiService[IO]): IO[Unit] = {
+  val filePart = GeminiService.file("https://example.com/document.pdf", "application/pdf")
+  val textPart = GeminiService.text("Summarize this document")
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(Content(parts = filePart.parts ++ textPart.parts))
+    )
+  ).void
 }
 ```
 
@@ -102,7 +160,7 @@ import gemini4s.model.request.GenerateContentRequest
 
 def withSystemInstruction(service: GeminiService[IO]): IO[Unit] = {
   val systemInstruction = Content(
-    parts = List(ContentPart(
+    parts = List(ContentPart.Text(
       "You are a helpful assistant that always responds in a friendly, " +
       "encouraging tone. Keep responses concise."
     ))
@@ -130,12 +188,12 @@ import gemini4s.model.request.GenerateContentRequest
 
 def conversation(service: GeminiService[IO]): IO[Unit] = {
   val history = List(
-    Content(parts = List(ContentPart("What is Scala?")), role = Some("user")),
+    Content(parts = List(ContentPart.Text("What is Scala?")), role = Some("user")),
     Content(
-      parts = List(ContentPart("Scala is a programming language...")),
+      parts = List(ContentPart.Text("Scala is a programming language...")),
       role = Some("model")
     ),
-    Content(parts = List(ContentPart("What are its main features?")), role = Some("user"))
+    Content(parts = List(ContentPart.Text("What are its main features?")), role = Some("user"))
   )
   
   service.generateContent(
@@ -169,7 +227,7 @@ def jsonMode(service: GeminiService[IO]): IO[Unit] = {
     )
   ).flatMap {
     case Right(response) =>
-      val json = response.candidates.head.content.parts.head
+      val json = response.candidates.head.content.flatMap(_.parts.headOption)
       IO.println(s"JSON response: $json")
     case Left(error) =>
       IO.println(s"Error: ${error.message}")
@@ -201,7 +259,7 @@ def multipleCandidates(service: GeminiService[IO]): IO[Unit] = {
   ).flatMap {
     case Right(response) =>
       response.candidates.foreach { candidate =>
-        println(s"Candidate: ${candidate.content.parts.head}")
+        println(s"Candidate: ${candidate.content.flatMap(_.parts.headOption).getOrElse("No content")}")
       }
       IO.unit
     case Left(error) =>

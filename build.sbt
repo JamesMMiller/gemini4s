@@ -1,4 +1,4 @@
-val baseVersion   = "0.2"
+val baseVersion   = "0.3"
 val scala3Version = "3.6.2"
 val zioCliVersion = "0.5.0"
 
@@ -74,8 +74,10 @@ lazy val root = project
     addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
 
     // Load .env file for tests
-    Test / fork    := true,
-    Test / envVars := {
+    Test / parallelExecution := false,
+    Test / fork              := true,
+    run / fork               := true,
+    Test / envVars           := {
       val envFile = file(".env")
       if (envFile.exists()) {
         val props = new java.util.Properties()

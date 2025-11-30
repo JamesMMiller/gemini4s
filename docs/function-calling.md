@@ -130,7 +130,7 @@ import io.circe.Json
 import gemini4s.model.response.{GenerateContentResponse, ResponsePart}
 
 def handleFunctionCalls(response: GenerateContentResponse): IO[Unit] = {
-  val parts = response.candidates.headOption.map(_.content.parts).getOrElse(List.empty)
+  val parts = response.candidates.headOption.flatMap(_.content).map(_.parts).getOrElse(List.empty)
   parts.foreach {
     case ResponsePart.FunctionCall(data) =>
       println(s"Function: ${data.name}")
@@ -192,7 +192,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
     ).flatMap {
       case Right(response) =>
         // 3. Check for function calls
-        response.candidates.headOption.flatMap(_.content.parts.headOption) match {
+        response.candidates.headOption.flatMap(_.content).flatMap(_.parts.headOption) match {
           case Some(ResponsePart.FunctionCall(data)) =>
             // 4. Execute the function
             val location = data.args.get("location")
@@ -204,7 +204,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
             
             // 5. Send function result back to model
             val functionResponse = Content(
-              parts = List(ContentPart(weatherData)),
+              parts = List(ContentPart.Text(weatherData)),
               role = Some("function")
             )
             
@@ -221,7 +221,7 @@ def weatherAgent(apiKey: String): IO[Unit] = {
             ).flatMap {
               case Right(finalResponse) =>
                 val text = finalResponse.candidates.headOption
-                  .flatMap(_.content.parts.headOption)
+                  .flatMap(_.content).flatMap(_.parts.headOption)
                   .collect { case ResponsePart.Text(t) => t }
                   .getOrElse("No response")
                 IO.println(text)
@@ -345,15 +345,15 @@ def executeFunction(name: String, args: Map[String, io.circe.Json]): IO[Content]
         val location = args.get("location").flatMap(_.asString)
         location match {
           case Some(loc) =>
-            IO.pure(Content(parts = List(ContentPart(s"Weather data for $loc"))))
+            IO.pure(Content(parts = List(ContentPart.Text(s"Weather data for $loc"))))
           case None =>
-            IO.pure(Content(parts = List(ContentPart("Error: location parameter missing"))))
+            IO.pure(Content(parts = List(ContentPart.Text("Error: location parameter missing"))))
         }
       case unknown =>
-        IO.pure(Content(parts = List(ContentPart(s"Error: Unknown function $unknown"))))
+        IO.pure(Content(parts = List(ContentPart.Text(s"Error: Unknown function $unknown"))))
     }
   }.handleErrorWith { error =>
-    IO.pure(Content(parts = List(ContentPart(s"Error executing function: ${error.getMessage}"))))
+    IO.pure(Content(parts = List(ContentPart.Text(s"Error executing function: ${error.getMessage}"))))
   }
 }
 ```

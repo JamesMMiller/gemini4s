@@ -118,7 +118,28 @@ object GeminiService {
    * @param text The input text
    * @return A Content instance with the text wrapped in a Part
    */
-  def text(text: String): Content = Content(parts = List(ContentPart(text = text)))
+  def text(text: String): Content = Content(parts = List(ContentPart.Text(text)))
+
+  /**
+   * Creates a Content instance from an image (Base64 encoded).
+   *
+   * @param base64 The Base64 encoded image data
+   * @param mimeType The MIME type of the image (e.g., "image/jpeg")
+   * @return A Content instance with the image wrapped in a Part
+   */
+  def image(base64: String, mimeType: String): Content =
+    Content(parts = List(ContentPart.InlineData(MimeType.unsafe(mimeType), ContentPart.Base64Data(base64))))
+
+  /**
+   * Helper to create a Content object with a file URI.
+   *
+   * @param uri
+   *   The URI of the file.
+   * @param mimeType
+   *   The MIME type of the file.
+   */
+  def file(uri: String, mimeType: String): Content =
+    Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), ContentPart.FileUri(uri))))
 
   private final class GeminiServiceImpl[F[_]: Async](
       httpClient: GeminiHttpClient[F]

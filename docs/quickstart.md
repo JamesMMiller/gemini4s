@@ -45,7 +45,7 @@ object QuickStart extends IOApp.Simple {
         GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing")))
       ).flatMap {
         case Right(response) => 
-          IO.println(response.candidates.head.content.parts.head)
+          IO.println(response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("No content"))
         case Left(error) => 
           IO.println(s"Error: ${error.message}")
       }

@@ -21,9 +21,11 @@ class GeminiServiceSpec extends CatsEffectSuite {
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
-            content = ResponseContent(
-              parts = List(ResponsePart.Text(text = "Test response")),
-              role = Some("model")
+            content = Some(
+              ResponseContent(
+                parts = List(ResponsePart.Text(text = "Test response")),
+                role = Some("model")
+              )
             ),
             finishReason = Some("STOP"),
             safetyRatings = None
@@ -42,9 +44,11 @@ class GeminiServiceSpec extends CatsEffectSuite {
       val response = GenerateContentResponse(
         candidates = List(
           Candidate(
-            content = ResponseContent(
-              parts = List(ResponsePart.Text(text = "Streaming test response")),
-              role = Some("model")
+            content = Some(
+              ResponseContent(
+                parts = List(ResponsePart.Text(text = "Streaming test response")),
+                role = Some("model")
+              )
             ),
             finishReason = Some("STOP"),
             safetyRatings = None
@@ -105,7 +109,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
   test("text helper should create Content.Text correctly") {
     val content = GeminiService.text("Hello")
-    assertEquals(content.parts.head, ContentPart("Hello"))
+    assertEquals(content.parts.head, ContentPart.Text("Hello"))
   }
 
   test("Endpoints should generate correct paths") {
@@ -134,5 +138,48 @@ class GeminiServiceSpec extends CatsEffectSuite {
       GeminiConstants.Endpoints.batchEmbedContents(customModel),
       s"${customModel.value}:batchEmbedContents"
     )
+  }
+  test("GeminiService should handle error responses") {
+    val service = new TestGemini {
+      override def generateContent(request: GenerateContentRequest): IO[Either[GeminiError, GenerateContentResponse]] =
+        IO.pure(Left(GeminiError.InvalidRequest("Invalid")))
+    }
+
+    service.generateContent(GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("test")))).map {
+      case Left(e)  => assertEquals(e.message, "Invalid")
+      case Right(_) => fail("Expected error")
+    }
+  }
+
+  test("GeminiService should support countTokens") {
+    val service = new TestGemini
+    service.countTokens(CountTokensRequest(ModelName.Gemini25Flash, List(GeminiService.text("test")))).map {
+      case Right(count) => assertEquals(count, 42)
+      case Left(_)      => fail("Expected success")
+    }
+  }
+
+  test("GeminiService should support embedContent") {
+    val service = new TestGemini
+    service.embedContent(EmbedContentRequest(GeminiService.text("test"), ModelName.Gemini25Flash)).map {
+      case Right(embedding) => assertEquals(embedding.values, List(0.1f, 0.2f))
+      case Left(_)          => fail("Expected success")
+    }
+  }
+
+  test("GeminiService should support batchEmbedContents") {
+    val service = new TestGemini
+    service.batchEmbedContents(BatchEmbedContentsRequest(ModelName.Gemini25Flash, List.empty)).map {
+      case Right(embeddings) => assertEquals(embeddings.head.values, List(0.1f, 0.2f))
+      case Left(_)           => fail("Expected success")
+    }
+  }
+
+  test("GeminiService should support createCachedContent") {
+    val service = new TestGemini
+    service.createCachedContent(CreateCachedContentRequest(model = Some("model"))).map {
+      case Right(cache) => assertEquals(cache.name, "cachedContents/123")
+      case Left(_)      => fail("Expected success")
+    }
   }
 }

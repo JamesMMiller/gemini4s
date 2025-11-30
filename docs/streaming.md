@@ -22,7 +22,7 @@ def basicStream(service: GeminiService[IO]): IO[Unit] = {
   service.generateContentStream(
     GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Count from 1 to 10")))
   )
-    .evalMap(response => IO.println(response.candidates.head.content.parts.head))
+    .evalMap(response => IO.println(response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("")))
     .compile
     .drain
 }
@@ -46,7 +46,7 @@ def streamText(service: GeminiService[IO]): IO[Unit] = {
   )
     .map(_.candidates.headOption)
     .unNone
-    .map(_.content.parts.headOption)
+    .map(_.content.flatMap(_.parts.headOption))
     .unNone
     .collect { case ResponsePart.Text(text) => text }
     .evalMap(text => IO.print(text))  // Print without newlines
@@ -75,7 +75,7 @@ def accumulateStream(service: GeminiService[IO]): IO[String] = {
     )
       .map(_.candidates.headOption)
       .unNone
-      .map(_.content.parts.headOption)
+      .map(_.content.flatMap(_.parts.headOption))
       .unNone
       .collect { case ResponsePart.Text(text) => text }
       .evalTap(chunk => accumulated.update(_ + chunk))
@@ -129,7 +129,7 @@ def streamWithDelay(service: GeminiService[IO]): IO[Unit] = {
   )
     .map(_.candidates.headOption)
     .unNone
-    .map(_.content.parts.headOption)
+    .map(_.content.flatMap(_.parts.headOption))
     .unNone
     .collect { case ResponsePart.Text(text) => text }
     .metered(100.millis)  // Slow down processing
@@ -156,7 +156,7 @@ def chatbot(service: GeminiService[IO]): IO[Unit] = {
       _ <- IO.print("You: ")
       input <- IO.readLine
       _ <- if (input.toLowerCase == "quit") IO.unit else {
-        val userMessage = Content(parts = List(ContentPart(input)), role = Some("user"))
+        val userMessage = Content(parts = List(ContentPart.Text(input)), role = Some("user"))
         
         for {
           _ <- history.update(_ :+ userMessage)
@@ -168,7 +168,7 @@ def chatbot(service: GeminiService[IO]): IO[Unit] = {
             )
             .map(_.candidates.headOption)
             .unNone
-            .map(_.content.parts.headOption)
+            .map(_.content.flatMap(_.parts.headOption))
             .unNone
             .collect { case ResponsePart.Text(text) => text }
             .evalTap(chunk => IO.print(chunk))
@@ -176,7 +176,7 @@ def chatbot(service: GeminiService[IO]): IO[Unit] = {
             .foldMonoid
           
           _ <- IO.println("")
-          _ <- history.update(_ :+ Content(parts = List(ContentPart(text = response)), role = Some("model")))
+          _ <- history.update(_ :+ Content(parts = List(ContentPart.Text(response)), role = Some("model")))
           
           _ <- chat(history)
         } yield ()
@@ -211,7 +211,7 @@ def streamWithConfig(service: GeminiService[IO]): IO[Unit] = {
       generationConfig = Some(config)
     )
   )
-    .evalMap(response => IO.println(response.candidates.head.content.parts.head))
+    .evalMap(response => IO.println(response.candidates.head.content.flatMap(_.parts.headOption).getOrElse("")))
     .compile
     .drain
 }
@@ -236,7 +236,7 @@ def monitorProgress(service: GeminiService[IO]): IO[Unit] = {
     )
       .map(_.candidates.headOption)
       .unNone
-      .map(_.content.parts.headOption)
+      .map(_.content.flatMap(_.parts.headOption))
       .unNone
       .collect { case ResponsePart.Text(text) => text }
       .evalTap(_ => chunkCount.update(_ + 1))
