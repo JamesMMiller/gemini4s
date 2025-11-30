@@ -127,7 +127,8 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .generateContent(
           GenerateContentRequest(
             model = ModelName.Gemini25Flash,
-            contents = List(GeminiService.text("What's the weather in Tokyo?")),
+            contents =
+              List(GeminiService.text("Call the get_weather function for Tokyo, Japan. Ensure you use the tool.")),
             tools = Some(List(weatherTool))
           )
         )
@@ -204,6 +205,36 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .compile
         .toList
         .map(chunks => assert(chunks.nonEmpty, "Expected at least one chunk"))
+    }
+  }
+
+  test("generateContent with Image should describe the image") {
+    HttpClientFs2Backend.resource[IO]().use { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse(""))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      // 1x1 transparent PNG
+      val base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+      val imagePart   = GeminiService.image(base64Image, "image/png")
+      val textPart    = GeminiService.text("What is this image?")
+
+      service
+        .generateContent(
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(Content(parts = imagePart.parts ++ textPart.parts))
+          )
+        )
+        .map {
+          case Right(response) =>
+            val text = response.candidates.head.content.parts.head match {
+              case ResponsePart.Text(t) => t
+              case _                    => fail("Expected text response")
+            }
+            assert(text.nonEmpty)
+          case Left(e)         => fail(s"API call failed: ${e.message}")
+        }
     }
   }
 

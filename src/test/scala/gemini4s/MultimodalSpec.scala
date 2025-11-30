@@ -1,13 +1,15 @@
 package gemini4s
 
-import munit.FunSuite
 import io.circe.syntax._
+import munit.FunSuite
+
 import gemini4s.model.domain._
 
 class MultimodalSpec extends FunSuite {
 
   test("ContentPart.InlineData should encode correctly") {
-    val part: ContentPart = ContentPart.InlineData("image/jpeg", "base64data")
+    val part: ContentPart =
+      ContentPart.InlineData(ContentPart.MimeType("image/jpeg"), ContentPart.Base64Data("base64data"))
     val json              = part.asJson.noSpaces
     assert(json.contains("inlineData"))
     assert(json.contains("mimeType"))
@@ -17,7 +19,7 @@ class MultimodalSpec extends FunSuite {
   }
 
   test("ContentPart.FileData should encode correctly") {
-    val part: ContentPart = ContentPart.FileData("image/png", "uri")
+    val part: ContentPart = ContentPart.FileData(ContentPart.MimeType("image/png"), ContentPart.FileUri("uri"))
     val json              = part.asJson.noSpaces
     assert(json.contains("fileData"))
     assert(json.contains("mimeType"))
@@ -31,8 +33,8 @@ class MultimodalSpec extends FunSuite {
     assertEquals(content.parts.length, 1)
     content.parts.head match {
       case ContentPart.InlineData(mimeType, data) =>
-        assertEquals(mimeType, "image/png")
-        assertEquals(data, "base64")
+        assertEquals(mimeType.value, "image/png")
+        assertEquals(data.value, "base64")
       case _                                      => fail("Expected InlineData")
     }
   }
@@ -42,9 +44,30 @@ class MultimodalSpec extends FunSuite {
     assertEquals(content.parts.length, 1)
     content.parts.head match {
       case ContentPart.FileData(mimeType, fileUri) =>
-        assertEquals(mimeType, "application/pdf")
-        assertEquals(fileUri, "uri")
+        assertEquals(mimeType.value, "application/pdf")
+        assertEquals(fileUri.value, "uri")
       case _                                       => fail("Expected FileData")
     }
+  }
+
+  test("MimeType codec should work") {
+    val mimeType = ContentPart.MimeType("application/json")
+    val json     = mimeType.asJson
+    assertEquals(json.asString, Some("application/json"))
+    assertEquals(json.as[ContentPart.MimeType], Right(mimeType))
+  }
+
+  test("Base64Data codec should work") {
+    val data = ContentPart.Base64Data("base64")
+    val json = data.asJson
+    assertEquals(json.asString, Some("base64"))
+    assertEquals(json.as[ContentPart.Base64Data], Right(data))
+  }
+
+  test("FileUri codec should work") {
+    val uri  = ContentPart.FileUri("http://example.com")
+    val json = uri.asJson
+    assertEquals(json.asString, Some("http://example.com"))
+    assertEquals(json.as[ContentPart.FileUri], Right(uri))
   }
 }
