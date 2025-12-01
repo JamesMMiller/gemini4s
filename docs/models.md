@@ -15,10 +15,12 @@ import gemini4s.model.domain.GeminiConstants
 val flash = GeminiConstants.Gemini25Flash
 val pro = GeminiConstants.Gemini25Pro
 val flashLite = GeminiConstants.Gemini25FlashLite
-val embedding = GeminiConstants.EmbeddingText001
+val embedding = GeminiConstants.EmbeddingGemini001
+val latestPro = GeminiConstants.GeminiProLatest
+val latestFlash = GeminiConstants.GeminiFlashLatest
 
 // You can also use string literals for new models not yet in constants
-val futureModel = "models/gemini-3.0-pro"
+val futureModel = "models/gemini-4.0-pro"
 ```
 ## Using Different Models
 

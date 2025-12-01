@@ -2,14 +2,16 @@ package gemini4s.model.domain
 
 object GeminiConstants {
 
-  /** Default model identifier for Gemini 2.5 Flash */
-  val DefaultModel: ModelName      = ModelName.Gemini25Flash
-  val Gemini25Flash: ModelName     = ModelName.Gemini25Flash
-  val Gemini25Pro: ModelName       = ModelName.Gemini25Pro
-  val Gemini25FlashLite: ModelName = ModelName.Gemini25FlashLite
-  val Gemini3Pro: ModelName        = ModelName.Gemini3Pro
-  val Imagen4: ModelName           = ModelName.Imagen4
-  val EmbeddingText001: ModelName  = ModelName.EmbeddingText001
+  /** Default model identifier for Gemini Flash Latest */
+  val DefaultModel: ModelName       = ModelName.GeminiFlashLatest
+  val Gemini25Flash: ModelName      = ModelName.Gemini25Flash
+  val Gemini25Pro: ModelName        = ModelName.Gemini25Pro
+  val Gemini25FlashLite: ModelName  = ModelName.Gemini25FlashLite
+  val Gemini3Pro: ModelName         = ModelName.Gemini3Pro
+  val Imagen4: ModelName            = ModelName.Imagen4
+  val EmbeddingGemini001: ModelName = ModelName.EmbeddingGemini001
+  val GeminiProLatest: ModelName    = ModelName.GeminiProLatest
+  val GeminiFlashLatest: ModelName  = ModelName.GeminiFlashLatest
 
   /** Maximum tokens per request (30,720 for Gemini Pro) */
   val MaxTokensPerRequest = 30720

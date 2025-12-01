@@ -94,13 +94,13 @@ class GeminiServiceImplSpec extends CatsEffectSuite {
     val client           = new MockHttpClient(response = Right(expectedResponse))
     val service          = GeminiService.make[IO](client)
     val content          = Content(List(ContentPart.Text("test")))
-    val request          = EmbedContentRequest(content, GeminiConstants.EmbeddingText001)
+    val request          = EmbedContentRequest(content, GeminiConstants.EmbeddingGemini001)
 
     service.embedContent(request).map { result =>
       assertEquals(result, Right(ContentEmbedding(List(0.1f))))
       assertEquals(
         client.lastEndpoint,
-        GeminiConstants.Endpoints.embedContent(GeminiConstants.EmbeddingText001)
+        GeminiConstants.Endpoints.embedContent(GeminiConstants.EmbeddingGemini001)
       )
       assert(client.lastRequest.exists(_.isInstanceOf[EmbedContentRequest]))
     }
@@ -110,7 +110,7 @@ class GeminiServiceImplSpec extends CatsEffectSuite {
     val expectedResponse = BatchEmbedContentsResponse(List(ContentEmbedding(List(0.1f))))
     val client           = new MockHttpClient(response = Right(expectedResponse))
     val service          = GeminiService.make[IO](client)
-    val model            = GeminiConstants.EmbeddingText001
+    val model            = GeminiConstants.EmbeddingGemini001
     val requests         = List(EmbedContentRequest(Content(List(ContentPart.Text("test"))), model))
     val batchRequest     = BatchEmbedContentsRequest(model, requests)
 
@@ -118,7 +118,7 @@ class GeminiServiceImplSpec extends CatsEffectSuite {
       assertEquals(result, Right(List(ContentEmbedding(List(0.1f)))))
       assertEquals(
         client.lastEndpoint,
-        GeminiConstants.Endpoints.batchEmbedContents(GeminiConstants.EmbeddingText001)
+        GeminiConstants.Endpoints.batchEmbedContents(GeminiConstants.EmbeddingGemini001)
       )
       assert(client.lastRequest.exists(_.isInstanceOf[BatchEmbedContentsRequest]))
     }
