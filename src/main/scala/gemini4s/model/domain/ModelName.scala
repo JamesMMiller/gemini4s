@@ -14,9 +14,11 @@ object ModelName {
   val Gemini25Flash: ModelName      = "models/gemini-2.5-flash"
   val Gemini25Pro: ModelName        = "models/gemini-2.5-pro"
   val Gemini25FlashLite: ModelName  = "models/gemini-2.5-flash-lite"
-  val Gemini3Pro: ModelName         = "models/gemini-3.0-pro-preview-001"
+  val Gemini3Pro: ModelName         = "models/gemini-3-pro-preview"
   val Imagen4: ModelName            = "models/imagen-4.0-generate-001"
   val EmbeddingGemini001: ModelName = "models/gemini-embedding-001"
+  val GeminiProLatest: ModelName    = "models/gemini-pro-latest"
+  val GeminiFlashLatest: ModelName  = "models/gemini-flash-latest"
 
   // Default model
   val Default: ModelName = Gemini25Flash
