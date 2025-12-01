@@ -21,7 +21,7 @@ object ModelName {
   val GeminiFlashLatest: ModelName  = "models/gemini-flash-latest"
 
   // Default model
-  val Default: ModelName = Gemini25Flash
+  val Default: ModelName = GeminiFlashLatest
 
   /**
    * Smart constructor for custom model names.

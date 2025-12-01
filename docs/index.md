@@ -80,12 +80,12 @@ See the [API documentation](https://javadoc.io/doc/io.github.jamesmmiller/gemini
 gemini4s supports all Gemini models:
 
 - `gemini-3-pro-preview` - Latest reasoning model
-- `gemini-2.5-flash` - Fast, versatile performance (default)
+- `gemini-2.5-flash` - Fast, versatile performance
 - `gemini-2.5-pro` - Complex reasoning tasks
 - `gemini-2.5-flash-lite` - Lightweight, high-volume tasks
 - `gemini-embedding-001` - Text embeddings
 - `gemini-pro-latest` - Latest stable Pro model
-- `gemini-flash-latest` - Latest stable Flash model
+- `gemini-flash-latest` - Latest stable Flash model (default)
 
 See the [Models Guide](models.md) for detailed comparison and selection guidance.
 

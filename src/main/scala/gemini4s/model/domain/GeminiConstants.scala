@@ -2,8 +2,8 @@ package gemini4s.model.domain
 
 object GeminiConstants {
 
-  /** Default model identifier for Gemini 2.5 Flash */
-  val DefaultModel: ModelName       = ModelName.Gemini25Flash
+  /** Default model identifier for Gemini Flash Latest */
+  val DefaultModel: ModelName       = ModelName.GeminiFlashLatest
   val Gemini25Flash: ModelName      = ModelName.Gemini25Flash
   val Gemini25Pro: ModelName        = ModelName.Gemini25Pro
   val Gemini25FlashLite: ModelName  = ModelName.Gemini25FlashLite
