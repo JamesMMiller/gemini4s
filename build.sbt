@@ -48,6 +48,9 @@ lazy val root = project
         sonatypePublishToBundle.value
       }
     },
+    organizationName       := "JamesMMiller",
+    startYear              := Some(2024),
+    versionScheme          := Some("early-semver"),
     developers             := List(
       Developer(
         "jamesmiller",
