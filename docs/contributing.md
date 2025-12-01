@@ -36,7 +36,7 @@ We use `sbt` for building and testing.
     ```
 -   **Run integration tests**:
     ```bash
-    sbt it:test
+    sbt integration/test
     ```
     > **Note**: Integration tests will run against a mock backend if the `GEMINI_API_KEY` environment variable is not set. To run against the real Gemini API, create a `.env` file with your API key:
     > ```bash
