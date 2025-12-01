@@ -1,6 +1,5 @@
 val baseVersion   = "0.3"
 val scala3Version = "3.6.2"
-val zioCliVersion = "0.5.0"
 
 inThisBuild(
   List(
@@ -115,5 +114,3 @@ lazy val integration = project
       }
     }
   )
-
-// Examples project removed as it was ZIO-based
