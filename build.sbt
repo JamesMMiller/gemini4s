@@ -1,6 +1,5 @@
 val baseVersion   = "0.3"
 val scala3Version = "3.6.2"
-val zioCliVersion = "0.5.0"
 
 inThisBuild(
   List(
@@ -48,11 +47,14 @@ lazy val root = project
         sonatypePublishToBundle.value
       }
     },
+    organizationName       := "JamesMMiller",
+    startYear              := Some(2024),
+    versionScheme          := Some("early-semver"),
     developers             := List(
       Developer(
         "jamesmiller",
         "James Miller",
-        "james@example.com",
+        "7511223+JamesMMiller@users.noreply.github.com",
         url("https://github.com/JamesMMiller")
       )
     ),
@@ -112,5 +114,3 @@ lazy val integration = project
       }
     }
   )
-
-// Examples project removed as it was ZIO-based
