@@ -90,7 +90,7 @@ See the [Models Guide](models.md) for detailed comparison and selection guidance
 
 - **GitHub**: [JamesMMiller/gemini4s](https://github.com/JamesMMiller/gemini4s)
 - **Issues**: [Report bugs or request features](https://github.com/JamesMMiller/gemini4s/issues)
-- **Contributing**: See [CONTRIBUTING.md](https://github.com/JamesMMiller/gemini4s/blob/main/CONTRIBUTING.md)
+- **Contributing**: See [Contributing Guide](contributing.md)
 
 ## License
 
