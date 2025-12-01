@@ -26,7 +26,7 @@ def basicEmbedding(apiKey: String): IO[Unit] = {
     import gemini4s.model.domain.GeminiConstants
     
     service.embedContent(
-      EmbedContentRequest(GeminiService.text("Scala is a programming language"), GeminiConstants.EmbeddingText001)
+      EmbedContentRequest(GeminiService.text("Scala is a programming language"), GeminiConstants.EmbeddingGemini001)
     ).flatMap {
       case Right(embedding) =>
         IO.println(s"Embedding dimension: ${embedding.values.length}") *>
@@ -54,7 +54,7 @@ def withTaskType(service: GeminiService[IO]): IO[Unit] = {
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text("best scala libraries"),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.RETRIEVAL_QUERY)
     )
   ).void
@@ -63,7 +63,7 @@ def withTaskType(service: GeminiService[IO]): IO[Unit] = {
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text("Cats Effect is a library for..."),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
       title = Some("Cats Effect Documentation")
     )
@@ -73,7 +73,7 @@ def withTaskType(service: GeminiService[IO]): IO[Unit] = {
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text("functional programming"),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.SEMANTIC_SIMILARITY)
     )
   ).void
@@ -101,12 +101,12 @@ def batchEmbeddings(service: GeminiService[IO]): IO[Unit] = {
   val requests = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT)
     )
   }
   
-  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).flatMap {
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, requests)).flatMap {
     case Right(embeddings) =>
       IO.println(s"Generated ${embeddings.length} embeddings")
     case Left(error) =>
@@ -161,7 +161,7 @@ def semanticSearch(
   service.embedContent(
     EmbedContentRequest(
       content = GeminiService.text(query),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.RETRIEVAL_QUERY)
     )
   ).flatMap {
@@ -198,12 +198,12 @@ def clusterDocuments(
   val requests: List[EmbedContentRequest] = documents.map { doc =>
     EmbedContentRequest(
       content = GeminiService.text(doc),
-      model = GeminiConstants.EmbeddingText001,
+      model = GeminiConstants.EmbeddingGemini001,
       taskType = Some(TaskType.CLUSTERING)
     )
   }
   
-  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).flatMap {
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, requests)).flatMap {
     case Right(response) =>
       // Simple clustering: group by index modulo k
       val clusters: Map[Int, List[String]] = documents.zipWithIndex
@@ -263,7 +263,7 @@ case class EmbeddingCache(
         case Some(embedding) => IO.pure(embedding)
         case None =>
           service.embedContent(
-            EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingText001)
+            EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingGemini001)
           ).flatMap {
             case Right(embedding) =>
               cache.update(_ + (text -> embedding)) *>
@@ -309,13 +309,13 @@ def efficientEmbedding(
   val requests = texts.map { text =>
     EmbedContentRequest(
       content = GeminiService.text(text),
-      model = GeminiConstants.EmbeddingText001
+      model = GeminiConstants.EmbeddingGemini001
     )
   }
-  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingText001, requests)).void
+  service.batchEmbedContents(BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, requests)).void
   
   // Avoid - individual requests
-  // texts.traverse(text => service.embedContent(EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingText001)))
+  // texts.traverse(text => service.embedContent(EmbedContentRequest(GeminiService.text(text), GeminiConstants.EmbeddingGemini001)))
 }
 ```
 
