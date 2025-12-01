@@ -54,7 +54,7 @@ lazy val root = project
       Developer(
         "jamesmiller",
         "James Miller",
-        "james@example.com",
+        "",
         url("https://github.com/JamesMMiller")
       )
     ),
