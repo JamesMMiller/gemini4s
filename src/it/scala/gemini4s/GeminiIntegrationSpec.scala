@@ -120,25 +120,6 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
       val jsonConfig = GenerationConfig(responseMimeType = Some(MimeType.ApplicationJson))
 
-      // If mocking, we need to ensure the mock returns JSON-like text if we were parsing it strictly,
-      // but here we just check if it returns success.
-      // For the mock to be robust for this specific test, we might need a more specific matcher,
-      // but the generic generateContent mock returns a simple text.
-      // The original test checked if text starts with { or [.
-      // Let's adjust the mock or the test expectation.
-      // If real API, it returns JSON. If mock, it returns "Mock response".
-      // "Mock response" does not start with { or [.
-      // So this test will fail on mock if we don't adjust the mock.
-
-      // I'll skip the assertion on content format if we are in mock mode, or improve the mock.
-      // Improving the mock is better.
-
-      // But I can't easily distinguish this request from the previous one in the simple stub builder without inspecting body.
-      // SttpBackendStub allows inspecting body.
-
-      // Let's keep it simple: If apiKey is None, we assume success if we get a Right.
-      // If apiKey is Some, we do the extra assertions.
-
       service
         .generateContent(
           GenerateContentRequest(
