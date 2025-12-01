@@ -24,15 +24,17 @@ lazy val commonSettings = Seq(
     "io.circe"                      %% "circe-generic"       % "0.14.6",
     "io.circe"                      %% "circe-parser"        % "0.14.6",
     "io.circe"                      %% "circe-fs2"           % "0.14.1",
-    "org.scalameta"                 %% "munit"               % "0.7.29" % Test,
-    "org.typelevel"                 %% "munit-cats-effect-3" % "1.0.7"  % Test
+    "org.scalameta"                 %% "munit"               % "0.7.29" % "test,it",
+    "org.typelevel"                 %% "munit-cats-effect-3" % "1.0.7"  % "test,it"
   ),
   testFrameworks += new TestFramework("munit.Framework")
 )
 
 lazy val root = project
   .in(file("."))
+  .configs(IntegrationTest)
   .settings(
+    Defaults.itSettings,
     commonSettings,
     name := "gemini4s",
 
@@ -74,10 +76,10 @@ lazy val root = project
     addCommandAlias("testCoverage", ";clean;coverage;test;coverageReport"),
 
     // Load .env file for tests
-    Test / parallelExecution := false,
-    Test / fork              := true,
-    run / fork               := true,
-    Test / envVars           := {
+    Test / parallelExecution  := false,
+    Test / fork               := true,
+    run / fork                := true,
+    Test / envVars            := {
       val envFile = file(".env")
       if (envFile.exists()) {
         val props = new java.util.Properties()
@@ -89,7 +91,8 @@ lazy val root = project
       } else {
         Map.empty
       }
-    }
+    },
+    IntegrationTest / envVars := (Test / envVars).value
   )
 
 // Examples project removed as it was ZIO-based
