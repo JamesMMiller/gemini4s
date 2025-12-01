@@ -79,10 +79,11 @@ See the [API documentation](https://javadoc.io/doc/io.github.jamesmmiller/gemini
 
 gemini4s supports all Gemini models:
 
+- `gemini-3.0-pro-preview-001` - Latest reasoning model
 - `gemini-2.5-flash` - Fast, versatile performance (default)
 - `gemini-2.5-pro` - Complex reasoning tasks
 - `gemini-2.5-flash-lite` - Lightweight, high-volume tasks
-- `text-embedding-004` - Text embeddings
+- `gemini-embedding-001` - Text embeddings
 
 See the [Models Guide](models.md) for detailed comparison and selection guidance.
 

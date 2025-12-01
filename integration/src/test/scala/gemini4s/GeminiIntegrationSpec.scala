@@ -212,7 +212,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .embedContent(
           EmbedContentRequest(
             content = GeminiService.text("Hello world!"),
-            model = ModelName.EmbeddingText001
+            model = ModelName.EmbeddingGemini001
           )
         )
         .map {
@@ -229,14 +229,14 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       val service     = GeminiService.make[IO](httpClient)
 
       val requests = List(
-        EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingText001),
-        EmbedContentRequest(GeminiService.text("Second text"), ModelName.EmbeddingText001)
+        EmbedContentRequest(GeminiService.text("First text"), ModelName.EmbeddingGemini001),
+        EmbedContentRequest(GeminiService.text("Second text"), ModelName.EmbeddingGemini001)
       )
 
       service
         .batchEmbedContents(
           BatchEmbedContentsRequest(
-            model = ModelName.EmbeddingText001,
+            model = ModelName.EmbeddingGemini001,
             requests = requests
           )
         )
