@@ -150,4 +150,5 @@ val developmentSafety = List(
 ## Next Steps
 
 - **[Error Handling](error-handling.md)** - Handle safety errors
+- **[Examples](examples.md)** - Complete safety examples
 - **[Best Practices](best-practices.md)** - Production patterns

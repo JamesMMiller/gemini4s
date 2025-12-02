@@ -244,6 +244,15 @@ class MockGemini extends GeminiService[IO] {
   def embedContent(request: gemini4s.model.request.EmbedContentRequest) = IO.pure(Right(gemini4s.model.response.ContentEmbedding(List.empty)))
   def batchEmbedContents(request: gemini4s.model.request.BatchEmbedContentsRequest) = IO.pure(Right(List.empty))
   def createCachedContent(request: gemini4s.model.request.CreateCachedContentRequest) = IO.pure(Right(gemini4s.model.response.CachedContent("", "", "", "", "", None)))
+  
+  // File API
+  def uploadFile(path: java.nio.file.Path, mimeType: String, displayName: Option[String]) = 
+    IO.pure(Right(gemini4s.model.domain.File("files/mock", uri = gemini4s.model.domain.FileUri("http://mock"))))
+  def listFiles(pageSize: Int, pageToken: Option[String]) = 
+    IO.pure(Right(gemini4s.model.response.ListFilesResponse(Some(List.empty), None)))
+  def getFile(name: String) = 
+    IO.pure(Right(gemini4s.model.domain.File("files/mock", uri = gemini4s.model.domain.FileUri("http://mock"))))
+  def deleteFile(name: String) = IO.pure(Right(()))
 }
 ```
 

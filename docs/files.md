@@ -77,3 +77,9 @@ def generateWithFile(service: GeminiService[IO], fileUri: String): IO[Unit] = {
   }
 }
 ```
+
+## Next Steps
+
+- **[Content Generation](content-generation.md)** - Use files in generation
+- **[Examples](examples.md)** - Complete examples
+- **[Best Practices](best-practices.md)** - Production patterns
