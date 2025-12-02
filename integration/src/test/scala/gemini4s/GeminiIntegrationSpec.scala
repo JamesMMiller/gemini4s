@@ -277,8 +277,9 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
       val service     = GeminiService.make[IO](httpClient)
 
-      // 1x1 transparent PNG
-      val base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+      // 1x1 red pixel
+      val base64Image =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
       val imagePart   = GeminiService.image(base64Image, "image/png")
       val textPart    = GeminiService.text("What is this image?")
 
@@ -290,7 +291,9 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
           )
         )
         .map {
-          case Right(response) => assert(response.candidates.nonEmpty)
+          case Right(response) =>
+            println(response)
+            assert(response.candidates.nonEmpty)
           case Left(e)         => fail(s"API call failed: ${e.message}")
         }
     }

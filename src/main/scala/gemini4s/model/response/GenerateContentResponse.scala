@@ -15,7 +15,21 @@ final case class GenerateContentResponse(
 )
 
 object GenerateContentResponse {
-  given Decoder[GenerateContentResponse] = deriveDecoder
+
+  given Decoder[GenerateContentResponse] = Decoder.instance { c =>
+    for {
+      candidates     <- c.downField("candidates").as[Option[List[Candidate]]]
+      usageMetadata  <- c.downField("usageMetadata").as[Option[UsageMetadata]]
+      modelVersion   <- c.downField("modelVersion").as[Option[String]]
+      promptFeedback <- c.downField("promptFeedback").as[Option[PromptFeedback]]
+    } yield GenerateContentResponse(
+      candidates.getOrElse(Nil),
+      usageMetadata,
+      modelVersion,
+      promptFeedback
+    )
+  }
+
   given Encoder[GenerateContentResponse] = deriveEncoder
 }
 
