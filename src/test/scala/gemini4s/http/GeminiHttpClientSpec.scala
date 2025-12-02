@@ -213,4 +213,78 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
         assert(result.left.exists(_.isInstanceOf[GeminiError.ConnectionError]))
       }
   }
+  test("startResumableUpload should return upload URL") {
+    val uploadUrl = "http://upload-url"
+    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]])
+      .whenRequestMatches(_.uri.path.mkString("/").contains("upload/v1beta/files"))
+      .thenRespond(
+        sttp.client3.Response("", StatusCode.Ok, "", List(sttp.model.Header("X-Goog-Upload-URL", uploadUrl)))
+      )
+
+    val client = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+
+    client.startResumableUpload("http://base-url/upload/v1beta/files", "{}", Map.empty).map { result =>
+      assertEquals(result, Right(uploadUrl))
+    }
+  }
+
+  test("uploadChunk should return File") {
+    val file         = File(
+      name = "files/123",
+      uri = FileUri("http://file-uri")
+    )
+    // The API returns { "file": { ... } }
+    val responseBody = io.circe.Json.obj("file" -> file.asJson).noSpaces
+
+    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]])
+      .whenRequestMatches(_.uri.toString == "http://upload-url")
+      .thenRespond(responseBody)
+
+    val client = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val path   = java.nio.file.Paths.get("test.txt")
+
+    // We need a real file for the body, so let's create a temp one
+    val tempFile = java.nio.file.Files.createTempFile("test", ".txt")
+    java.nio.file.Files.write(tempFile, "content".getBytes)
+
+    client.uploadChunk("http://upload-url", tempFile, Map.empty).map(result => assertEquals(result, Right(file)))
+  }
+
+  test("delete should return Unit") {
+    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]])
+      .whenRequestMatches(_.method == sttp.model.Method.DELETE)
+      .thenRespond(StatusCode.Ok)
+
+    val client = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+
+    client.delete("files/123").map(result => assertEquals(result, Right(())))
+  }
+
+  test("startResumableUpload should handle errors") {
+    val ioBackend =
+      SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespond(StatusCode.BadRequest)
+
+    val client = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+
+    client.startResumableUpload("http://base-url", "{}", Map.empty).map(result => assert(result.isLeft))
+  }
+
+  test("uploadChunk should handle errors") {
+    val ioBackend =
+      SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespond(StatusCode.BadRequest)
+
+    val client   = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val tempFile = java.nio.file.Files.createTempFile("test", ".txt")
+
+    client.uploadChunk("http://upload-url", tempFile, Map.empty).map(result => assert(result.isLeft))
+  }
+
+  test("delete should handle errors") {
+    val ioBackend =
+      SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespond("error", StatusCode.BadRequest)
+
+    val client = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+
+    client.delete("files/123").map(result => assert(result.isLeft))
+  }
 }

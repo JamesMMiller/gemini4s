@@ -82,6 +82,52 @@ trait GeminiService[F[_]] {
       request: CreateCachedContentRequest
   ): F[Either[GeminiError, CachedContent]]
 
+  /**
+   * Uploads a file using the resumable upload protocol.
+   *
+   * @param path The path to the file
+   * @param mimeType The MIME type of the file
+   * @param displayName Optional display name
+   * @return Either a GeminiError or the uploaded File
+   */
+  def uploadFile(
+      path: java.nio.file.Path,
+      mimeType: String,
+      displayName: Option[String] = None
+  ): F[Either[GeminiError, File]]
+
+  /**
+   * Lists files with pagination.
+   *
+   * @param pageSize The number of files to return
+   * @param pageToken The page token for pagination
+   * @return Either a GeminiError or the ListFilesResponse
+   */
+  def listFiles(
+      pageSize: Int = 10,
+      pageToken: Option[String] = None
+  ): F[Either[GeminiError, ListFilesResponse]]
+
+  /**
+   * Gets a file by name.
+   *
+   * @param name The resource name of the file
+   * @return Either a GeminiError or the File
+   */
+  def getFile(
+      name: String
+  ): F[Either[GeminiError, File]]
+
+  /**
+   * Deletes a file by name.
+   *
+   * @param name The resource name of the file
+   * @return Either a GeminiError or Unit
+   */
+  def deleteFile(
+      name: String
+  ): F[Either[GeminiError, Unit]]
+
 }
 
 object GeminiService {
@@ -139,7 +185,7 @@ object GeminiService {
    *   The MIME type of the file.
    */
   def file(uri: String, mimeType: String): Content =
-    Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), ContentPart.FileUri(uri))))
+    Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), FileUri(uri))))
 
   private final class GeminiServiceImpl[F[_]: Async](
       httpClient: GeminiHttpClient[F]
@@ -193,6 +239,51 @@ object GeminiService {
       GeminiConstants.Endpoints.createCachedContent,
       request
     )
+
+    override def uploadFile(
+        path: java.nio.file.Path,
+        mimeType: String,
+        displayName: Option[String]
+    ): F[Either[GeminiError, File]] = {
+      val fileSize = java.nio.file.Files.size(path)
+      val metadata = io.circe.Json
+        .obj(
+          "file" -> io.circe.Json.obj(
+            "displayName" -> displayName.map(io.circe.Json.fromString).getOrElse(io.circe.Json.Null)
+          )
+        )
+        .noSpaces
+
+      val startHeaders = Map(
+        "X-Goog-Upload-Protocol"              -> "resumable",
+        "X-Goog-Upload-Command"               -> "start",
+        "X-Goog-Upload-Header-Content-Length" -> fileSize.toString,
+        "X-Goog-Upload-Header-Content-Type"   -> mimeType
+      )
+
+      httpClient.startResumableUpload(GeminiConstants.Endpoints.uploadFile, metadata, startHeaders).flatMap {
+        case Right(uploadUrl) =>
+          val uploadHeaders = Map(
+            "Content-Length"        -> fileSize.toString,
+            "X-Goog-Upload-Command" -> "upload, finalize",
+            "X-Goog-Upload-Offset"  -> "0"
+          )
+          httpClient.uploadChunk(uploadUrl, path, uploadHeaders)
+        case Left(error)      => Async[F].pure(Left(error))
+      }
+    }
+
+    override def listFiles(
+        pageSize: Int,
+        pageToken: Option[String]
+    ): F[Either[GeminiError, ListFilesResponse]] = {
+      val params = Map("pageSize" -> pageSize.toString) ++ pageToken.map("pageToken" -> _)
+      httpClient.get[ListFilesResponse](GeminiConstants.Endpoints.files, params)
+    }
+
+    override def getFile(name: String): F[Either[GeminiError, File]] = httpClient.get[File](name)
+
+    override def deleteFile(name: String): F[Either[GeminiError, Unit]] = httpClient.delete(name)
 
   }
 

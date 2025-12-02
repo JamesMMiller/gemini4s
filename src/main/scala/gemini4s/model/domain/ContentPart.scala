@@ -20,15 +20,6 @@ object ContentPart {
     given Decoder[Base64Data]                   = Decoder.decodeString
   }
 
-  opaque type FileUri = String
-
-  object FileUri {
-    def apply(value: String): FileUri        = value
-    extension (a: FileUri) def value: String = a
-    given Encoder[FileUri]                   = Encoder.encodeString
-    given Decoder[FileUri]                   = Decoder.decodeString
-  }
-
   final case class Text(text: String)                               extends ContentPart
   final case class InlineData(mimeType: MimeType, data: Base64Data) extends ContentPart
   final case class FileData(mimeType: MimeType, fileUri: FileUri)   extends ContentPart

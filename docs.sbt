@@ -59,6 +59,7 @@ lazy val docs = project
               "Features",
               TextLink.internal(Root / "content-generation.md", "Content Generation"),
               TextLink.internal(Root / "streaming.md", "Streaming"),
+              TextLink.internal(Root / "files.md", "File API"),
               TextLink.internal(Root / "function-calling.md", "Function Calling"),
               TextLink.internal(Root / "embeddings.md", "Embeddings"),
               TextLink.internal(Root / "safety.md", "Safety Settings"),

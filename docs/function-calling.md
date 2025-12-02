@@ -495,4 +495,5 @@ def callExternalAPI(location: String): IO[String] = {
 
 - **[Examples](examples.md)** - Complete function calling examples
 - **[Streaming](streaming.md)** - Use functions with streaming
+- **[Error Handling](error-handling.md)** - Handle function execution errors
 - **[Best Practices](best-practices.md)** - Production patterns

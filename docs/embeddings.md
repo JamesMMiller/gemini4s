@@ -322,4 +322,5 @@ def efficientEmbedding(
 ## Next Steps
 
 - **[Examples](examples.md)** - Complete embedding examples
+- **[Error Handling](error-handling.md)** - Handle embedding errors
 - **[Best Practices](best-practices.md)** - Production patterns

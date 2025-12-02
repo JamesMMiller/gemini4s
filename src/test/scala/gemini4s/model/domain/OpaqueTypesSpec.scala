@@ -33,4 +33,20 @@ class OpaqueTypesSpec extends FunSuite {
     assert(MimeType("invalid").isLeft)
     assert(MimeType("").isLeft)
   }
+
+  test("SizeBytes codec") {
+    import io.circe.syntax._
+    import io.circe.parser._
+
+    val size = SizeBytes(12345L)
+
+    // Test encoding
+    assertEquals(size.asJson.asNumber.flatMap(_.toLong), Some(12345L))
+
+    // Test decoding from number
+    assertEquals(decode[SizeBytes]("12345"), Right(size))
+
+    // Test decoding from string (Gemini API format)
+    assertEquals(decode[SizeBytes]("\"12345\""), Right(size))
+  }
 }

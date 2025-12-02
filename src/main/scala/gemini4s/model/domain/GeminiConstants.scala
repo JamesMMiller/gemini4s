@@ -48,8 +48,12 @@ object GeminiConstants {
     def generateContentStream(model: ModelName = DefaultModel): String = s"${toApiString(model)}:streamGenerateContent"
     def countTokens(model: ModelName = DefaultModel): String           = s"${toApiString(model)}:countTokens"
     def embedContent(model: ModelName = DefaultModel): String          = s"${toApiString(model)}:embedContent"
-    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${toApiString(model)}:batchEmbedContents"
-    def createCachedContent: String                                    = "cachedContents"
+    def batchEmbedContents(model: ModelName): String                   = s"${toApiString(model)}:batchEmbedContents"
+    val createCachedContent: String                                    = "cachedContents"
+
+    // File API
+    val uploadFile: String = "https://generativelanguage.googleapis.com/upload/v1beta/files"
+    val files: String      = "files"
   }
 
 }
