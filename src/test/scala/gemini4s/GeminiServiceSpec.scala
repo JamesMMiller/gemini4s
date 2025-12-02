@@ -217,4 +217,111 @@ class GeminiServiceSpec extends CatsEffectSuite {
 
     service.createCachedContent(request).map(result => assertEquals(result, Left(error)))
   }
+  test("uploadFile should call client with correct request") {
+    val expectedFile = File(
+      name = "files/123",
+      displayName = Some("test.txt"),
+      mimeType = Some(MimeType.unsafe("text/plain")),
+      sizeBytes = Some(SizeBytes(100L)),
+      createTime = Some("now"),
+      updateTime = Some("now"),
+      expirationTime = Some("later"),
+      sha256Hash = Some("hash"),
+      uri = FileUri("http://file-uri"),
+      state = Some(FileState.ACTIVE),
+      error = None
+    )
+
+    val client = new MockHttpClient() {
+      override def startResumableUpload(
+          uri: String,
+          metadata: String,
+          headers: Map[String, String]
+      ): IO[Either[GeminiError, String]] = IO.pure(Right("http://upload-url"))
+
+      override def uploadChunk(
+          uploadUri: String,
+          file: java.nio.file.Path,
+          headers: Map[String, String]
+      ): IO[Either[GeminiError, File]] = IO.pure(Right(expectedFile))
+    }
+
+    val service = GeminiService.make[IO](client)
+    val path    = java.nio.file.Files.createTempFile("test", ".txt")
+    java.nio.file.Files.write(path, "content".getBytes)
+
+    service.uploadFile(path, "text/plain", Some("test.txt")).map(result => assertEquals(result, Right(expectedFile)))
+  }
+
+  test("listFiles should call client with correct request") {
+    val expectedResponse = ListFilesResponse(Some(List.empty), None)
+    val client           = new MockHttpClient() {
+      override def get[Res: Decoder](
+          endpoint: String,
+          params: Map[String, String]
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(expectedResponse.asInstanceOf[Res]))
+      }
+    }
+    val service          = GeminiService.make[IO](client)
+
+    service.listFiles().map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.files)
+    }
+  }
+
+  test("getFile should call client with correct request") {
+    val expectedFile = File(
+      name = "files/123",
+      uri = FileUri("http://file-uri")
+    )
+    val client       = new MockHttpClient() {
+      override def get[Res: Decoder](
+          endpoint: String,
+          params: Map[String, String]
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(expectedFile.asInstanceOf[Res]))
+      }
+    }
+    val service      = GeminiService.make[IO](client)
+
+    service.getFile("files/123").map { result =>
+      assertEquals(result, Right(expectedFile))
+      assertEquals(client.lastEndpoint, "files/123")
+    }
+  }
+
+  test("deleteFile should call client with correct request") {
+    val client  = new MockHttpClient() {
+      override def delete(endpoint: String): IO[Either[GeminiError, Unit]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(()))
+      }
+    }
+    val service = GeminiService.make[IO](client)
+
+    service.deleteFile("files/123").map { result =>
+      assertEquals(result, Right(()))
+      assertEquals(client.lastEndpoint, "files/123")
+    }
+  }
+
+  test("uploadFile should handle errors") {
+    val error   = GeminiError.InvalidRequest("error")
+    val client  = new MockHttpClient() {
+      override def startResumableUpload(
+          uri: String,
+          metadata: String,
+          headers: Map[String, String]
+      ): IO[Either[GeminiError, String]] = IO.pure(Left(error))
+    }
+    val service = GeminiService.make[IO](client)
+    val path    = java.nio.file.Files.createTempFile("test", ".txt")
+    java.nio.file.Files.write(path, "content".getBytes)
+
+    service.uploadFile(path, "text/plain").map(result => assertEquals(result, Left(error)))
+  }
 }

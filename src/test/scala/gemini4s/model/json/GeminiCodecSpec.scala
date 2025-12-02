@@ -164,4 +164,56 @@ class GeminiCodecSpec extends FunSuite {
     )
     assertEquals(config.asJson.as[GenerationConfig], Right(config))
   }
+  test("ListFilesResponse codec") {
+    val res = ListFilesResponse(
+      files = Some(List(File(name = "files/1", uri = FileUri("uri")))),
+      nextPageToken = Some("token")
+    )
+    assertEquals(res.asJson.as[ListFilesResponse], Right(res))
+  }
+
+  test("File codec") {
+    val file = File(
+      name = "files/1",
+      displayName = Some("display"),
+      mimeType = Some(MimeType.unsafe("text/plain")),
+      sizeBytes = Some(SizeBytes(100L)),
+      createTime = Some("now"),
+      updateTime = Some("now"),
+      expirationTime = Some("later"),
+      sha256Hash = Some("hash"),
+      uri = FileUri("uri"),
+      state = Some(FileState.ACTIVE),
+      error = Some(Status(1, "msg", Some(List(Json.obj("a" -> Json.fromString("b"))))))
+    )
+    assertEquals(file.asJson.as[File], Right(file): Either[DecodingFailure, File])
+  }
+
+  test("UsageMetadata codec") {
+    val meta = UsageMetadata(promptTokenCount = Some(10), candidatesTokenCount = Some(20), totalTokenCount = 30)
+    assertEquals(meta.asJson.as[UsageMetadata], Right(meta))
+  }
+
+  test("PromptFeedback codec") {
+    val feedback = PromptFeedback(
+      blockReason = Some("SAFETY"),
+      safetyRatings = Some(List(SafetyRating("HARM_CATEGORY_HARASSMENT", "HIGH")))
+    )
+    assertEquals(feedback.asJson.as[PromptFeedback], Right(feedback))
+  }
+
+  test("ResponsePart codec") {
+    val text: ResponsePart = ResponsePart.Text("text")
+    assertEquals(text.asJson.as[ResponsePart], Right(text))
+
+    val functionCall: ResponsePart =
+      ResponsePart.FunctionCall(FunctionCallData("name", Map("a" -> Json.fromString("b"))))
+    assertEquals(functionCall.asJson.as[ResponsePart], Right(functionCall))
+
+    val executableCode: ResponsePart = ResponsePart.ExecutableCode(ExecutableCodeData("python", "print('hi')"))
+    assertEquals(executableCode.asJson.as[ResponsePart], Right(executableCode))
+
+    val codeExecutionResult: ResponsePart = ResponsePart.CodeExecutionResult(CodeExecutionResultData("ok", "out"))
+    assertEquals(codeExecutionResult.asJson.as[ResponsePart], Right(codeExecutionResult))
+  }
 }
