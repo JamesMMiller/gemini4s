@@ -36,22 +36,13 @@ object GeminiConstants {
   /**
    * API endpoint paths for different operations.
    */
-  /**
-   * API endpoint paths for different operations.
-   */
+
   object Endpoints {
-
-    private def normalize(model: ModelName): String = {
-      val value = model.value
-      if (value.startsWith("models/") || value.startsWith("tunedModels/")) value
-      else s"models/$value"
-    }
-
-    def generateContent(model: ModelName = DefaultModel): String       = s"${normalize(model)}:generateContent"
-    def generateContentStream(model: ModelName = DefaultModel): String = s"${normalize(model)}:streamGenerateContent"
-    def countTokens(model: ModelName = DefaultModel): String           = s"${normalize(model)}:countTokens"
-    def embedContent(model: ModelName = DefaultModel): String          = s"${normalize(model)}:embedContent"
-    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${normalize(model)}:batchEmbedContents"
+    def generateContent(model: ModelName = DefaultModel): String       = s"${model.toApiString}:generateContent"
+    def generateContentStream(model: ModelName = DefaultModel): String = s"${model.toApiString}:streamGenerateContent"
+    def countTokens(model: ModelName = DefaultModel): String           = s"${model.toApiString}:countTokens"
+    def embedContent(model: ModelName = DefaultModel): String          = s"${model.toApiString}:embedContent"
+    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${model.toApiString}:batchEmbedContents"
     def createCachedContent: String                                    = "cachedContents"
   }
 

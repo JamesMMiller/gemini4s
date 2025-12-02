@@ -53,6 +53,14 @@ object ModelName {
      * Get the underlying string value.
      */
     def value: String = name
+
+    /**
+     * Get the API-compatible string value (with "models/" prefix).
+     */
+    def toApiString: String =
+      if (name.startsWith("models/") || name.startsWith("tunedModels/")) name
+      else s"models/$name"
+
   }
 
   // Circe codecs
