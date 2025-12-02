@@ -1,8 +1,8 @@
 package gemini4s.model.request
 
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 
 import gemini4s.model.domain._
 

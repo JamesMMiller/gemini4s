@@ -1,8 +1,8 @@
 package gemini4s.model.domain
 
 import io.circe._
-import io.circe.syntax._
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 
 /**
  * Represents a batch job for asynchronous processing.

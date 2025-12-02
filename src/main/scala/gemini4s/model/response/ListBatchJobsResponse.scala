@@ -2,6 +2,7 @@ package gemini4s.model.response
 
 import io.circe._
 import io.circe.generic.semiauto._
+
 import gemini4s.model.domain.BatchJob
 
 final case class ListBatchJobsResponse(

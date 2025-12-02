@@ -3,8 +3,8 @@ package gemini4s.http
 import cats.effect.Async
 import cats.syntax.all._
 import fs2.Stream
-import io.circe.{ Decoder, Encoder }
 import io.circe.syntax._
+import io.circe.{ Decoder, Encoder }
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.circe._
