@@ -19,4 +19,20 @@ class ModelNameSpec extends FunSuite {
       Right(ModelName.Standard("my-tuned-model"))
     ) // Note: Decoder currently defaults to Standard via apply
   }
+
+  test("ModelName.apply should validate input") {
+    assert(ModelName("valid").isRight)
+    assert(ModelName("").isLeft)
+    assert(ModelName("   ").isLeft)
+  }
+
+  test("ModelName.unsafe should validate input") {
+    assertEquals(ModelName.unsafe("valid"), ModelName.Standard("valid"))
+    intercept[IllegalArgumentException] {
+      ModelName.unsafe("")
+    }
+    intercept[IllegalArgumentException] {
+      ModelName.unsafe("   ")
+    }
+  }
 }

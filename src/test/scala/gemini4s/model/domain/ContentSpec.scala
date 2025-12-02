@@ -24,4 +24,14 @@ class ContentSpec extends FunSuite {
     val content = Content(parts = List())
     assertEquals(content.parts, List())
   }
+
+  test("ContentPart.Base64Data should wrap string") {
+    val data = ContentPart.Base64Data("data")
+    assertEquals(data.value, "data")
+  }
+
+  test("ContentPart.FileUri should wrap string") {
+    val uri = ContentPart.FileUri("gs://bucket/file")
+    assertEquals(uri.value, "gs://bucket/file")
+  }
 }

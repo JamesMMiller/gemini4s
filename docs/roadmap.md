@@ -4,9 +4,12 @@ This document outlines the future development plans for `gemini4s`.
 
 ## High Priority
 
+- **File API**: Implement `media.upload` to support uploading files directly via `GeminiService`.
+
+## Recently Completed
+
 - **Structured Outputs**: Support for `responseSchema` in `GenerationConfig` to enable reliable JSON extraction.
 - **Code Execution**: Support for code execution in `Tool` to allow the model to run code.
-- **File API**: Implement `media.upload` to support uploading files directly via `GeminiService`.
 
 ## Medium Priority
 
