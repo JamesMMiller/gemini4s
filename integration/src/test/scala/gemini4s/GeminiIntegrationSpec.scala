@@ -68,6 +68,65 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
             )
           )
         )
+        // File API Stubs
+        .whenRequestMatches(_.uri.path.exists(_.endsWith("upload/v1beta/files")))
+        .thenRespond(
+          Response(
+            Right(""),
+            StatusCode.Ok,
+            "",
+            List(sttp.model.Header("x-goog-upload-url", "http://upload-url"))
+          )
+        )
+        .whenRequestMatches(_.uri.toString == "http://upload-url")
+        .thenRespond("""{
+            "file": {
+              "name": "files/mock-file",
+              "displayName": "Mock File",
+              "mimeType": "text/plain",
+              "sizeBytes": "100",
+              "createTime": "2024-01-01T00:00:00Z",
+              "updateTime": "2024-01-01T00:00:00Z",
+              "expirationTime": "2024-01-02T00:00:00Z",
+              "sha256Hash": "hash",
+              "uri": "http://file-uri",
+              "state": "ACTIVE"
+            }
+          }""")
+        .whenRequestMatches(r => r.method == sttp.model.Method.GET && r.uri.path.exists(_.endsWith("files")))
+        .thenRespond("""{
+            "files": [
+              {
+                "name": "files/mock-file",
+                "displayName": "Mock File",
+                "mimeType": "text/plain",
+                "sizeBytes": "100",
+                "createTime": "2024-01-01T00:00:00Z",
+                "updateTime": "2024-01-01T00:00:00Z",
+                "expirationTime": "2024-01-02T00:00:00Z",
+                "sha256Hash": "hash",
+                "uri": "http://file-uri",
+                "state": "ACTIVE"
+              }
+            ]
+          }""")
+        .whenRequestMatches(r => r.method == sttp.model.Method.GET && r.uri.path.exists(_.endsWith("files/mock-file")))
+        .thenRespond("""{
+            "name": "files/mock-file",
+            "displayName": "Mock File",
+            "mimeType": "text/plain",
+            "sizeBytes": "100",
+            "createTime": "2024-01-01T00:00:00Z",
+            "updateTime": "2024-01-01T00:00:00Z",
+            "expirationTime": "2024-01-02T00:00:00Z",
+            "sha256Hash": "hash",
+            "uri": "http://file-uri",
+            "state": "ACTIVE"
+          }""")
+        .whenRequestMatches(r =>
+          r.method == sttp.model.Method.DELETE && r.uri.path.exists(_.endsWith("files/mock-file"))
+        )
+        .thenRespond("{}")
 
       testCode(stub)
   }
@@ -418,11 +477,29 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         result.handleErrorWith(e => IO.println(s"File API test error: $e") *> IO.raiseError(e))
       } else {
         // Mock test
-        // Since we can't easily mock the complex stateful interaction of file upload/list/delete
-        // with the simple SttpBackendStub setup here without a lot of boilerplate,
-        // we'll skip the complex flow in mock mode or add a simplified check.
-        // The unit tests cover the request construction logic.
-        IO(assert(true))
+        val path = java.nio.file.Files.createTempFile("gemini-test", ".txt")
+        java.nio.file.Files.write(path, "Hello Gemini File API".getBytes("UTF-8"))
+
+        val result = for {
+          upload <- service.uploadFile(path, "text/plain", Some("Mock File"))
+          file    = upload.getOrElse(fail(s"Upload failed: ${upload.left.map(_.message)}"))
+          _       = assertEquals(file.name, "files/mock-file")
+
+          list <- service.listFiles()
+          _     = assert(list.isRight, "List files failed")
+          files = list.toOption.get.files
+          _     = assert(files.exists(_.name == "files/mock-file"), "Mock file not found in list")
+
+          get        <- service.getFile("files/mock-file")
+          _           = assert(get.isRight, "Get file failed")
+          fetchedFile = get.toOption.get
+          _           = assertEquals(fetchedFile.name, "files/mock-file")
+
+          delete <- service.deleteFile("files/mock-file")
+          _       = assert(delete.isRight, "Delete file failed")
+        } yield ()
+
+        result.handleErrorWith(e => IO.println(s"File API mock test error: $e") *> IO.raiseError(e))
       }
     }
   }
