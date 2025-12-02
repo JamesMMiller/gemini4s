@@ -240,13 +240,22 @@ object GeminiHttpClient {
         .put(uri)
         .headers(headers)
         .body(file)
-        .response(asJson[gemini4s.model.domain.File])
+        .response(asString)
         .send(backend)
         .map { response =>
           response.body match {
-            case Right(file) => Right(file)
-            case Left(error) =>
-              Left(GeminiError.InvalidRequest(s"Upload failed: ${response.code} - ${error.getMessage}", None))
+            case Right(body) => io.circe.parser.parse(body).flatMap { json =>
+                // The API returns { "file": { ... } } for upload response
+                val fileJson = json.hcursor.downField("file").focus.getOrElse(json)
+                fileJson.as[gemini4s.model.domain.File]
+              } match {
+                case Right(file) => Right(file)
+                case Left(error) => Left(
+                    GeminiError
+                      .InvalidRequest(s"Upload failed: ${response.code} - ${error.getMessage}. Raw body: $body", None)
+                  )
+              }
+            case Left(error) => Left(GeminiError.InvalidRequest(s"Upload failed: ${response.code} - $error", None))
           }
         }
         .handleError(error => Left(GeminiError.ConnectionError(error.getMessage, Some(error))))

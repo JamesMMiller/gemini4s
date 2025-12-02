@@ -454,7 +454,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
         val result = for {
           upload <- service.uploadFile(path, "text/plain", Some("Test File"))
-          file    = upload.getOrElse(fail("Upload failed"))
+          file    = upload.getOrElse(fail(s"Upload failed: ${upload.left.map(_.message)}"))
           _      <- IO.println(s"Uploaded file: ${file.name}")
 
           // Wait for processing if needed (though text is usually fast)
@@ -462,7 +462,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
           list <- service.listFiles()
           _     = assert(list.isRight, "List files failed")
-          files = list.toOption.get.files
+          files = list.toOption.get.files.getOrElse(List.empty)
           _     = assert(files.exists(_.name == file.name), "Uploaded file not found in list")
 
           get        <- service.getFile(file.name)
@@ -487,7 +487,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
 
           list <- service.listFiles()
           _     = assert(list.isRight, "List files failed")
-          files = list.toOption.get.files
+          files = list.toOption.get.files.getOrElse(List.empty)
           _     = assert(files.exists(_.name == "files/mock-file"), "Mock file not found in list")
 
           get        <- service.getFile("files/mock-file")
