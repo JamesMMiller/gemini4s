@@ -1,8 +1,9 @@
-package gemini4s
+package gemini4s.model
 
 import io.circe.syntax._
 import munit.FunSuite
 
+import gemini4s.GeminiService
 import gemini4s.model.domain._
 
 class MultimodalSpec extends FunSuite {

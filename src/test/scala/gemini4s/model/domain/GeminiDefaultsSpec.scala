@@ -1,4 +1,4 @@
-package gemini4s.model
+package gemini4s.model.domain
 
 import munit.FunSuite
 
