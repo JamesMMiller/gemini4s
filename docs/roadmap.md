@@ -4,8 +4,6 @@ This document outlines the future development plans for `gemini4s`.
 
 ## High Priority
 
-- **File API**: Implement `media.upload` to support uploading files directly via `GeminiService`.
-
 
 ## Medium Priority
 
