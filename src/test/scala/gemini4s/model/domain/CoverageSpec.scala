@@ -1,8 +1,8 @@
 package gemini4s.model.domain
 
-import munit.FunSuite
-import io.circe.syntax._
 import io.circe.parser.decode
+import io.circe.syntax._
+import munit.FunSuite
 
 class CoverageSpec extends FunSuite {
 
