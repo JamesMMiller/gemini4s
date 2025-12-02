@@ -13,7 +13,8 @@ final case class GenerationConfig(
     candidateCount: Option[Int] = None,
     maxOutputTokens: Option[Int] = None,
     stopSequences: Option[List[String]] = None,
-    responseMimeType: Option[MimeType] = None
+    responseMimeType: Option[MimeType] = None,
+    responseSchema: Option[Schema] = None
 )
 
 object GenerationConfig {

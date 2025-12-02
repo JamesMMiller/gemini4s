@@ -59,4 +59,10 @@ class ToolSpec extends FunSuite {
     )
     assertEquals(config.allowedFunctionNames, Some(List("func1", "func2")))
   }
+  test("Tool should handle codeExecution") {
+    val tool = Tool(codeExecution = Some(CodeExecution()))
+    assert(tool.codeExecution.isDefined)
+    val json = tool.asJson
+    assert(json.asObject.get("codeExecution").isDefined)
+  }
 }

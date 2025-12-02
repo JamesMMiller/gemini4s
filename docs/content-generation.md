@@ -235,6 +235,51 @@ def jsonMode(service: GeminiService[IO]): IO[Unit] = {
 }
 ```
 
+## Structured Outputs
+
+For stricter JSON validation, provide a schema using `responseSchema`:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import gemini4s.model.request.GenerateContentRequest
+
+def structuredOutput(service: GeminiService[IO]): IO[Unit] = {
+  val schema = Schema(
+    `type` = SchemaType.OBJECT,
+    properties = Some(Map(
+      "name" -> Schema(SchemaType.STRING),
+      "age" -> Schema(SchemaType.INTEGER),
+      "skills" -> Schema(
+        `type` = SchemaType.ARRAY,
+        items = Some(Schema(SchemaType.STRING))
+      )
+    )),
+    required = Some(List("name", "age"))
+  )
+
+  val config = GenerationConfig(
+    responseMimeType = Some(MimeType.ApplicationJson),
+    responseSchema = Some(schema)
+  )
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(GeminiService.text("Generate a software engineer profile")),
+      generationConfig = Some(config)
+    )
+  ).flatMap {
+    case Right(response) =>
+      val json = response.candidates.head.content.flatMap(_.parts.headOption)
+      IO.println(s"Structured JSON: $json")
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
 ## Candidate Count
 
 Request multiple response candidates:
