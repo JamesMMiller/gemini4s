@@ -92,7 +92,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("DefaultModel should be models/gemini-2.5-flash") {
-    assertEquals(GeminiConstants.DefaultModel.value, "models/gemini-flash-latest")
+    assertEquals(GeminiConstants.DefaultModel.value, "gemini-flash-latest")
   }
 
   test("MaxTokensPerRequest should be 30720") {

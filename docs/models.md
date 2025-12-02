@@ -20,7 +20,7 @@ val latestPro = GeminiConstants.GeminiProLatest
 val latestFlash = GeminiConstants.GeminiFlashLatest
 
 // You can also use string literals for new models not yet in constants
-val futureModel = "models/gemini-4.0-pro"
+val futureModel = "gemini-4.0-pro"
 ```
 ## Using Different Models
 
