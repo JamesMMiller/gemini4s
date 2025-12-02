@@ -223,8 +223,9 @@ val productionSafety = List(
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.config.ApiKey
-import gemini4s.model.domain.Content
-import gemini4s.model.response.GenerateContentResponse
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.model.response._
 import gemini4s.error.GeminiError
 
 class MockGemini extends GeminiService[IO] {
@@ -243,10 +244,58 @@ class MockGemini extends GeminiService[IO] {
   def countTokens(request: gemini4s.model.request.CountTokensRequest) = IO.pure(Right(0))
   def embedContent(request: gemini4s.model.request.EmbedContentRequest) = IO.pure(Right(gemini4s.model.response.ContentEmbedding(List.empty)))
   def batchEmbedContents(request: gemini4s.model.request.BatchEmbedContentsRequest) = IO.pure(Right(List.empty))
-  def batchGenerateContent(model: gemini4s.model.domain.ModelName, requests: List[gemini4s.model.request.GenerateContentRequest]) = 
-    IO.pure(Right(gemini4s.model.domain.BatchJob("models/mock/batchJobs/1", gemini4s.model.domain.BatchJobState.JOB_STATE_PENDING, "now", "now")))
-  def getBatchJob(name: String) = 
-    IO.pure(Right(gemini4s.model.domain.BatchJob(name, gemini4s.model.domain.BatchJobState.JOB_STATE_SUCCEEDED, "now", "now")))
+  override def batchGenerateContent(
+      model: ModelName,
+      requests: List[GenerateContentRequest]
+  ): IO[Either[GeminiError, BatchJob]] = {
+    val job = BatchJob(
+      name = s"models/${model.toString}/batchJobs/123",
+      state = BatchJobState.JOB_STATE_PENDING,
+      createTime = java.time.Instant.now().toString,
+      updateTime = java.time.Instant.now().toString
+    )
+    IO.pure(Right(job))
+  }
+
+  override def batchGenerateContent(
+      model: ModelName,
+      dataset: String
+  ): IO[Either[GeminiError, BatchJob]] = {
+    val job = BatchJob(
+      name = s"models/${model.toString}/batchJobs/file-123",
+      state = BatchJobState.JOB_STATE_PENDING,
+      createTime = java.time.Instant.now().toString,
+      updateTime = java.time.Instant.now().toString
+    )
+    IO.pure(Right(job))
+  }
+
+  override def getBatchJob(name: String): IO[Either[GeminiError, BatchJob]] = {
+    val job = BatchJob(
+      name = name,
+      state = BatchJobState.JOB_STATE_SUCCEEDED,
+      createTime = java.time.Instant.now().toString,
+      updateTime = java.time.Instant.now().toString
+    )
+    IO.pure(Right(job))
+  }
+
+  override def listBatchJobs(
+      pageSize: Int,
+      pageToken: Option[String]
+  ): IO[Either[GeminiError, ListBatchJobsResponse]] = {
+    val response = ListBatchJobsResponse(
+      batchJobs = Some(List.empty),
+      nextPageToken = None
+    )
+    IO.pure(Right(response))
+  }
+
+  override def cancelBatchJob(name: String): IO[Either[GeminiError, Unit]] =
+    IO.pure(Right(()))
+
+  override def deleteBatchJob(name: String): IO[Either[GeminiError, Unit]] =
+    IO.pure(Right(()))
   def createCachedContent(request: gemini4s.model.request.CreateCachedContentRequest) = IO.pure(Right(gemini4s.model.response.CachedContent("", "", "", "", "", None)))
   
   // File API
