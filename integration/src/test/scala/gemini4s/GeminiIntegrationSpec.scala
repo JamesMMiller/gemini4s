@@ -367,17 +367,11 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .map {
           case Right(response) =>
             if (apiKey.isDefined) {
-              // Check if the model decided to use code execution (it might just answer directly, but usually it uses code for math)
-              // We check for either ExecutableCode or CodeExecutionResult in the parts
               val hasCodeExecution = response.candidates.head.content.exists(_.parts.exists {
                 case _: ResponsePart.ExecutableCode      => true
                 case _: ResponsePart.CodeExecutionResult => true
                 case _                                   => false
               })
-              // Note: It's possible the model answers directly without code, so this assertion might be flaky if the model is too smart.
-              // But for "Calculate...", it usually triggers code execution.
-              // To be safe, we just print if it didn't use it, or assert if we are strict.
-              // Let's assert for now as it's the feature we are testing.
               if (!hasCodeExecution) println("WARNING: Model did not use code execution for math prompt.")
               assert(response.candidates.nonEmpty)
             } else {

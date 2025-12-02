@@ -13,7 +13,7 @@ class GeminiFeaturesSpec extends FunSuite {
   test("EmbedContentRequest should encode correctly") {
     val request = EmbedContentRequest(
       content = Content(parts = List(ContentPart.Text("Hello"))),
-      model = ModelName.unsafe("models/embedding-001"),
+      model = ModelName.unsafe("embedding-001"),
       taskType = Some(TaskType.RETRIEVAL_DOCUMENT),
       title = Some("Test Doc"),
       outputDimensionality = Some(768)
@@ -26,15 +26,15 @@ class GeminiFeaturesSpec extends FunSuite {
 
   test("BatchEmbedContentsRequest should encode correctly") {
     val request = BatchEmbedContentsRequest(
-      model = ModelName.unsafe("models/embedding-001"),
+      model = ModelName.unsafe("embedding-001"),
       requests = List(
         EmbedContentRequest(
           content = Content(parts = List(ContentPart.Text("Hello"))),
-          model = ModelName.unsafe("models/embedding-001")
+          model = ModelName.unsafe("embedding-001")
         ),
         EmbedContentRequest(
           content = Content(parts = List(ContentPart.Text("World"))),
-          model = ModelName.unsafe("models/embedding-001")
+          model = ModelName.unsafe("embedding-001")
         )
       )
     )

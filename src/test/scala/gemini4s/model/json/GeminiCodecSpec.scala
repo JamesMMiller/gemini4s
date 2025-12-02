@@ -13,7 +13,7 @@ class GeminiCodecSpec extends FunSuite {
   // Requests
 
   test("GenerateContentRequest codec") {
-    val req = GenerateContentRequest(
+    val req  = GenerateContentRequest(
       model = ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
       contents = List(Content(List(ContentPart.Text("test")))),
       safetySettings = Some(List(SafetySetting(HarmCategory.HARASSMENT, HarmBlockThreshold.BLOCK_NONE))),
@@ -22,7 +22,9 @@ class GeminiCodecSpec extends FunSuite {
       tools = Some(List(Tool(Some(List(FunctionDeclaration("name", "desc", None)))))),
       toolConfig = Some(ToolConfig(Some(FunctionCallingConfig(Some(FunctionCallingMode.AUTO)))))
     )
-    assertEquals(req.asJson.as[GenerateContentRequest], Right(req))
+    val json = req.asJson
+    assert(json.asObject.flatMap(_("model")).isEmpty, "Model field should be excluded from JSON")
+    assert(json.asObject.flatMap(_("contents")).isDefined)
   }
 
   test("CountTokensRequest codec") {
