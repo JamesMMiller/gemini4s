@@ -61,6 +61,32 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
               "state": "JOB_STATE_SUCCEEDED",
               "createTime": "2024-01-01T00:00:00Z",
               "updateTime": "2024-01-01T00:00:00Z"
+            },
+            "response": {
+              "inlinedResponses": [
+                {
+                  "response": {
+                    "candidates": [{
+                      "content": {
+                        "parts": [{"text": "Mock batch result 1"}],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }]
+                  }
+                },
+                {
+                  "response": {
+                    "candidates": [{
+                      "content": {
+                        "parts": [{"text": "Mock batch result 2"}],
+                        "role": "model"
+                      },
+                      "finishReason": "STOP"
+                    }]
+                  }
+                }
+              ]
             }
           }""")
         .whenRequestMatches(_.uri.path.exists(_.endsWith("batches")))
@@ -580,6 +606,40 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
           assert(response.batchJobs.get.nonEmpty, "batchJobs is defined but empty")
         }
       }
+    }
+  }
+
+  test("batchGenerateContent should retrieve inline results after completion") {
+    withBackend { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      val model    = ModelName.Gemini25Flash
+      val requests = List(
+        GenerateContentRequest(model, List(GeminiService.text("Test prompt 1"))),
+        GenerateContentRequest(model, List(GeminiService.text("Test prompt 2")))
+      )
+
+      for {
+        // Create batch job
+        result <- service.batchGenerateContent(model, requests)
+        job    <- IO.fromEither(result)
+
+        // Get job status and retrieve results
+        jobResult    <- service.getBatchJob(job.name)
+        completedJob <- IO.fromEither(jobResult)
+
+        // Verify results are present
+        _ = assert(completedJob.response.isDefined, "Response should be present")
+        _ = completedJob.response.foreach { response =>
+              assert(response.inlinedResponses.isDefined, "InlinedResponses should be present")
+              response.inlinedResponses.foreach { results =>
+                assertEquals(results.size, 2, "Should have 2 results")
+                assert(results.head.response.isDefined, "First result should have response")
+              }
+            }
+      } yield ()
     }
   }
 

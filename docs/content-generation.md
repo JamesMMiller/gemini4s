@@ -504,8 +504,9 @@ def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
   
   for {
     // Upload file first
-    uploadResult <- service.uploadFile(localFile, mimeType = Some("application/jsonl"))
-    fileUri      <- IO.fromEither(uploadResult.map(_.uri))
+    uploadResult <- service.uploadFile(localFile, mimeType = "application/jsonl")
+    file         <- IO.fromEither(uploadResult)
+    fileUri       = file.uri
     
     // Create batch job from uploaded file
     jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, fileUri)
@@ -561,6 +562,7 @@ When a batch job completes successfully, the results are available in the `Batch
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.syntax.all._
 import gemini4s.GeminiService
 import gemini4s.model.domain._
 
@@ -649,6 +651,7 @@ def retrieveFileResults(service: GeminiService[IO], jobName: String): IO[Unit] =
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.syntax.all._
 import gemini4s.GeminiService
 import gemini4s.model.domain._
 import gemini4s.model.request._
@@ -688,7 +691,11 @@ def completeBatchWorkflow(service: GeminiService[IO]): IO[Unit] = {
         case Some(results) =>
           results.zipWithIndex.traverse_ { case (result, i) =>
             result.response match {
-              case Some(res) => IO.println(s"Response $i: ${res.text}")
+              case Some(res) => 
+                val text = res.candidates.headOption.flatMap(_.content.flatMap(_.parts.headOption)).collect {
+                  case ContentPart.Text(t) => t
+                }.getOrElse("No text")
+                IO.println(s"Response $i: $text")
               case None => IO.println(s"Response $i had error: ${result.error}")
             }
           }
@@ -709,6 +716,7 @@ def completeBatchWorkflow(service: GeminiService[IO]): IO[Unit] = {
 
 ```scala mdoc:compile-only
 import cats.effect.IO
+import cats.syntax.all._
 import gemini4s.GeminiService
 
 def listAllJobs(service: GeminiService[IO]): IO[Unit] = {
@@ -716,7 +724,7 @@ def listAllJobs(service: GeminiService[IO]): IO[Unit] = {
     case Right(response) =>
       response.batchJobs match {
         case Some(jobs) =>
-          jobs.foreach { job =>
+          jobs.traverse_ { job =>
             IO.println(s"${job.name}: ${job.state}")
           }
         case None =>
