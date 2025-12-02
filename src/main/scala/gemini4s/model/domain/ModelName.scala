@@ -51,6 +51,14 @@ object ModelName {
   }
 
   // Circe codecs
-  given Encoder[ModelName] = Encoder[String].contramap(_.value)
-  given Decoder[ModelName] = Decoder[String].emap(apply)
+  given Encoder[ModelName] = Encoder[String].contramap {
+    case Standard(v) => s"models/$v"
+    case Tuned(v)    => s"tunedModels/$v"
+  }
+
+  given Decoder[ModelName] = Decoder[String].emap { str =>
+    val v = str.stripPrefix("models/").stripPrefix("tunedModels/")
+    apply(v)
+  }
+
 }

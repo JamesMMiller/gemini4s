@@ -7,7 +7,8 @@ import io.circe.generic.semiauto._
  * Tool details that the model may use to generate response.
  */
 final case class Tool(
-    functionDeclarations: Option[List[FunctionDeclaration]] = None
+    functionDeclarations: Option[List[FunctionDeclaration]] = None,
+    codeExecution: Option[CodeExecution] = None
 )
 
 object Tool {
@@ -81,7 +82,8 @@ final case class Schema(
     nullable: Option[Boolean] = None,
     `enum`: Option[List[String]] = None,
     properties: Option[Map[String, Schema]] = None,
-    required: Option[List[String]] = None
+    required: Option[List[String]] = None,
+    items: Option[Schema] = None
 )
 
 object Schema {

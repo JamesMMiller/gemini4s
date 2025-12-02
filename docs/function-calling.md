@@ -41,6 +41,37 @@ val weatherFunction = FunctionDeclaration(
 )
 ```
 
+## Code Execution
+
+Enable the model to write and execute Python code for complex calculations:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import gemini4s.model.request.GenerateContentRequest
+
+def codeExecution(service: GeminiService[IO]): IO[Unit] = {
+  // Enable code execution tool
+  val tool = Tool(codeExecution = Some(CodeExecution()))
+  
+  service.generateContent(
+    GenerateContentRequest(
+      model = ModelName.Gemini25Flash,
+      contents = List(GeminiService.text("Calculate the sum of the first 50 prime numbers")),
+      tools = Some(List(tool))
+    )
+  ).flatMap {
+    case Right(response) =>
+      // Response may contain ExecutableCode and CodeExecutionResult parts
+      val text = response.candidates.head.content.flatMap(_.parts.headOption)
+      IO.println(s"Response: $text")
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
 ## Using Tools
 
 Provide tools to the model:

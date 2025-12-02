@@ -100,6 +100,7 @@ lazy val integration = project
   .settings(
     commonSettings,
     publish / skip := true,
+    Test / fork    := true,
     Test / envVars := {
       val envFile = file(".env")
       if (envFile.exists()) {

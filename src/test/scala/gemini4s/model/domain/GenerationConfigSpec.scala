@@ -50,4 +50,11 @@ class GenerationConfigSpec extends FunSuite {
     val config = GenerationConfig(stopSequences = Some(List("STOP", "END")))
     assertEquals(config.stopSequences, Some(List("STOP", "END")))
   }
+  test("GenerationConfig should handle responseSchema") {
+    val schema = Schema(SchemaType.OBJECT, properties = Some(Map("key" -> Schema(SchemaType.STRING))))
+    val config = GenerationConfig(responseSchema = Some(schema))
+    assertEquals(config.responseSchema, Some(schema))
+    val json   = config.asJson
+    assert(json.asObject.get("responseSchema").isDefined)
+  }
 }

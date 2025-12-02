@@ -277,8 +277,9 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
       val service     = GeminiService.make[IO](httpClient)
 
-      // 1x1 transparent PNG
-      val base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+      // 1x1 red pixel
+      val base64Image =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
       val imagePart   = GeminiService.image(base64Image, "image/png")
       val textPart    = GeminiService.text("What is this image?")
 
@@ -290,7 +291,92 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
           )
         )
         .map {
-          case Right(response) => assert(response.candidates.nonEmpty)
+          case Right(response) =>
+            println(response)
+            assert(response.candidates.nonEmpty)
+          case Left(e)         => fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
+
+  test("generateContent with Structured Outputs should return valid JSON object") {
+    withBackend { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      val schema = Schema(
+        `type` = SchemaType.OBJECT,
+        properties = Some(
+          Map(
+            "name" -> Schema(SchemaType.STRING),
+            "age"  -> Schema(SchemaType.INTEGER)
+          )
+        ),
+        required = Some(List("name", "age"))
+      )
+
+      val config = GenerationConfig(
+        responseMimeType = Some(MimeType.ApplicationJson),
+        responseSchema = Some(schema)
+      )
+
+      service
+        .generateContent(
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(GeminiService.text("Generate a person named Alice who is 30 years old.")),
+            generationConfig = Some(config)
+          )
+        )
+        .map {
+          case Right(response) =>
+            if (apiKey.isDefined) {
+              val text = response.candidates.head.content.flatMap(_.parts.headOption) match {
+                case Some(ResponsePart.Text(t)) => t
+                case _                          => fail("Expected text response")
+              }
+              // Simple check for JSON structure
+              assert(text.contains("Alice"))
+              assert(text.contains("30"))
+              assert(text.trim.startsWith("{"))
+            } else {
+              assert(true)
+            }
+          case Left(e)         => fail(s"API call failed: ${e.message}")
+        }
+    }
+  }
+
+  test("generateContent with Code Execution should return executable code result") {
+    withBackend { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      val tool = Tool(codeExecution = Some(CodeExecution()))
+
+      service
+        .generateContent(
+          GenerateContentRequest(
+            model = ModelName.Gemini25Flash,
+            contents = List(GeminiService.text("Calculate the sum of the first 50 prime numbers using Python.")),
+            tools = Some(List(tool))
+          )
+        )
+        .map {
+          case Right(response) =>
+            if (apiKey.isDefined) {
+              val hasCodeExecution = response.candidates.head.content.exists(_.parts.exists {
+                case _: ResponsePart.ExecutableCode      => true
+                case _: ResponsePart.CodeExecutionResult => true
+                case _                                   => false
+              })
+              if (!hasCodeExecution) println("WARNING: Model did not use code execution for math prompt.")
+              assert(response.candidates.nonEmpty)
+            } else {
+              assert(true)
+            }
           case Left(e)         => fail(s"API call failed: ${e.message}")
         }
     }

@@ -5,6 +5,7 @@ import fs2.Stream
 import io.circe.{ Decoder, Encoder }
 import munit.CatsEffectSuite
 
+import gemini4s.config.{ ApiKey, GeminiConfig }
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._
@@ -138,5 +139,45 @@ class GeminiServiceSpec extends CatsEffectSuite {
       assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.createCachedContent)
       assert(client.lastRequest.exists(_.isInstanceOf[CreateCachedContentRequest]))
     }
+  }
+  test("make with config should create service") {
+    val config   = GeminiConfig("test-key")
+    val resource = GeminiService.make[IO](config)
+    resource.use(service => IO(assert(service != null)))
+  }
+  test("countTokens should handle errors") {
+    val error   = GeminiError.InvalidRequest("error")
+    val client  = new MockHttpClient(response = Left(error))
+    val service = GeminiService.make[IO](client)
+    val request = CountTokensRequest(GeminiConstants.DefaultModel, List(Content(List(ContentPart.Text("test")))))
+
+    service.countTokens(request).map(result => assertEquals(result, Left(error)))
+  }
+
+  test("embedContent should handle errors") {
+    val error   = GeminiError.InvalidRequest("error")
+    val client  = new MockHttpClient(response = Left(error))
+    val service = GeminiService.make[IO](client)
+    val request = EmbedContentRequest(Content(List(ContentPart.Text("test"))), GeminiConstants.EmbeddingGemini001)
+
+    service.embedContent(request).map(result => assertEquals(result, Left(error)))
+  }
+
+  test("batchEmbedContents should handle errors") {
+    val error   = GeminiError.InvalidRequest("error")
+    val client  = new MockHttpClient(response = Left(error))
+    val service = GeminiService.make[IO](client)
+    val request = BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, List.empty)
+
+    service.batchEmbedContents(request).map(result => assertEquals(result, Left(error)))
+  }
+
+  test("createCachedContent should handle errors") {
+    val error   = GeminiError.InvalidRequest("error")
+    val client  = new MockHttpClient(response = Left(error))
+    val service = GeminiService.make[IO](client)
+    val request = CreateCachedContentRequest(model = Some("model"))
+
+    service.createCachedContent(request).map(result => assertEquals(result, Left(error)))
   }
 }

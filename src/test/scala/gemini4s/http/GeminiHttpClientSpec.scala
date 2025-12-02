@@ -191,4 +191,26 @@ class GeminiHttpClientSpec extends CatsEffectSuite {
         assert(result.left.exists(_.isInstanceOf[GeminiError.InvalidRequest]))
       }
   }
+
+  test("postStream should handle connection exceptions") {
+    val ioBackend = SttpBackendStub(implicitly[sttp.monad.MonadError[IO]]).whenAnyRequest.thenRespond(
+      throw new java.net.ConnectException("Connection refused")
+    )
+
+    val client  = GeminiHttpClient.make[IO](createBackend(ioBackend), apiKey)
+    val request = GenerateContentRequest(
+      ModelName.unsafe("gemini-2.0-flash-lite-preview-02-05"),
+      List(Content(parts = List(ContentPart.Text("prompt"))))
+    )
+
+    client
+      .postStream[GenerateContentRequest, GenerateContentResponse]("streamGenerateContent", request)
+      .compile
+      .drain
+      .attempt
+      .map { result =>
+        assert(result.isLeft)
+        assert(result.left.exists(_.isInstanceOf[GeminiError.ConnectionError]))
+      }
+  }
 }

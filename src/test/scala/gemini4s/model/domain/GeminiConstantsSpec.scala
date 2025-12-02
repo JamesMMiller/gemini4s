@@ -33,6 +33,22 @@ class GeminiConstantsSpec extends CatsEffectSuite {
     assertEquals(content.parts.head, ContentPart.Text("Hello"))
   }
 
+  test("image helper should create Content.InlineData correctly") {
+    val base64   = "base64data"
+    val mimeType = "image/jpeg"
+    val content  = GeminiService.image(base64, mimeType)
+    val expected = ContentPart.InlineData(MimeType.unsafe(mimeType), ContentPart.Base64Data(base64))
+    assertEquals(content.parts.head, expected)
+  }
+
+  test("file helper should create Content.FileData correctly") {
+    val uri      = "gs://bucket/file"
+    val mimeType = "application/pdf"
+    val content  = GeminiService.file(uri, mimeType)
+    val expected = ContentPart.FileData(MimeType.unsafe(mimeType), ContentPart.FileUri(uri))
+    assertEquals(content.parts.head, expected)
+  }
+
   test("Endpoints should generate correct paths") {
     val model = ModelName.Gemini25Flash
     assertEquals(GeminiConstants.Endpoints.generateContent(model), "models/gemini-2.5-flash:generateContent")
