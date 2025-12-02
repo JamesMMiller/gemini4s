@@ -96,4 +96,81 @@ class BatchJobSpec extends FunSuite {
     val json = job.asJson
     assert(json.hcursor.downField("name").as[String] == Right("batch789"))
   }
+
+  test("BatchJob with response should encode/decode correctly") {
+    val response = BatchJobResponse(
+      inlinedResponses = Some(
+        List(
+          BatchInlineResponse(
+            response = Some(
+              gemini4s.model.response.GenerateContentResponse(
+                candidates = List.empty,
+                usageMetadata = None,
+                promptFeedback = None
+              )
+            )
+          )
+        )
+      )
+    )
+    val job      = BatchJob(
+      "batch-with-response",
+      BatchJobState.JOB_STATE_SUCCEEDED,
+      "2024-01-01T00:00:00Z",
+      "2024-01-01T01:00:00Z",
+      None,
+      Some(response)
+    )
+
+    val json    = job.asJson
+    val decoded = decode[BatchJob](json.noSpaces)
+
+    assert(decoded.isRight)
+    assert(decoded.map(_.response.isDefined) == Right(true))
+  }
+
+  test("BatchJobResponse should handle inlined responses") {
+    val json    = """{
+      "inlinedResponses": [
+        {"response": {"candidates": [], "usageMetadata": null}},
+        {"error": {"code": 400, "message": "Bad request"}}
+      ]
+    }"""
+    val decoded = decode[BatchJobResponse](json)
+
+    assert(decoded.isRight)
+    assert(decoded.map(_.inlinedResponses.map(_.size)) == Right(Some(2)))
+  }
+
+  test("BatchJobResponse should handle responses file") {
+    val json    = """{"responsesFile": "files/output-123"}"""
+    val decoded = decode[BatchJobResponse](json)
+
+    assert(decoded.isRight)
+    assertEquals(decoded.map(_.responsesFile), Right(Some("files/output-123")))
+  }
+
+  test("BatchInlineResponse should handle response") {
+    val response = gemini4s.model.response.GenerateContentResponse(
+      candidates = List.empty,
+      usageMetadata = None,
+      promptFeedback = None
+    )
+    val inline   = BatchInlineResponse(response = Some(response))
+    val json     = inline.asJson.noSpaces
+    val decoded  = decode[BatchInlineResponse](json)
+
+    assert(decoded.isRight)
+    assert(decoded.map(_.response.isDefined) == Right(true))
+  }
+
+  test("BatchInlineResponse should handle error") {
+    val error   = BatchJobError(500, "Internal error")
+    val inline  = BatchInlineResponse(error = Some(error))
+    val json    = inline.asJson.noSpaces
+    val decoded = decode[BatchInlineResponse](json)
+
+    assert(decoded.isRight)
+    assert(decoded.map(_.error.map(_.code)) == Right(Some(500)))
+  }
 }

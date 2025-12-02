@@ -1,8 +1,9 @@
 package gemini4s.model.request
 
-import io.circe.syntax.*
 import io.circe.parser.*
+import io.circe.syntax.*
 import munit.FunSuite
+
 import gemini4s.model.domain.*
 
 class BatchGenerateContentRequestSpec extends FunSuite {

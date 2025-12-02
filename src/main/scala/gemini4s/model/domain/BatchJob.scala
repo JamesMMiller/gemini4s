@@ -4,6 +4,8 @@ import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 
+import gemini4s.model.response.GenerateContentResponse
+
 /**
  * Represents a batch job for asynchronous processing.
  */
@@ -12,7 +14,8 @@ final case class BatchJob(
     state: BatchJobState,
     createTime: String,
     updateTime: String,
-    error: Option[BatchJobError] = None
+    error: Option[BatchJobError] = None,
+    response: Option[BatchJobResponse] = None
 )
 
 object BatchJob {
@@ -25,7 +28,8 @@ object BatchJob {
       createTime <- metadata.downField("createTime").as[String]
       updateTime <- metadata.downField("updateTime").as[String]
       error      <- c.downField("error").as[Option[BatchJobError]]
-    } yield BatchJob(name, state, createTime, updateTime, error)
+      response   <- c.downField("response").as[Option[BatchJobResponse]]
+    } yield BatchJob(name, state, createTime, updateTime, error, response)
   }
 
   given Encoder[BatchJob] = Encoder.instance { job =>
@@ -36,10 +40,37 @@ object BatchJob {
         "createTime" -> Json.fromString(job.createTime),
         "updateTime" -> Json.fromString(job.updateTime)
       ),
-      "error"    -> job.error.asJson
+      "error"    -> job.error.asJson,
+      "response" -> job.response.asJson
     )
   }
 
+}
+
+/**
+ * Response from a batch job containing results.
+ */
+final case class BatchJobResponse(
+    inlinedResponses: Option[List[BatchInlineResponse]] = None,
+    responsesFile: Option[String] = None
+)
+
+object BatchJobResponse {
+  given Decoder[BatchJobResponse] = deriveDecoder
+  given Encoder[BatchJobResponse] = deriveEncoder
+}
+
+/**
+ * Individual response within an inlined batch result.
+ */
+final case class BatchInlineResponse(
+    response: Option[GenerateContentResponse] = None,
+    error: Option[BatchJobError] = None
+)
+
+object BatchInlineResponse {
+  given Decoder[BatchInlineResponse] = deriveDecoder
+  given Encoder[BatchInlineResponse] = deriveEncoder
 }
 
 /**
