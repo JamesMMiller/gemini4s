@@ -63,7 +63,7 @@ def describeImage(service: GeminiService[IO]): IO[Unit] = {
 
 ### Files
 
-Use the `GeminiService.file` helper to include files via URI (e.g., from Google Cloud Storage or File API):
+Use the `GeminiService.file` helper to include files via URI (e.g., from Google Cloud Storage or [File API](files.md)):
 
 ```scala mdoc:compile-only
 import cats.effect.IO
@@ -437,6 +437,7 @@ object Configs {
 ## Next Steps
 
 - **[Streaming](streaming.md)** - Stream responses in real-time
+- **[File API](files.md)** - Upload and manage files
 - **[Function Calling](function-calling.md)** - Use tools and functions
 - **[Safety Settings](safety.md)** - Configure content filtering
 - **[Examples](examples.md)** - See complete working examples

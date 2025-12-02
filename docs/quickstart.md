@@ -61,6 +61,7 @@ object QuickStart extends IOApp.Simple {
 Now that you have the basics, explore:
 
 - **[Core Concepts](core-concepts.md)** - Understand the library's design
+- **[File API](files.md)** - Upload files for multimodal generation
 - **[Examples](examples.md)** - See complete working examples
 - **[Best Practices](best-practices.md)** - Production-ready patterns
 

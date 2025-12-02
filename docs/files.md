@@ -61,7 +61,7 @@ def deleteFileExample(service: GeminiService[IO], fileName: String): IO[Unit] = 
 
 ## Using Files in Prompts
 
-Once a file is uploaded, you can use its URI in your prompts using `GeminiService.file`.
+Once a file is uploaded, you can use its URI in your prompts using `GeminiService.file`. See [Content Generation](content-generation.md#multimodal-input) for more details.
 
 ```scala
 def generateWithFile(service: GeminiService[IO], fileUri: String): IO[Unit] = {
