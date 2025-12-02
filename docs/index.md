@@ -14,7 +14,7 @@ gemini4s is a **purely functional**, **type-safe**, and **idiomatic** Scala 3 li
 - 🛡️ **Type-Safe**: Strongly typed models for requests, responses, and configuration
 - 🌊 **Streaming**: Native FS2 streaming for real-time responses
 - 🧩 **Composable**: Built on Cats Effect 3 for seamless integration
-- 🛡️ **Robust**: Comprehensive error handling and retry strategies
+- 🛡️ **Robust**: Comprehensive error handling
 - 🛠️ **Feature Complete**: Supports content generation, embeddings, function calling, caching, and more
 
 ## Quick Start
