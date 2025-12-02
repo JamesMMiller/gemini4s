@@ -550,6 +550,85 @@ def pollBatchJob(service: GeminiService[IO], jobName: String): IO[Unit] = {
 }
 ```
 
+#### Retrieving Results
+
+When a batch job completes successfully, the results are stored in a Cloud Storage bucket. The `BatchJob` response includes metadata about the output location.
+
+> **Note**: In the current Gemini API, batch job results are written to Cloud Storage as JSONL files. You'll need to:
+> 1. Access the output GCS bucket specified when creating the job (or use the File API to retrieve results)
+> 2. Download and parse the JSONL output file
+> 3. Each line contains the response for one request in the batch
+
+**Example: Retrieving Results**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import scala.concurrent.duration._
+import java.nio.file.{Files, Paths}
+import io.circe.parser._
+
+def retrieveBatchResults(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  for {
+    // 1. Poll until complete
+    jobResult <- service.getBatchJob(jobName).flatMap(IO.fromEither)
+    _         <- jobResult.state match {
+      case BatchJobState.JOB_STATE_SUCCEEDED =>
+        IO.println("Job completed! Results are available in Cloud Storage.")
+      case BatchJobState.JOB_STATE_FAILED =>
+        IO.raiseError(new Exception(s"Job failed: ${jobResult.error.map(_.message)}"))
+      case _ =>
+        IO.raiseError(new Exception(s"Job not complete yet: ${jobResult.state}"))
+    }
+
+    // 2. Results location
+    _ <- IO.println(s"Job name: ${jobResult.name}")
+    _ <- IO.println("Results are stored in the output GCS bucket configured for your project")
+    _ <- IO.println("Download the output JSONL file from Cloud Storage to access responses")
+
+    // 3. If using File API for output, you can retrieve via:
+    // - List files to find the output file URI
+    // - Download using File API methods
+  } yield ()
+}
+```
+
+**Processing Results from JSONL**
+
+Once you've downloaded the results file:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import io.circe.parser._
+import gemini4s.model.response.GenerateContentResponse
+import scala.io.Source
+
+def processResultsFile(filePath: String): IO[Unit] = IO {
+  val lines = Source.fromFile(filePath).getLines()
+  
+  lines.zipWithIndex.foreach { case (line, index) =>
+    decode[GenerateContentResponse](line) match {
+      case Right(response) =>
+        println(s"Request $index result:")
+        response.candidates.foreach { candidate =>
+          candidate.content.foreach { content =>
+            content.parts.foreach { part =>
+              part match {
+                case text: gemini4s.model.domain.ContentPart.Text =>
+                  println(s"  ${text.text}")
+                case _ => ()
+              }
+            }
+          }
+        }
+      case Left(error) =>
+        println(s"Error parsing result $index: ${error.getMessage}")
+    }
+  }
+}
+```
+
 #### Managing Batch Jobs
 
 **List All Jobs**
