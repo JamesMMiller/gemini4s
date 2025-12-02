@@ -243,6 +243,10 @@ class MockGemini extends GeminiService[IO] {
   def countTokens(request: gemini4s.model.request.CountTokensRequest) = IO.pure(Right(0))
   def embedContent(request: gemini4s.model.request.EmbedContentRequest) = IO.pure(Right(gemini4s.model.response.ContentEmbedding(List.empty)))
   def batchEmbedContents(request: gemini4s.model.request.BatchEmbedContentsRequest) = IO.pure(Right(List.empty))
+  def batchGenerateContent(model: gemini4s.model.domain.ModelName, requests: List[gemini4s.model.request.GenerateContentRequest]) = 
+    IO.pure(Right(gemini4s.model.domain.BatchJob("models/mock/batchJobs/1", gemini4s.model.domain.BatchJobState.JOB_STATE_PENDING, "now", "now")))
+  def getBatchJob(name: String) = 
+    IO.pure(Right(gemini4s.model.domain.BatchJob(name, gemini4s.model.domain.BatchJobState.JOB_STATE_SUCCEEDED, "now", "now")))
   def createCachedContent(request: gemini4s.model.request.CreateCachedContentRequest) = IO.pure(Right(gemini4s.model.response.CachedContent("", "", "", "", "", None)))
   
   // File API

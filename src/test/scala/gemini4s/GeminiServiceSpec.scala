@@ -42,11 +42,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def get[Res: Decoder](
         endpoint: String,
         params: Map[String, String]
-    ): IO[Either[GeminiError, Res]] = IO.pure(Left(GeminiError.InvalidRequest("Not implemented", None)))
+    ): IO[Either[GeminiError, Res]] = {
+      lastEndpoint = endpoint
+      IO.pure(response.asInstanceOf[Either[GeminiError, Res]])
+    }
 
     override def delete(
         endpoint: String
-    ): IO[Either[GeminiError, Unit]] = IO.pure(Right(()))
+    ): IO[Either[GeminiError, Unit]] = {
+      lastEndpoint = endpoint
+      IO.pure(Right(()))
+    }
 
     override def startResumableUpload(
         uri: String,
@@ -163,7 +169,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
   }
 
   test("batchGenerateContent should call client with correct request") {
-    val expectedResponse = BatchGenerateContentResponse(List(GenerateContentResponse(List.empty, None, None)))
+    val expectedResponse = BatchJob("job-name", BatchJobState.JOB_STATE_PENDING, "now", "now")
     val client           = new MockHttpClient(response = Right(expectedResponse))
     val service          = GeminiService.make[IO](client)
     val model            = GeminiConstants.DefaultModel
@@ -173,6 +179,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
       assertEquals(result, Right(expectedResponse))
       assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.batchGenerateContent(model))
       assert(client.lastRequest.exists(_.isInstanceOf[BatchGenerateContentRequest]))
+    }
+  }
+
+  test("getBatchJob should call client with correct request") {
+    val expectedResponse = BatchJob("job-name", BatchJobState.JOB_STATE_SUCCEEDED, "now", "now")
+    val client           = new MockHttpClient(response = Right(expectedResponse))
+    val service          = GeminiService.make[IO](client)
+
+    service.getBatchJob("job-name").map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, "job-name")
     }
   }
 

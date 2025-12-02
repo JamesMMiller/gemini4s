@@ -4,6 +4,7 @@ import cats.effect.Async
 import cats.syntax.all._
 import fs2.Stream
 import io.circe.{ Decoder, Encoder }
+import io.circe.syntax._
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
 import sttp.client3.circe._
@@ -118,11 +119,12 @@ object GeminiHttpClient {
         endpoint: String,
         request: Req
     ): F[Either[GeminiError, Res]] = {
-      val uri = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
-
+      val uri  = uri"$baseUrl".addPath(endpoint.split('/')).addParam("key", apiKey.value)
+      val body = request.asJson.noSpaces
+      println(s"Sending POST to $uri with body: $body")
       basicRequest
         .post(uri)
-        .body(request)
+        .body(body)
         .response(asJson[Res])
         .send(backend)
         .map { response =>

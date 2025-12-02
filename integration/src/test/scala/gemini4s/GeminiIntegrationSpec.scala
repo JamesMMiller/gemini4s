@@ -45,6 +45,37 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         .thenRespond("""{"embedding": {"values": [0.1, 0.2, 0.3]}}""")
         .whenRequestMatches(_.uri.path.exists(_.endsWith("batchEmbedContents")))
         .thenRespond("""{"embeddings": [{"values": [0.1, 0.2]}, {"values": [0.3, 0.4]}]}""")
+        .whenRequestMatches(_.uri.path.exists(_.endsWith("batchGenerateContent")))
+        .thenRespond("""{
+            "name": "models/gemini-1.5-flash/batchJobs/123",
+            "metadata": {
+              "state": "JOB_STATE_PENDING",
+              "createTime": "2024-01-01T00:00:00Z",
+              "updateTime": "2024-01-01T00:00:00Z"
+            }
+          }""")
+        .whenRequestMatches(_.uri.path.exists(_.endsWith("batchJobs/123")))
+        .thenRespond("""{
+            "name": "models/gemini-1.5-flash/batchJobs/123",
+            "metadata": {
+              "state": "JOB_STATE_SUCCEEDED",
+              "createTime": "2024-01-01T00:00:00Z",
+              "updateTime": "2024-01-01T00:00:00Z"
+            }
+          }""")
+        .whenRequestMatches(_.uri.path.exists(_.endsWith("batches")))
+        .thenRespond("""{
+            "batchJobs": [
+              {
+                "name": "models/gemini-1.5-flash/batchJobs/123",
+                "metadata": {
+                  "state": "JOB_STATE_SUCCEEDED",
+                  "createTime": "2024-01-01T00:00:00Z",
+                  "updateTime": "2024-01-01T00:00:00Z"
+                }
+              }
+            ]
+          }""")
         .whenRequestMatches(_.uri.path.exists(_.endsWith("streamGenerateContent")))
         .thenRespondF(_ =>
           IO(
@@ -504,4 +535,57 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     }
   }
 
+  test("batchGenerateContent should return responses for multiple prompts") {
+    withBackend { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      val model    = ModelName.Gemini25Flash
+      val requests = List(
+        GenerateContentRequest(model, List(GeminiService.text("What is 1+1?"))),
+        GenerateContentRequest(model, List(GeminiService.text("What is 2+2?")))
+      )
+
+      service.batchGenerateContent(model, requests).flatMap { result =>
+        assert(result.isRight, s"Batch generation failed: $result")
+        val job = result.toOption.get
+        assertEquals(job.state, BatchJobState.JOB_STATE_PENDING)
+
+        // Poll for status (mock will return SUCCEEDED immediately for the specific ID)
+        service.getBatchJob(job.name).map { jobResult =>
+          assert(jobResult.isRight, s"Get batch job failed: $jobResult")
+          val updatedJob = jobResult.toOption.get
+          assert(
+            updatedJob.state == BatchJobState.JOB_STATE_SUCCEEDED || updatedJob.state == BatchJobState.JOB_STATE_PENDING,
+            s"Unexpected state: ${updatedJob.state}"
+          )
+        }
+      }
+    }
+  }
+
+  test("listBatchJobs should return a list of batch jobs") {
+    withBackend { backend =>
+      val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
+      val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
+      val service     = GeminiService.make[IO](httpClient)
+
+      service.listBatchJobs().map { result =>
+        assert(result.isRight, s"List batch jobs failed: $result")
+        val response = result.toOption.get
+        if (response.batchJobs.isEmpty) {
+          println(s"ListBatchJobsResponse: $response (No jobs found)")
+        } else {
+          assert(response.batchJobs.get.nonEmpty, "batchJobs is defined but empty")
+        }
+      }
+    }
+  }
+
+  // Note: Skipping cancelBatchJob as it's hard to time correctly with fast jobs
+  // and deleteBatchJob is destructive/cleanup.
+  // We can test deleteBatchJob by creating a dummy job, but we already have one from the previous test.
+  // Let's try to delete the job created in the previous test if possible, but state sharing is hard.
+  // Instead, we'll just verify list works.
 }

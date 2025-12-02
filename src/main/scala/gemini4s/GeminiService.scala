@@ -138,7 +138,61 @@ trait GeminiService[F[_]] {
   def batchGenerateContent(
       model: ModelName,
       requests: List[GenerateContentRequest]
-  ): F[Either[GeminiError, BatchGenerateContentResponse]]
+  ): F[Either[GeminiError, BatchJob]]
+
+  /**
+   * Gets the status of a batch job.
+   *
+   * @param name The resource name of the batch job
+   * @return Either a GeminiError or the BatchJob
+   */
+  def getBatchJob(
+      name: String
+  ): F[Either[GeminiError, BatchJob]]
+
+  /**
+   * Lists batch jobs.
+   *
+   * @param pageSize The maximum number of batch jobs to return
+   * @param pageToken A page token, received from a previous list call
+   * @return Either a GeminiError or the ListBatchJobsResponse
+   */
+  def listBatchJobs(
+      pageSize: Int = 10,
+      pageToken: Option[String] = None
+  ): F[Either[GeminiError, ListBatchJobsResponse]]
+
+  /**
+   * Cancels a batch job.
+   *
+   * @param name The resource name of the batch job
+   * @return Either a GeminiError or Unit
+   */
+  def cancelBatchJob(
+      name: String
+  ): F[Either[GeminiError, Unit]]
+
+  /**
+   * Deletes a batch job.
+   *
+   * @param name The resource name of the batch job
+   * @return Either a GeminiError or Unit
+   */
+  def deleteBatchJob(
+      name: String
+  ): F[Either[GeminiError, Unit]]
+
+  /**
+   * Generates content for a batch of requests using a file dataset.
+   *
+   * @param model The model to use
+   * @param dataset The URI of the dataset (File API or GCS)
+   * @return Either a GeminiError or the BatchJob
+   */
+  def batchGenerateContent(
+      model: ModelName,
+      dataset: String
+  ): F[Either[GeminiError, BatchJob]]
 
 }
 
@@ -214,11 +268,16 @@ object GeminiService {
     override def batchGenerateContent(
         model: ModelName,
         requests: List[GenerateContentRequest]
-    ): F[Either[GeminiError, BatchGenerateContentResponse]] =
-      httpClient.post[BatchGenerateContentRequest, BatchGenerateContentResponse](
-        GeminiConstants.Endpoints.batchGenerateContent(model),
-        BatchGenerateContentRequest(requests)
-      )
+    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
+      GeminiConstants.Endpoints.batchGenerateContent(model),
+      BatchGenerateContentRequest(requests)
+    )
+
+    override def getBatchJob(
+        name: String
+    ): F[Either[GeminiError, BatchJob]] = httpClient.get[BatchJob](
+      GeminiConstants.Endpoints.getBatchJob(name)
+    )
 
     override def generateContentStream(
         request: GenerateContentRequest
@@ -305,6 +364,28 @@ object GeminiService {
     override def getFile(name: String): F[Either[GeminiError, File]] = httpClient.get[File](name)
 
     override def deleteFile(name: String): F[Either[GeminiError, Unit]] = httpClient.delete(name)
+
+    override def listBatchJobs(
+        pageSize: Int,
+        pageToken: Option[String]
+    ): F[Either[GeminiError, ListBatchJobsResponse]] = {
+      val params = Map("pageSize" -> pageSize.toString) ++ pageToken.map("pageToken" -> _)
+      httpClient.get[ListBatchJobsResponse](GeminiConstants.Endpoints.listBatchJobs, params)
+    }
+
+    override def cancelBatchJob(name: String): F[Either[GeminiError, Unit]] =
+      httpClient.post[Unit, Unit](GeminiConstants.Endpoints.cancelBatchJob(name), ())
+
+    override def deleteBatchJob(name: String): F[Either[GeminiError, Unit]] =
+      httpClient.delete(GeminiConstants.Endpoints.deleteBatchJob(name))
+
+    override def batchGenerateContent(
+        model: ModelName,
+        dataset: String
+    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
+      GeminiConstants.Endpoints.batchGenerateContent(model),
+      BatchGenerateContentRequest(dataset)
+    )
 
   }
 

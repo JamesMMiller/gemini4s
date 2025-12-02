@@ -68,12 +68,16 @@ class GeminiCodecSpec extends FunSuite {
   }
 
   test("BatchGenerateContentRequest encoding") {
-    val req  = BatchGenerateContentRequest(
+    val req           = BatchGenerateContentRequest(
       List(GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart.Text("text"))))))
     )
-    val json = req.asJson
-    assert(json.hcursor.downField("requests").downArray.downField("contents").succeeded)
-    assert(json.hcursor.downField("requests").downArray.downField("model").failed)
+    val json          = req.asJson
+    val requestsArray =
+      json.hcursor.downField("batch").downField("input_config").downField("requests").downField("requests")
+
+    assert(requestsArray.succeeded)
+    assert(requestsArray.downArray.downField("request").succeeded)
+    assert(requestsArray.downArray.downField("metadata").downField("key").succeeded)
   }
 
   // Responses
@@ -110,9 +114,15 @@ class GeminiCodecSpec extends FunSuite {
     assertEquals(res.asJson.as[BatchEmbedContentsResponse], Right(res))
   }
 
-  test("BatchGenerateContentResponse codec") {
-    val res = BatchGenerateContentResponse(List(GenerateContentResponse(List.empty, None, None)))
-    assertEquals(res.asJson.as[BatchGenerateContentResponse], Right(res))
+  test("BatchJob codec") {
+    val job = BatchJob(
+      name = "models/gemini-1.5-flash/batchJobs/123",
+      state = BatchJobState.JOB_STATE_PENDING,
+      createTime = "2024-01-01T00:00:00Z",
+      updateTime = "2024-01-01T00:00:00Z",
+      error = None
+    )
+    assertEquals(job.asJson.as[BatchJob], Right(job))
   }
 
   test("CachedContent codec") {

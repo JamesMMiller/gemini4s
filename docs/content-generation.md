@@ -434,33 +434,53 @@ object Configs {
 }
 ```
 
-## Batch Generation
- 
-Generate content for multiple prompts in a single request:
- 
+### Batch Generation (Async)
+
+For large volumes of requests, you can use the asynchronous batch generation API. This returns a `BatchJob` that you can poll for completion.
+
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.request.GenerateContentRequest
-import gemini4s.model.domain.{GeminiConstants, ModelName}
- 
-def batch(service: GeminiService[IO]): IO[Unit] = {
-  val model = ModelName.Gemini25Flash
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import gemini4s.config.ApiKey
+
+def batchGenerationExamples(service: GeminiService[IO])(using apiKey: ApiKey): IO[Unit] = {
+  // 1. Create a batch job with inline requests
   val requests = List(
-    GenerateContentRequest(model, List(GeminiService.text("What is 2+2?"))),
-    GenerateContentRequest(model, List(GeminiService.text("What is 3+3?")))
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Tell me a joke"))),
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Write a poem")))
   )
- 
-  service.batchGenerateContent(model, requests).flatMap {
-    case Right(response) =>
-      response.candidates.zipWithIndex.foreach { case (candidate, index) =>
-        val text = candidate.content.flatMap(_.parts.headOption).getOrElse("No content")
-        IO.println(s"Response $index: $text")
-      }
-      IO.unit
-    case Left(error) =>
-      IO.println(s"Error: ${error.message}")
-  }
+
+  for {
+    // Submit inline batch job
+    jobResult <- service.batchGenerateContent(ModelName.Gemini25Flash, requests)
+    job       <- IO.fromEither(jobResult)
+    _         <- IO.println(s"Job started: ${job.name}")
+
+    // 2. Create a batch job from a file (File API or GCS)
+    // Assuming fileUri is obtained from service.uploadFile(...)
+    fileUri = "files/example-file-uri"
+    fileJobResult <- service.batchGenerateContent(ModelName.Gemini25Flash, fileUri)
+    fileJob       <- IO.fromEither(fileJobResult)
+    _             <- IO.println(s"File job started: ${fileJob.name}")
+
+    // 3. Poll for status
+    statusResult <- service.getBatchJob(job.name)
+    status       <- IO.fromEither(statusResult)
+    _            <- IO.println(s"Job status: ${status.state}")
+
+    // 4. List batch jobs
+    listResult <- service.listBatchJobs()
+    list       <- IO.fromEither(listResult)
+    _          <- IO.println(s"Found ${list.batchJobs.map(_.size).getOrElse(0)} jobs")
+
+    // 5. Cancel a job
+    _ <- service.cancelBatchJob(job.name)
+
+    // 6. Delete a job
+    _ <- service.deleteBatchJob(job.name)
+  } yield ()
 }
 ```
  
