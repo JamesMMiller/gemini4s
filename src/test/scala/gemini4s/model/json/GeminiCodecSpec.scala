@@ -143,7 +143,7 @@ class GeminiCodecSpec extends FunSuite {
     val inline: ContentPart = ContentPart.InlineData(MimeType.unsafe("image/jpeg"), ContentPart.Base64Data("base64"))
     assertEquals(inline.asJson.as[ContentPart], Right(inline))
 
-    val file: ContentPart = ContentPart.FileData(MimeType.unsafe("application/pdf"), ContentPart.FileUri("uri"))
+    val file: ContentPart = ContentPart.FileData(MimeType.unsafe("application/pdf"), FileUri("uri"))
     assertEquals(file.asJson.as[ContentPart], Right(file))
   }
 

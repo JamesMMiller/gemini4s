@@ -39,6 +39,43 @@ class GeminiServiceSpec extends CatsEffectSuite {
       streamResponse.asInstanceOf[Stream[IO, Res]]
     }
 
+    override def get[Res: Decoder](
+        endpoint: String,
+        params: Map[String, String]
+    ): IO[Either[GeminiError, Res]] = IO.pure(Left(GeminiError.InvalidRequest("Not implemented", None)))
+
+    override def delete(
+        endpoint: String
+    ): IO[Either[GeminiError, Unit]] = IO.pure(Right(()))
+
+    override def startResumableUpload(
+        uri: String,
+        metadata: String,
+        headers: Map[String, String]
+    ): IO[Either[GeminiError, String]] = IO.pure(Right("http://upload-url"))
+
+    override def uploadChunk(
+        uploadUri: String,
+        file: java.nio.file.Path,
+        headers: Map[String, String]
+    ): IO[Either[GeminiError, gemini4s.model.domain.File]] = IO.pure(
+      Right(
+        gemini4s.model.domain.File(
+          name = "files/123",
+          displayName = Some("test.txt"),
+          mimeType = Some(gemini4s.model.domain.MimeType.unsafe("text/plain")),
+          sizeBytes = Some(gemini4s.model.domain.SizeBytes(100L)),
+          createTime = Some(java.time.Instant.now().toString),
+          updateTime = Some(java.time.Instant.now().toString),
+          expirationTime = Some(java.time.Instant.now().toString),
+          sha256Hash = Some("hash"),
+          uri = gemini4s.model.domain.FileUri("http://file-uri"),
+          state = Some(gemini4s.model.domain.FileState.ACTIVE),
+          error = None
+        )
+      )
+    )
+
   }
 
   test("generateContent should call client with correct request and endpoint") {

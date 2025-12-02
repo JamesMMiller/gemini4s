@@ -45,7 +45,7 @@ class GeminiConstantsSpec extends CatsEffectSuite {
     val uri      = "gs://bucket/file"
     val mimeType = "application/pdf"
     val content  = GeminiService.file(uri, mimeType)
-    val expected = ContentPart.FileData(MimeType.unsafe(mimeType), ContentPart.FileUri(uri))
+    val expected = ContentPart.FileData(MimeType.unsafe(mimeType), FileUri(uri))
     assertEquals(content.parts.head, expected)
   }
 

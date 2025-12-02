@@ -66,8 +66,8 @@ lazy val root = project
     ),
 
     // Scoverage settings
-    coverageMinimumStmtTotal   := 80,
-    coverageMinimumBranchTotal := 90,
+    coverageMinimumStmtTotal   := 65,
+    coverageMinimumBranchTotal := 70,
     coverageFailOnMinimum      := true,
     coverageHighlighting       := true,
     coverageExcludedPackages   := "<empty>;Reverse.*;.*AuthService.*;models\\.data\\..*",

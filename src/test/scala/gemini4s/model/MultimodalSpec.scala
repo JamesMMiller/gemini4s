@@ -15,7 +15,7 @@ class MultimodalSpec extends FunSuite {
   }
 
   test("ContentPart.FileData should encode correctly") {
-    val part: ContentPart = ContentPart.FileData(MimeType.unsafe("image/png"), ContentPart.FileUri("uri"))
+    val part: ContentPart = ContentPart.FileData(MimeType.unsafe("image/png"), FileUri("uri"))
     val json              = part.asJson.noSpaces
     assert(json.contains("fileData"))
     assert(json.contains("mimeType"))
@@ -60,11 +60,11 @@ class MultimodalSpec extends FunSuite {
     assertEquals(json.as[ContentPart.Base64Data], Right(data))
   }
 
-  test("FileUri codec should work") {
-    val uri  = ContentPart.FileUri("http://example.com")
+  test("ContentPart.FileUri should encode/decode") {
+    val uri  = FileUri("http://example.com")
     val json = uri.asJson
     assertEquals(json.asString, Some("http://example.com"))
-    assertEquals(json.as[ContentPart.FileUri], Right(uri))
+    assertEquals(json.as[FileUri], Right(uri))
   }
 
   test("GeminiService.image helper should create correct ContentPart") {

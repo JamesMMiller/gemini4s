@@ -31,7 +31,7 @@ class ContentSpec extends FunSuite {
   }
 
   test("ContentPart.FileUri should wrap string") {
-    val uri = ContentPart.FileUri("gs://bucket/file")
+    val uri = FileUri("gs://bucket/file")
     assertEquals(uri.value, "gs://bucket/file")
   }
 }
