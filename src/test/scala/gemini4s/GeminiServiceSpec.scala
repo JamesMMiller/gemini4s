@@ -11,7 +11,7 @@ import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 
-class GeminiServiceImplSpec extends CatsEffectSuite {
+class GeminiServiceSpec extends CatsEffectSuite {
 
   class MockHttpClient(
       response: Either[GeminiError, Any] = Right(()),

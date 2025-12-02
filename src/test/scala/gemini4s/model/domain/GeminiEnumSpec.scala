@@ -1,4 +1,4 @@
-package gemini4s.model
+package gemini4s.model.domain
 
 import io.circe._
 import io.circe.syntax._

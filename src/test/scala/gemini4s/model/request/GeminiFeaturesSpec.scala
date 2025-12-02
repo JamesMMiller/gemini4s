@@ -1,4 +1,4 @@
-package gemini4s.model
+package gemini4s.model.request
 
 import io.circe.parser._
 import io.circe.syntax._
@@ -8,7 +8,7 @@ import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 
-class GeminiServiceFeaturesSpec extends FunSuite {
+class GeminiFeaturesSpec extends FunSuite {
 
   test("EmbedContentRequest should encode correctly") {
     val request = EmbedContentRequest(
