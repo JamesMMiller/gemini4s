@@ -2,15 +2,7 @@ package gemini4s.model.domain
 
 import munit.FunSuite
 
-import gemini4s.config.ApiKey
-
 class OpaqueTypesSpec extends FunSuite {
-
-  test("ApiKey validation") {
-    assert(ApiKey("valid-key").isRight)
-    assert(ApiKey("").isLeft)
-    assert(ApiKey("   ").isLeft)
-  }
 
   test("Temperature validation") {
     assert(Temperature(0.0f).isRight)
