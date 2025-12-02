@@ -67,6 +67,15 @@ class GeminiCodecSpec extends FunSuite {
     assertEquals(req.asJson.as[CreateCachedContentRequest], Right(req))
   }
 
+  test("BatchGenerateContentRequest encoding") {
+    val req  = BatchGenerateContentRequest(
+      List(GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart.Text("text"))))))
+    )
+    val json = req.asJson
+    assert(json.hcursor.downField("requests").downArray.downField("contents").succeeded)
+    assert(json.hcursor.downField("requests").downArray.downField("model").failed)
+  }
+
   // Responses
 
   test("GenerateContentResponse codec") {
@@ -99,6 +108,11 @@ class GeminiCodecSpec extends FunSuite {
   test("BatchEmbedContentsResponse codec") {
     val res = BatchEmbedContentsResponse(List(ContentEmbedding(List(0.1f))))
     assertEquals(res.asJson.as[BatchEmbedContentsResponse], Right(res))
+  }
+
+  test("BatchGenerateContentResponse codec") {
+    val res = BatchGenerateContentResponse(List(GenerateContentResponse(List.empty, None, None)))
+    assertEquals(res.asJson.as[BatchGenerateContentResponse], Right(res))
   }
 
   test("CachedContent codec") {

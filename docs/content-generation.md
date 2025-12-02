@@ -434,6 +434,36 @@ object Configs {
 }
 ```
 
+## Batch Generation
+ 
+Generate content for multiple prompts in a single request:
+ 
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.request.GenerateContentRequest
+import gemini4s.model.domain.{GeminiConstants, ModelName}
+ 
+def batch(service: GeminiService[IO]): IO[Unit] = {
+  val model = ModelName.Gemini25Flash
+  val requests = List(
+    GenerateContentRequest(model, List(GeminiService.text("What is 2+2?"))),
+    GenerateContentRequest(model, List(GeminiService.text("What is 3+3?")))
+  )
+ 
+  service.batchGenerateContent(model, requests).flatMap {
+    case Right(response) =>
+      response.candidates.zipWithIndex.foreach { case (candidate, index) =>
+        val text = candidate.content.flatMap(_.parts.headOption).getOrElse("No content")
+        IO.println(s"Response $index: $text")
+      }
+      IO.unit
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+ 
 ## Next Steps
 
 - **[Streaming](streaming.md)** - Stream responses in real-time

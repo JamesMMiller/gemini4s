@@ -128,6 +128,18 @@ trait GeminiService[F[_]] {
       name: String
   ): F[Either[GeminiError, Unit]]
 
+  /**
+   * Generates content for a batch of requests.
+   *
+   * @param model The model to use
+   * @param requests The list of generation requests
+   * @return Either a GeminiError or the BatchGenerateContentResponse
+   */
+  def batchGenerateContent(
+      model: ModelName,
+      requests: List[GenerateContentRequest]
+  ): F[Either[GeminiError, BatchGenerateContentResponse]]
+
 }
 
 object GeminiService {
@@ -197,6 +209,15 @@ object GeminiService {
       httpClient.post[GenerateContentRequest, GenerateContentResponse](
         GeminiConstants.Endpoints.generateContent(request.model),
         request
+      )
+
+    override def batchGenerateContent(
+        model: ModelName,
+        requests: List[GenerateContentRequest]
+    ): F[Either[GeminiError, BatchGenerateContentResponse]] =
+      httpClient.post[BatchGenerateContentRequest, BatchGenerateContentResponse](
+        GeminiConstants.Endpoints.batchGenerateContent(model),
+        BatchGenerateContentRequest(requests)
       )
 
     override def generateContentStream(

@@ -162,6 +162,20 @@ class GeminiServiceSpec extends CatsEffectSuite {
     }
   }
 
+  test("batchGenerateContent should call client with correct request") {
+    val expectedResponse = BatchGenerateContentResponse(List(GenerateContentResponse(List.empty, None, None)))
+    val client           = new MockHttpClient(response = Right(expectedResponse))
+    val service          = GeminiService.make[IO](client)
+    val model            = GeminiConstants.DefaultModel
+    val requests         = List(GenerateContentRequest(model, List(Content(List(ContentPart.Text("test"))))))
+
+    service.batchGenerateContent(model, requests).map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.batchGenerateContent(model))
+      assert(client.lastRequest.exists(_.isInstanceOf[BatchGenerateContentRequest]))
+    }
+  }
+
   test("createCachedContent should call client with correct request") {
     val expectedResponse = CachedContent("name", "model", "now", "now", "later")
     val client           = new MockHttpClient(response = Right(expectedResponse))
@@ -207,6 +221,16 @@ class GeminiServiceSpec extends CatsEffectSuite {
     val request = BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, List.empty)
 
     service.batchEmbedContents(request).map(result => assertEquals(result, Left(error)))
+  }
+
+  test("batchGenerateContent should handle errors") {
+    val error    = GeminiError.InvalidRequest("error")
+    val client   = new MockHttpClient(response = Left(error))
+    val service  = GeminiService.make[IO](client)
+    val model    = GeminiConstants.DefaultModel
+    val requests = List(GenerateContentRequest(model, List(Content(List(ContentPart.Text("test"))))))
+
+    service.batchGenerateContent(model, requests).map(result => assertEquals(result, Left(error)))
   }
 
   test("createCachedContent should handle errors") {

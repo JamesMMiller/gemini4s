@@ -49,6 +49,7 @@ object GeminiConstants {
     def countTokens(model: ModelName = DefaultModel): String           = s"${toApiString(model)}:countTokens"
     def embedContent(model: ModelName = DefaultModel): String          = s"${toApiString(model)}:embedContent"
     def batchEmbedContents(model: ModelName): String                   = s"${toApiString(model)}:batchEmbedContents"
+    def batchGenerateContent(model: ModelName): String                 = s"${toApiString(model)}:batchGenerateContent"
     val createCachedContent: String                                    = "cachedContents"
 
     // File API
