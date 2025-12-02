@@ -38,11 +38,17 @@ object GeminiConstants {
    */
 
   object Endpoints {
-    def generateContent(model: ModelName = DefaultModel): String       = s"${model.toApiString}:generateContent"
-    def generateContentStream(model: ModelName = DefaultModel): String = s"${model.toApiString}:streamGenerateContent"
-    def countTokens(model: ModelName = DefaultModel): String           = s"${model.toApiString}:countTokens"
-    def embedContent(model: ModelName = DefaultModel): String          = s"${model.toApiString}:embedContent"
-    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${model.toApiString}:batchEmbedContents"
+
+    private def toApiString(model: ModelName): String = model match {
+      case ModelName.Standard(v) => s"models/$v"
+      case ModelName.Tuned(v)    => s"tunedModels/$v"
+    }
+
+    def generateContent(model: ModelName = DefaultModel): String       = s"${toApiString(model)}:generateContent"
+    def generateContentStream(model: ModelName = DefaultModel): String = s"${toApiString(model)}:streamGenerateContent"
+    def countTokens(model: ModelName = DefaultModel): String           = s"${toApiString(model)}:countTokens"
+    def embedContent(model: ModelName = DefaultModel): String          = s"${toApiString(model)}:embedContent"
+    def batchEmbedContents(model: ModelName = DefaultModel): String    = s"${toApiString(model)}:batchEmbedContents"
     def createCachedContent: String                                    = "cachedContents"
   }
 
