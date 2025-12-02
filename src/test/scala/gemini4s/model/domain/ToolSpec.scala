@@ -65,4 +65,17 @@ class ToolSpec extends FunSuite {
     val json = tool.asJson
     assert(json.asObject.get("codeExecution").isDefined)
   }
+
+  test("CodeExecution should encode/decode") {
+    val ce   = CodeExecution()
+    val json = ce.asJson.noSpaces
+    assertEquals(json, "{}")
+    assertEquals(io.circe.parser.decode[CodeExecution](json), Right(ce))
+  }
+
+  test("Tool with CodeExecution should encode correctly") {
+    val tool = Tool(codeExecution = Some(CodeExecution()))
+    val json = tool.asJson.noSpaces
+    assert(json.contains("codeExecution"))
+  }
 }
