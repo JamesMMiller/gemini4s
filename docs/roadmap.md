@@ -7,7 +7,7 @@ This document outlines the future development plans for `gemini4s`.
 
 ## Medium Priority
 
-- **Batch Generation**: Support for `batchGenerateContent` endpoint.
+
 - **Tuned Models**: Management APIs for creating, listing, and deleting tuned models.
 - **Grounding**: Integration with Google Search for grounded responses (`googleSearchRetrieval`).
 

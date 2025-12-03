@@ -67,6 +67,19 @@ class GeminiCodecSpec extends FunSuite {
     assertEquals(req.asJson.as[CreateCachedContentRequest], Right(req))
   }
 
+  test("BatchGenerateContentRequest encoding") {
+    val req           = BatchGenerateContentRequest(
+      List(GenerateContentRequest(ModelName.unsafe("model"), List(Content(List(ContentPart.Text("text"))))))
+    )
+    val json          = req.asJson
+    val requestsArray =
+      json.hcursor.downField("batch").downField("input_config").downField("requests").downField("requests")
+
+    assert(requestsArray.succeeded)
+    assert(requestsArray.downArray.downField("request").succeeded)
+    assert(requestsArray.downArray.downField("metadata").downField("key").succeeded)
+  }
+
   // Responses
 
   test("GenerateContentResponse codec") {
@@ -99,6 +112,17 @@ class GeminiCodecSpec extends FunSuite {
   test("BatchEmbedContentsResponse codec") {
     val res = BatchEmbedContentsResponse(List(ContentEmbedding(List(0.1f))))
     assertEquals(res.asJson.as[BatchEmbedContentsResponse], Right(res))
+  }
+
+  test("BatchJob codec") {
+    val job = BatchJob(
+      name = "models/gemini-1.5-flash/batchJobs/123",
+      state = BatchJobState.JOB_STATE_PENDING,
+      createTime = "2024-01-01T00:00:00Z",
+      updateTime = "2024-01-01T00:00:00Z",
+      error = None
+    )
+    assertEquals(job.asJson.as[BatchJob], Right(job))
   }
 
   test("CachedContent codec") {

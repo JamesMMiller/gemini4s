@@ -31,6 +31,7 @@ class GeminiErrorSpec extends FunSuite {
     assertEquals(rateLimitExceeded.message, "API rate limit exceeded")
     assertEquals(modelOverloaded.message, "Model is currently overloaded")
     assertEquals(timeoutError.message, "Request timed out")
+    assertEquals(invalidRequest("msg").message, "msg")
   }
 
   test("create errors with custom messages") {

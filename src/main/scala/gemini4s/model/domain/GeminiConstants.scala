@@ -49,6 +49,11 @@ object GeminiConstants {
     def countTokens(model: ModelName = DefaultModel): String           = s"${toApiString(model)}:countTokens"
     def embedContent(model: ModelName = DefaultModel): String          = s"${toApiString(model)}:embedContent"
     def batchEmbedContents(model: ModelName): String                   = s"${toApiString(model)}:batchEmbedContents"
+    def batchGenerateContent(model: ModelName): String                 = s"${toApiString(model)}:batchGenerateContent"
+    def getBatchJob(name: String): String                              = name
+    val listBatchJobs: String                                          = "batches"
+    def cancelBatchJob(name: String): String                           = s"$name:cancel"
+    def deleteBatchJob(name: String): String                           = name
     val createCachedContent: String                                    = "cachedContents"
 
     // File API
