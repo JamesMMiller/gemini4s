@@ -496,7 +496,7 @@ Use files uploaded via the File API:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain._
+import gemini4s.model.domain.ModelName
 import java.nio.file.Paths
 
 def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
@@ -506,10 +506,9 @@ def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
     // Upload file first
     uploadResult <- service.uploadFile(localFile, mimeType = "application/jsonl")
     file         <- IO.fromEither(uploadResult)
-    fileUri       = file.uri
     
     // Create batch job from uploaded file
-    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, fileUri)
+    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, file.uri.value)
     job          <- IO.fromEither(jobResult)
     
     _            <- IO.println(s"Batch job from File API: ${job.name}")
@@ -577,17 +576,14 @@ def retrieveInlineResults(service: GeminiService[IO], jobName: String): IO[Unit]
               inlinedResults.zipWithIndex.traverse_ { case (result, index) =>
                 result.response match {
                   case Some(generateResponse) =>
-                    generateResponse.candidates.headOption match {
-                      case Some(candidate) =>
-                        candidate.content.flatMap(_.parts.headOption) match {
-                          case Some(part: gemini4s.model.domain.ContentPart.Text) =>
-                            IO.println(s"Result $index: ${part.text}")
-                          case _ =>
-                            IO.println(s"Result $index: No text content")
-                        }
-                      case None =>
-                        IO.println(s"Result $index: No candidates")
-                    }
+                    val text = generateResponse.candidates.headOption
+                      .flatMap(_.content.flatMap(_.parts.headOption))
+                      .flatMap {
+                        case part: gemini4s.model.response.ResponsePart.Text => Some(part.text)
+                        case _ => None
+                      }
+                      .getOrElse("No text content")
+                    IO.println(s"Result $index: $text")
                   case None =>
                     result.error match {
                       case Some(error) =>
@@ -692,9 +688,13 @@ def completeBatchWorkflow(service: GeminiService[IO]): IO[Unit] = {
           results.zipWithIndex.traverse_ { case (result, i) =>
             result.response match {
               case Some(res) => 
-                val text = res.candidates.headOption.flatMap(_.content.flatMap(_.parts.headOption)).collect {
-                  case ContentPart.Text(t) => t
-                }.getOrElse("No text")
+                val text = res.candidates.headOption
+                  .flatMap(_.content.flatMap(_.parts.headOption))
+                  .flatMap {
+                    case part: gemini4s.model.response.ResponsePart.Text => Some(part.text)
+                    case _ => None
+                  }
+                  .getOrElse("No text")
                 IO.println(s"Response $i: $text")
               case None => IO.println(s"Response $i had error: ${result.error}")
             }
