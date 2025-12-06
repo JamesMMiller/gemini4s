@@ -23,7 +23,7 @@ class BatchGenerateContentRequestSpec extends FunSuite {
   }
 
   test("BatchGenerateContentRequest encoder should handle GCS URI") {
-    val req  = BatchGenerateContentRequest(dataset = "gs://bucket/path/file.jsonl")
+    val req  = BatchGenerateContentRequest("gs://bucket/path/file.jsonl")
     val json = req.asJson
 
     assert(json.hcursor.downField("batch").downField("input_config").downField("gcs_source").downField("uri").succeeded)
@@ -35,7 +35,7 @@ class BatchGenerateContentRequestSpec extends FunSuite {
 
   test("BatchGenerateContentRequest encoder should handle file URI") {
     val fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
-    val req     = BatchGenerateContentRequest(dataset = fileUri)
+    val req     = BatchGenerateContentRequest(fileUri)
     val json    = req.asJson
 
     assert(json.hcursor.downField("batch").downField("input_config").downField("file_name").succeeded)
@@ -45,15 +45,7 @@ class BatchGenerateContentRequestSpec extends FunSuite {
     )
   }
 
-  test("BatchGenerateContentRequest encoder should handle empty case") {
-    val req  = BatchGenerateContentRequest(None, None)
-    val json = req.asJson
-
-    // Should create empty input_config object
-    assert(json.hcursor.downField("batch").downField("input_config").succeeded)
-  }
-
-  test("BatchGenerateContentRequest apply(requests) should set requests field") {
+  test("BatchGenerateContentRequest apply(requests) should set input field correctly") {
     val model    = GeminiConstants.DefaultModel
     val requests = List(
       GenerateContentRequest(
@@ -63,15 +55,13 @@ class BatchGenerateContentRequestSpec extends FunSuite {
     )
     val req      = BatchGenerateContentRequest(requests)
 
-    assertEquals(req.requests, Some(requests))
-    assertEquals(req.dataset, None)
+    assertEquals(req.input, BatchInput.InlineRequests(requests))
   }
 
-  test("BatchGenerateContentRequest apply(dataset) should set dataset field") {
+  test("BatchGenerateContentRequest apply(dataset) should set input field correctly") {
     val dataset = "gs://my-bucket/data.jsonl"
     val req     = BatchGenerateContentRequest(dataset)
 
-    assertEquals(req.requests, None)
-    assertEquals(req.dataset, Some(dataset))
+    assertEquals(req.input, BatchInput.FileDataset(dataset))
   }
 }
