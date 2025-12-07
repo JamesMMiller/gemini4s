@@ -71,4 +71,26 @@ class BatchGenerateContentRequestSpec extends FunSuite {
 
     assertEquals(req.input, BatchInput.ApiFile(dataset))
   }
+
+  test("BatchGenerateContentRequest decoder should decode GCS URI") {
+    val jsonString = """{"batch": {"input_config": {"gcs_source": {"uri": "gs://bucket/file.jsonl"}}}}"""
+    val decoded    = decode[BatchGenerateContentRequest](jsonString)
+
+    assertEquals(decoded, Right(BatchGenerateContentRequest("gs://bucket/file.jsonl")))
+  }
+
+  test("BatchGenerateContentRequest decoder should decode file name URI") {
+    val jsonString = """{"batch": {"input_config": {"file_name": "files/abc123"}}}"""
+    val decoded    = decode[BatchGenerateContentRequest](jsonString)
+
+    assertEquals(decoded, Right(BatchGenerateContentRequest("files/abc123")))
+  }
+
+  test("BatchGenerateContentRequest decoder should fail for inline requests (currently unsupported)") {
+    val jsonString = """{"batch": {"input_config": {"requests": {"requests": []}}}}"""
+    val decoded    = decode[BatchGenerateContentRequest](jsonString)
+
+    assert(decoded.isLeft)
+    assert(decoded.left.exists(_.getMessage.contains("Decoding inline requests is not currently supported")))
+  }
 }
