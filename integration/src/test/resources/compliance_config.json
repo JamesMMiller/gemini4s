@@ -1,0 +1,262 @@
+{
+    "resources": {
+        "models": {
+            "implemented": [
+                "generateContent",
+                "streamGenerateContent",
+                "countTokens",
+                "embedContent",
+                "batchEmbedContents",
+                "batchGenerateContent"
+            ],
+            "ignored": [
+                {
+                    "name": "get",
+                    "reason": "Not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
+                },
+                {
+                    "name": "list",
+                    "reason": "Not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
+                },
+                {
+                    "name": "patch",
+                    "reason": "Model patching not applicable for API consumers",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Model deletion not applicable for API consumers",
+                    "link": ""
+                },
+                {
+                    "name": "generateMessage",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "generateAnswer",
+                    "reason": "AQA not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/75"
+                },
+                {
+                    "name": "predict",
+                    "reason": "Imagen not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+                },
+                {
+                    "name": "predictLongRunning",
+                    "reason": "Veo not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+                },
+                {
+                    "name": "generateText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "batchEmbedText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "asyncBatchEmbedContent",
+                    "reason": "Async batch not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/78"
+                },
+                {
+                    "name": "countTextTokens",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "countMessageTokens",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "embedText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                }
+            ]
+        },
+        "tunedModels": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Tuning API unavailable in region - no models support createTunedModel",
+                    "link": ""
+                },
+                {
+                    "name": "list",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "get",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "patch",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "transferOwnership",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "generateContent",
+                    "reason": "Would be handled via standard generation with tuned model name",
+                    "link": ""
+                },
+                {
+                    "name": "streamGenerateContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "asyncBatchEmbedContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "batchGenerateContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "generateText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                }
+            ]
+        },
+        "corpora": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "list",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "get",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "delete",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "patch",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "query",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                }
+            ]
+        }
+    },
+    "schemas": {
+        "GenerationConfig": {
+            "implemented": [
+                "temperature",
+                "topP",
+                "topK",
+                "candidateCount",
+                "maxOutputTokens",
+                "stopSequences",
+                "responseMimeType",
+                "responseSchema"
+            ],
+            "ignored": [
+                {
+                    "name": "presencePenalty",
+                    "reason": "New feature - penalties",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "frequencyPenalty",
+                    "reason": "New feature - penalties",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "responseLogprobs",
+                    "reason": "New feature - logprobs",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "logprobs",
+                    "reason": "New feature - logprobs",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "enableEnhancedCivicAnswers",
+                    "reason": "Niche feature - low priority",
+                    "link": ""
+                },
+                {
+                    "name": "speechConfig",
+                    "reason": "TTS not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "mediaResolution",
+                    "reason": "New feature",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "thinkingConfig",
+                    "reason": "Gemini 2.5+ thinking",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "seed",
+                    "reason": "Deterministic generation",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "imageConfig",
+                    "reason": "Image generation config",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "_responseJsonSchema",
+                    "reason": "Internal field - not for public use",
+                    "link": ""
+                },
+                {
+                    "name": "responseJsonSchema",
+                    "reason": "Internal field - alias for responseSchema",
+                    "link": ""
+                },
+                {
+                    "name": "responseModalities",
+                    "reason": "Multimodal output selection",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                }
+            ]
+        }
+    }
+}

@@ -74,7 +74,8 @@ lazy val docs = project
             ThemeNavigationSection(
               "Project",
               TextLink.internal(Root / "roadmap.md", "Roadmap"),
-              TextLink.internal(Root / "contributing.md", "Contributing")
+              TextLink.internal(Root / "contributing.md", "Contributing"),
+              TextLink.internal(Root / "api-compliance.md", "API Compliance")
             )
           )
         )
