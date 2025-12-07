@@ -16,7 +16,13 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   // Define structure for config
   case class IgnoreItem(name: String, reason: String, link: String)
   case class ResourceConfig(implemented: List[String], ignored: List[IgnoreItem])
-  case class Config(resources: Map[String, ResourceConfig], schemas: Map[String, ResourceConfig])
+  case class ModelsConfig(tracked: List[String], ignored: List[IgnoreItem])
+
+  case class Config(
+      resources: Map[String, ResourceConfig],
+      schemas: Map[String, ResourceConfig],
+      availableModels: Option[ModelsConfig]
+  )
 
   // Model capability assertions - maps model name patterns to expected capabilities
   // NOTE: streamGenerateContent is NOT listed in supportedGenerationMethods but IS available
@@ -60,7 +66,11 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   implicit val resourceConfigDecoder: Decoder[ResourceConfig] =
     Decoder.forProduct2("implemented", "ignored")(ResourceConfig.apply)
 
-  implicit val configDecoder: Decoder[Config] = Decoder.forProduct2("resources", "schemas")(Config.apply)
+  implicit val modelsConfigDecoder: Decoder[ModelsConfig] =
+    Decoder.forProduct2("tracked", "ignored")(ModelsConfig.apply)
+
+  implicit val configDecoder: Decoder[Config] =
+    Decoder.forProduct3("resources", "schemas", "availableModels")(Config.apply)
 
   val apiKey = sys.env.get("GEMINI_API_KEY")
 
@@ -196,6 +206,71 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           }
         }
       case None      => IO(println("No API key, skipping model capabilities verification"))
+    }
+  }
+
+  test("Available Models Audit") {
+    val configFile = new File("src/test/resources/compliance_config.json")
+    if (!configFile.exists()) {
+      fail(s"Config file not found at: ${configFile.getAbsolutePath}")
+    }
+
+    val configJson = Source.fromFile(configFile).mkString
+    val config     = decode[Config](configJson).fold(
+      err => throw new Exception(s"JSON Decode Error: $err"),
+      c => c
+    )
+
+    apiKey match {
+      case Some(key) => HttpClientFs2Backend.resource[IO]().use { backend =>
+          val httpClient = GeminiHttpClient.make[IO](
+            backend,
+            ApiKey.unsafe(key),
+            baseUrl = "https://generativelanguage.googleapis.com"
+          )
+
+          httpClient.get[Json]("v1beta/models").map {
+            case Right(modelsJson) =>
+              val models = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
+
+              // Extract model names (strip "models/" prefix for cleaner config)
+              val apiModels = models.flatMap { m =>
+                m.hcursor.downField("name").as[String].toOption.map(_.stripPrefix("models/"))
+              }.toSet
+
+              config.availableModels match {
+                case Some(modelsConfig) =>
+                  val tracked   = (modelsConfig.tracked ++ modelsConfig.ignored.map(_.name)).toSet
+                  val untracked = apiModels.diff(tracked)
+
+                  if (untracked.nonEmpty) {
+                    println(s"\n=== UNTRACKED MODELS (${untracked.size}) ===")
+                    untracked.toList.sorted.foreach(m => println(s"  - $m"))
+                    fail(
+                      s"Found ${untracked.size} untracked models:\n${untracked.toList.sorted.mkString("\n")}\n\nAdd these to 'availableModels.tracked' or 'availableModels.ignored' in compliance_config.json"
+                    )
+                  } else {
+                    println(s"Available Models Audit Passed: All ${apiModels.size} models are tracked.")
+                  }
+
+                case None =>
+                  // No availableModels section - print all models for initial setup
+                  println(s"\n=== AVAILABLE MODELS (${apiModels.size}) ===")
+                  println("Add 'availableModels' section to compliance_config.json with these models:")
+                  println(s""""availableModels": {""")
+                  println(s"""  "tracked": [""")
+                  apiModels.toList.sorted.foreach(m => println(s"""    "$m","""))
+                  println(s"""  ],""")
+                  println(s"""  "ignored": []""")
+                  println(s"""}""")
+                  // Don't fail - just warn
+                  println("\nWARNING: No 'availableModels' section in config. Add one to track new models.")
+              }
+
+            case Left(e) => fail(s"Failed to fetch models: $e")
+          }
+        }
+      case None      => IO(println("No API key, skipping available models audit"))
     }
   }
 }

@@ -85,6 +85,24 @@ Schema 'GenerationConfig' has untracked fields: newField
 Please update compliance_config.json with 'ignored' entries if these are known missing features.
 ```
 
+### Available Models
+
+The audit also tracks all available models:
+
+```
+Available Models Audit Passed: All 50 models are tracked.
+```
+
+If new models are added to the API:
+
+```
+Found 2 untracked models:
+gemini-3.0-flash
+gemini-3.0-pro
+
+Add these to 'availableModels.tracked' or 'availableModels.ignored' in compliance_config.json
+```
+
 ### How to Fix
 
 1. **If you're implementing the feature**: Add it to the `implemented` array

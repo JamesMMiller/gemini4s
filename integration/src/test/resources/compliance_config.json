@@ -258,5 +258,233 @@
                 }
             ]
         }
+    },
+    "availableModels": {
+        "tracked": [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash-lite",
+            "gemini-embedding-001",
+            "gemini-flash-latest",
+            "gemini-pro-latest",
+            "imagen-4.0-generate-001"
+        ],
+        "ignored": [
+            {
+                "name": "aqa",
+                "reason": "AQA model - generateAnswer not implemented",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/75"
+            },
+            {
+                "name": "embedding-001",
+                "reason": "Legacy embedding model",
+                "link": ""
+            },
+            {
+                "name": "embedding-gecko-001",
+                "reason": "Legacy embedding model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-001",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-exp",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash-lite",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-lite-001",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-lite-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash-lite-preview-02-05",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-pro-exp",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-pro-exp-02-05",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-computer-use-preview-10-2025",
+                "reason": "Computer use preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-image",
+                "reason": "Image variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.5-flash-image-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-lite-preview-09-2025",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-preview-09-2025",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-preview-tts",
+                "reason": "TTS preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-pro-preview-tts",
+                "reason": "TTS preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-3-pro-image-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-3-pro-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-embedding-exp",
+                "reason": "Experimental embedding",
+                "link": ""
+            },
+            {
+                "name": "gemini-embedding-exp-03-07",
+                "reason": "Experimental embedding",
+                "link": ""
+            },
+            {
+                "name": "gemini-exp-1206",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-flash-lite-latest",
+                "reason": "Alias model",
+                "link": ""
+            },
+            {
+                "name": "gemini-robotics-er-1.5-preview",
+                "reason": "Robotics preview",
+                "link": ""
+            },
+            {
+                "name": "gemma-3-12b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-1b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-27b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-4b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3n-e2b-it",
+                "reason": "Gemma nano model",
+                "link": ""
+            },
+            {
+                "name": "gemma-3n-e4b-it",
+                "reason": "Gemma nano model",
+                "link": ""
+            },
+            {
+                "name": "imagen-4.0-fast-generate-001",
+                "reason": "Imagen fast variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+            },
+            {
+                "name": "imagen-4.0-generate-preview-06-06",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "imagen-4.0-ultra-generate-001",
+                "reason": "Imagen ultra variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+            },
+            {
+                "name": "imagen-4.0-ultra-generate-preview-06-06",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "nano-banana-pro-preview",
+                "reason": "Unknown preview model",
+                "link": ""
+            },
+            {
+                "name": "text-embedding-004",
+                "reason": "Legacy text embedding",
+                "link": ""
+            },
+            {
+                "name": "veo-2.0-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.0-fast-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.0-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.1-fast-generate-preview",
+                "reason": "Veo preview",
+                "link": ""
+            },
+            {
+                "name": "veo-3.1-generate-preview",
+                "reason": "Veo preview",
+                "link": ""
+            }
+        ]
     }
 }
