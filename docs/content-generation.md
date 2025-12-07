@@ -786,52 +786,7 @@ def deleteJob(service: GeminiService[IO], jobName: String): IO[Unit] = {
 4. **Cleanup**: Delete completed jobs to avoid quota issues
 5. **Monitoring**: List jobs periodically to track overall batch processing status
 
-#### Complete Example
 
-```scala mdoc:compile-only
-import cats.effect.IO
-import gemini4s.GeminiService
-import gemini4s.model.domain._
-import gemini4s.model.request._
-import scala.concurrent.duration._
-
-def completeBatchExample(service: GeminiService[IO]): IO[Unit] = {
-  val requests = List(
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Summarize: AI is transforming..."))),
-    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Translate to Spanish: Hello world")))
-  )
-
-  for {
-    // 1. Create batch job
-    jobResult <- service.batchGenerateContent(ModelName.Gemini25Flash, requests)
-    job       <- IO.fromEither(jobResult)
-    _         <- IO.println(s"Created job: ${job.name}")
-
-    // 2. Poll until complete
-    _ <- {
-      def poll: IO[BatchJob] =
-        service.getBatchJob(job.name).flatMap(IO.fromEither).flatMap { current =>
-          current.state match {
-            case BatchJobState.JOB_STATE_SUCCEEDED => IO.pure(current)
-            case BatchJobState.JOB_STATE_FAILED =>
-              IO.raiseError(new Exception(s"Job failed: ${current.error}"))
-            case _ =>
-              IO.sleep(5.seconds) >> poll
-          }
-        }
-      poll
-    }
-
-    _         <- IO.println("Job completed!")
-
-    // 3. Clean up
-    _         <- service.deleteBatchJob(job.name)
-    _         <- IO.println("Job deleted")
-  } yield ()
-}
-```
-
-```
  
 ## Next Steps
 
