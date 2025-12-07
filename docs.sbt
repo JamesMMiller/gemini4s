@@ -63,7 +63,8 @@ lazy val docs = project
               TextLink.internal(Root / "function-calling.md", "Function Calling"),
               TextLink.internal(Root / "embeddings.md", "Embeddings"),
               TextLink.internal(Root / "safety.md", "Safety Settings"),
-              TextLink.internal(Root / "caching.md", "Context Caching")
+              TextLink.internal(Root / "caching.md", "Context Caching"),
+              TextLink.internal(Root / "model-capabilities.md", "Model Capabilities")
             ),
             ThemeNavigationSection(
               "Reference",

@@ -5,6 +5,7 @@ import munit.CatsEffectSuite
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
+import gemini4s.model.domain.ModelCapabilities._
 import io.circe.Json
 import io.circe.parser._
 import scala.io.Source
@@ -17,7 +18,42 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   case class ResourceConfig(implemented: List[String], ignored: List[IgnoreItem])
   case class Config(resources: Map[String, ResourceConfig], schemas: Map[String, ResourceConfig])
 
-  // Simple manual decoder to avoid boilerplate if generic extras aren't available
+  // Model capability assertions - maps model name patterns to expected capabilities
+  // NOTE: streamGenerateContent is NOT listed in supportedGenerationMethods but IS available
+  // When generateContent is supported, streaming is implicitly available via the :streamGenerateContent endpoint
+  case class ModelCapabilityAssertion(
+      modelPattern: String,
+      expectedMethods: Set[String],
+      description: String
+  )
+
+  // Our capability model assertions - based on what the API actually reports
+  // Note: streaming is always available when generateContent is supported
+  val capabilityAssertions = List(
+    // Generation models - core capabilities
+    ModelCapabilityAssertion(
+      "gemini-2.5-flash",
+      Set("generateContent", "countTokens"), // batchGenerateContent varies by variant
+      "Gemini 2.5 Flash - Core Generation"
+    ),
+    ModelCapabilityAssertion(
+      "gemini-2.5-pro",
+      Set("generateContent", "countTokens"),
+      "Gemini 2.5 Pro - Core Generation"
+    ),
+    // Embedding models should support embedContent
+    ModelCapabilityAssertion(
+      "gemini-embedding-001",
+      Set("embedContent", "countTokens"),
+      "Gemini Embedding 001 - EmbeddingCapabilities"
+    ),
+    ModelCapabilityAssertion(
+      "text-embedding",
+      Set("embedContent"),
+      "Text Embedding models - EmbeddingCapabilities"
+    )
+  )
+
   import io.circe._
   implicit val ignoreItemDecoder: Decoder[IgnoreItem] = Decoder.forProduct3("name", "reason", "link")(IgnoreItem.apply)
 
@@ -59,11 +95,7 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
               val resources = discovery.hcursor.downField("resources").keys.getOrElse(Iterable.empty)
 
               resources.foreach { resName =>
-                // We only check resources we explicitly track in config, or warn if new resource appears
-                if (!config.resources.contains(resName)) {
-                  // For now, checking 'models'. Can create warning for unknown resources later.
-                  // errors :+= s"New Resource Discovered: $resName"
-                } else {
+                if (config.resources.contains(resName)) {
                   val methodsCursor = discovery.hcursor.downField("resources").downField(resName).downField("methods")
                   val apiMethods    = methodsCursor.keys.getOrElse(Iterable.empty).toList
 
@@ -76,9 +108,6 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
                   }
                 }
               }
-
-              // Special case for 'models' if it's top level? Discovery usually nests.
-              // Assuming standard Google Discovery format where methods can be on resources.
 
               // --- Audit Schemas (GenerationConfig) ---
               val genConfigProps =
@@ -95,7 +124,7 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
 
               if (errors.nonEmpty) {
                 fail(
-                  s"Compliance Audit Failed:\n${errors.mkString("\n")}\n\nPlease update audit/compliance_config.json with 'ignored' entries if these are known missing features."
+                  s"Compliance Audit Failed:\n${errors.mkString("\n")}\n\nPlease update compliance_config.json with 'ignored' entries if these are known missing features."
                 )
               } else {
                 println("Compliance Audit Passed: All API features are tracked.")
@@ -105,6 +134,68 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           }
         }
       case None      => IO(println("No API key, skipping compliance audit"))
+    }
+  }
+
+  test("Model Capabilities Verification") {
+    apiKey match {
+      case Some(key) => HttpClientFs2Backend.resource[IO]().use { backend =>
+          val httpClient = GeminiHttpClient.make[IO](
+            backend,
+            ApiKey.unsafe(key),
+            baseUrl = "https://generativelanguage.googleapis.com"
+          )
+
+          // Fetch the models list to get actual supportedGenerationMethods
+          httpClient.get[Json]("v1beta/models").map {
+            case Right(modelsJson) =>
+              val models   = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
+              var errors   = List.empty[String]
+              var verified = List.empty[String]
+
+              capabilityAssertions.foreach { assertion =>
+                // Find models matching the pattern
+                val matchingModels = models.filter { m =>
+                  val name = m.hcursor.downField("name").as[String].getOrElse("")
+                  name.contains(assertion.modelPattern)
+                }
+
+                if (matchingModels.isEmpty) {
+                  // Model not found - could be renamed or removed
+                  println(s"WARNING: No models found matching pattern '${assertion.modelPattern}'")
+                } else {
+                  matchingModels.foreach { model =>
+                    val modelName        = model.hcursor.downField("name").as[String].getOrElse("unknown")
+                    val supportedMethods =
+                      model.hcursor.downField("supportedGenerationMethods").as[List[String]].getOrElse(List.empty).toSet
+
+                    // Check if all expected methods are supported
+                    val missingMethods = assertion.expectedMethods.diff(supportedMethods)
+                    if (missingMethods.nonEmpty) {
+                      errors :+= s"${assertion.description}: Model '$modelName' is missing expected methods: ${missingMethods
+                          .mkString(", ")}. Actual: ${supportedMethods.mkString(", ")}"
+                    } else {
+                      verified :+= s"✓ $modelName supports all expected methods for ${assertion.description}"
+                    }
+                  }
+                }
+              }
+
+              // Print verified models
+              verified.foreach(println)
+
+              if (errors.nonEmpty) {
+                fail(
+                  s"Model Capability Verification Failed:\n${errors.mkString("\n")}\n\nUpdate ModelCapabilities.scala to match actual API capabilities."
+                )
+              } else {
+                println("Model Capabilities Verified: All assertions match API reality.")
+              }
+
+            case Left(e) => fail(s"Failed to fetch models: $e")
+          }
+        }
+      case None      => IO(println("No API key, skipping model capabilities verification"))
     }
   }
 }
