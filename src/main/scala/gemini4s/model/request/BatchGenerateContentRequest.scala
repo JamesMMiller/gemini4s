@@ -17,7 +17,8 @@ sealed trait BatchInput
 
 object BatchInput {
   final case class InlineRequests(requests: List[GenerateContentRequest]) extends BatchInput
-  final case class FileDataset(uri: String)                               extends BatchInput
+  final case class GcsFile(uri: String)                                   extends BatchInput
+  final case class ApiFile(uri: String)                                   extends BatchInput
 }
 
 object BatchGenerateContentRequest {
@@ -26,7 +27,8 @@ object BatchGenerateContentRequest {
     BatchGenerateContentRequest(BatchInput.InlineRequests(requests))
 
   def apply(datasetUri: String): BatchGenerateContentRequest =
-    BatchGenerateContentRequest(BatchInput.FileDataset(datasetUri))
+    if (datasetUri.startsWith("gs://")) BatchGenerateContentRequest(BatchInput.GcsFile(datasetUri))
+    else BatchGenerateContentRequest(BatchInput.ApiFile(datasetUri))
 
   given Encoder[BatchGenerateContentRequest] = Encoder.instance { req =>
     val inputConfig = req.input match {
@@ -44,12 +46,8 @@ object BatchGenerateContentRequest {
             "requests" -> Json.fromValues(requestsJson)
           )
         )
-      case BatchInput.FileDataset(uri)     =>
-        if (uri.startsWith("gs://")) {
-          Json.obj("gcs_source" -> Json.obj("uri" -> Json.fromString(uri)))
-        } else {
-          Json.obj("file_name" -> Json.fromString(uri)) // Assuming file API URI
-        }
+      case BatchInput.GcsFile(uri)         => Json.obj("gcs_source" -> Json.obj("uri" -> Json.fromString(uri)))
+      case BatchInput.ApiFile(uri)         => Json.obj("file_name" -> Json.fromString(uri))
     }
 
     Json.obj(
@@ -59,32 +57,27 @@ object BatchGenerateContentRequest {
     )
   }
 
+  // Best-effort decoder for testing purposes
   given Decoder[BatchGenerateContentRequest] = Decoder.instance { c =>
-    // Note: This decoder is a best-effort implementation since the API response structure
-    // for requests might not match this exactly if we were decoding a response.
-    // However, for symmetry in tests, we implement it.
     val inputConfig = c.downField("batch").downField("input_config")
 
+    // Try decoding GCS source
     inputConfig
-      .downField("requests")
-      .downField("requests")
-      .as[List[Json]]
-      .flatMap { _ =>
-        // Decoding inline requests is complex because of the wrapper structure (request + metadata)
-        // For now, we error on this side if needed or implement a manual decoder if strict round-trip is required.
-        // This is a simplification for the refactor.
-        // A proper decoder would need to unwrap the "request" field from the internal structure.
-        Left(DecodingFailure("Decoding BatchGenerateContentRequest is not fully supported yet", c.history))
-      }
+      .downField("gcs_source")
+      .downField("uri")
+      .as[String]
+      .map(uri => BatchGenerateContentRequest(BatchInput.GcsFile(uri)))
       .orElse {
-        inputConfig.downField("gcs_source").downField("uri").as[String].map { uri =>
-          BatchGenerateContentRequest(BatchInput.FileDataset(uri))
-        }
-      }
-      .orElse {
+        // Try decoding File API source
         inputConfig.downField("file_name").as[String].map { uri =>
-          BatchGenerateContentRequest(BatchInput.FileDataset(uri))
+          BatchGenerateContentRequest(BatchInput.ApiFile(uri))
         }
+      }
+      .orElse {
+        // Inline requests decoding is skipped for now due to complexity of reconstructing
+        // the original list from the (request + metadata) wrapper structure.
+        // This is primarily a request model, so decoding is mainly for tests.
+        Left(DecodingFailure("Decoding inline requests is not currently supported", c.history))
       }
   }
 

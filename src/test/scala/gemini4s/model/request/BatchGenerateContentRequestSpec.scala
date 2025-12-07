@@ -58,10 +58,17 @@ class BatchGenerateContentRequestSpec extends FunSuite {
     assertEquals(req.input, BatchInput.InlineRequests(requests))
   }
 
-  test("BatchGenerateContentRequest apply(dataset) should set input field correctly") {
+  test("BatchGenerateContentRequest apply(dataset) should set GCS input correctly") {
     val dataset = "gs://my-bucket/data.jsonl"
     val req     = BatchGenerateContentRequest(dataset)
 
-    assertEquals(req.input, BatchInput.FileDataset(dataset))
+    assertEquals(req.input, BatchInput.GcsFile(dataset))
+  }
+
+  test("BatchGenerateContentRequest apply(dataset) should set API File input correctly") {
+    val dataset = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    val req     = BatchGenerateContentRequest(dataset)
+
+    assertEquals(req.input, BatchInput.ApiFile(dataset))
   }
 }
