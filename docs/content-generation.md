@@ -434,6 +434,362 @@ object Configs {
 }
 ```
 
+### Batch Generation (Async)
+
+For large volumes of requests, use the asynchronous batch generation API. This is ideal for processing hundreds or thousands of requests efficiently.
+
+#### Creating Batch Jobs
+
+**Method 1: Inline Requests**
+
+Submit a list of requests directly:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import gemini4s.model.request._
+
+def inlineBatchJob(service: GeminiService[IO]): IO[Unit] = {
+  val requests = List(
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Tell me a joke"))),
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Write a haiku"))),
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("Explain quantum computing")))
+  )
+
+  service.batchGenerateContent(ModelName.Gemini25Flash, requests).flatMap {
+    case Right(job) =>
+      IO.println(s"Batch job created: ${job.name}")
+      IO.println(s"Initial state: ${job.state}")
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
+**Method 2: File-Based Input (GCS)**
+
+For very large batches, use Cloud Storage:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import gemini4s.model.request.BatchInput
+
+def gcsBatchJob(service: GeminiService[IO]): IO[Unit] = {
+  // File should be in JSONL format with one request per line
+  val gcsUri = "gs://my-bucket/batch-requests.jsonl"
+  
+  service.batchGenerateContent(ModelName.Gemini25Flash, BatchInput.GcsFile(GcsUri(gcsUri))).flatMap {
+    case Right(job) =>
+      IO.println(s"File-based batch job created: ${job.name}")
+    case Left(error) =>
+      IO.println(s"Error: ${error.message}")
+  }
+}
+```
+
+**Method 3: File API**
+
+Use files uploaded via the File API:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain.{ModelName, ResourceName}
+import gemini4s.model.request.BatchInput
+import java.nio.file.Paths
+
+def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
+  val localFile = Paths.get("batch-requests.jsonl")
+  
+  for {
+    // Upload file first
+    uploadResult <- service.uploadFile(localFile, mimeType = "application/jsonl")
+    file         <- IO.fromEither(uploadResult)
+    
+    // Create batch job from uploaded file
+    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, BatchInput.ApiFile(ResourceName(file.name)))
+    job          <- IO.fromEither(jobResult)
+    
+    _            <- IO.println(s"Batch job from File API: ${job.name}")
+  } yield ()
+}
+```
+
+#### Polling for Results
+
+Poll the batch job to check status and retrieve results:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import scala.concurrent.duration._
+
+def pollBatchJob(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  def checkStatus: IO[BatchJob] = 
+    service.getBatchJob(jobName).flatMap(IO.fromEither)
+  
+  def pollUntilComplete: IO[BatchJob] = 
+    checkStatus.flatMap { job =>
+      job.state match {
+        case BatchJobState.JOB_STATE_SUCCEEDED =>
+          IO.println(s"Job completed successfully!") >> IO.pure(job)
+        case BatchJobState.JOB_STATE_FAILED =>
+          IO.raiseError(new Exception(s"Job failed: ${job.error.map(_.message)}"))
+        case BatchJobState.JOB_STATE_CANCELLED =>
+          IO.raiseError(new Exception("Job was cancelled"))
+        case _ =>
+          IO.println(s"Job ${job.state}, waiting...") >>
+          IO.sleep(5.seconds) >>
+          pollUntilComplete
+      }
+    }
+  
+  pollUntilComplete.void
+}
+```
+
+#### Retrieving Results
+
+When a batch job completes successfully, the results are available in the `BatchJob` response object.
+
+**For Inline Requests**: Results are in `response.inlinedResponses`  
+**For File-Based Requests**: Results file URI is in `response.responsesFile`
+
+**Example: Retrieving Inline Results**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.syntax.all._
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+
+def retrieveInlineResults(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  service.getBatchJob(jobName).flatMap {
+    case Right(job) if job.state == BatchJobState.JOB_STATE_SUCCEEDED =>
+      job.response match {
+        case Some(response) =>
+          response.inlinedResponses match {
+            case Some(inlinedResults) =>
+              IO.println(s"Retrieved ${inlinedResults.size} results:") >>
+              inlinedResults.zipWithIndex.traverse_ { case (result, index) =>
+                result.response match {
+                  case Some(generateResponse) =>
+                    val text = generateResponse.candidates.headOption
+                      .flatMap(_.content.flatMap(_.parts.headOption))
+                      .flatMap {
+                        case part: gemini4s.model.response.ResponsePart.Text => Some(part.text)
+                        case _ => None
+                      }
+                      .getOrElse("No text content")
+                    IO.println(s"Result $index: $text")
+                  case None =>
+                    result.error match {
+                      case Some(error) =>
+                        IO.println(s"Result $index failed: ${error.message}")
+                      case None =>
+                        IO.println(s"Result $index: No response or error")
+                    }
+                }
+              }
+            case None =>
+              IO.println("No inline responses found")
+          }
+        case None =>
+          IO.println("No response data available")
+      }
+    case Right(job) if job.state == BatchJobState.JOB_STATE_FAILED =>
+      IO.raiseError(new Exception(s"Job failed: ${job.error.map(_.message).getOrElse("Unknown error")}"))
+    case Right(job) =>
+      IO.println(s"Job not complete yet: ${job.state}")
+    case Left(error) =>
+      IO.raiseError(new Exception(s"Error retrieving job: ${error.message}"))
+  }
+}
+```
+
+**Example: Retrieving File-Based Results**
+
+For file-based batch jobs, download the results file:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+
+def retrieveFileResults(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  service.getBatchJob(jobName).flatMap {
+    case Right(job) if job.state == BatchJobState.JOB_STATE_SUCCEEDED =>
+      job.response match {
+        case Some(response) =>
+          response.responsesFile match {
+            case Some(fileUri) =>
+              IO.println(s"Results file: $fileUri") >>
+              IO.println("Download this file to access the JSONL results")
+              // You can use the File API to download:
+              // service.getFile(fileUri) or similar
+            case None =>
+              IO.println("No results file found")
+          }
+        case None =>
+          IO.println("No response data available")
+      }
+    case Right(job) =>
+      IO.println(s"Job status: ${job.state}")
+    case Left(error) =>
+      IO.raiseError(new Exception(s"Error: ${error.message}"))
+  }
+}
+```
+
+**Complete Example with Polling and Results**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.syntax.all._
+import gemini4s.GeminiService
+import gemini4s.model.domain._
+import gemini4s.model.request._
+import scala.concurrent.duration._
+
+def completeBatchWorkflow(service: GeminiService[IO]): IO[Unit] = {
+  val requests = List(
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("What is Scala?"))),
+    GenerateContentRequest(ModelName.Gemini25Flash, List(GeminiService.text("What is functional programming?")))
+  )
+
+  for {
+    // 1. Create batch job
+    jobResult <- service.batchGenerateContent(ModelName.Gemini25Flash, requests)
+    job       <- IO.fromEither(jobResult)
+    _         <- IO.println(s"Created job: ${job.name}")
+
+    // 2. Poll until complete
+    completedJob <- {
+      def poll: IO[BatchJob] =
+        service.getBatchJob(job.name).flatMap(IO.fromEither).flatMap { current =>
+          current.state match {
+            case BatchJobState.JOB_STATE_SUCCEEDED => IO.pure(current)
+            case BatchJobState.JOB_STATE_FAILED =>
+              IO.raiseError(new Exception(s"Job failed: ${current.error}"))
+            case _ =>
+              IO.println(s"Status: ${current.state}, waiting...") >>
+              IO.sleep(5.seconds) >> poll
+          }
+        }
+      poll
+    }
+
+    // 3. Extract and display results
+    _ <- completedJob.response match {
+      case Some(response) => response.inlinedResponses match {
+        case Some(results) =>
+          results.zipWithIndex.traverse_ { case (result, i) =>
+            result.response match {
+              case Some(res) => 
+                val text = res.candidates.headOption
+                  .flatMap(_.content.flatMap(_.parts.headOption))
+                  .flatMap {
+                    case part: gemini4s.model.response.ResponsePart.Text => Some(part.text)
+                    case _ => None
+                  }
+                  .getOrElse("No text")
+                IO.println(s"Response $i: $text")
+              case None => IO.println(s"Response $i had error: ${result.error}")
+            }
+          }
+        case None => IO.println("No inline responses")
+      }
+      case None => IO.println("No response data")
+    }
+
+    // 4. Clean up
+    _ <- service.deleteBatchJob(job.name)
+  } yield ()
+}
+```
+
+#### Managing Batch Jobs
+
+**List All Jobs**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import cats.syntax.all._
+import gemini4s.GeminiService
+
+def listAllJobs(service: GeminiService[IO]): IO[Unit] = {
+  service.listBatchJobs(pageSize = 10).flatMap {
+    case Right(response) =>
+      response.batchJobs match {
+        case Some(jobs) =>
+          jobs.traverse_ { job =>
+            IO.println(s"${job.name}: ${job.state}")
+          }
+        case None =>
+          IO.println("No batch jobs found")
+      }
+    case Left(error) =>
+      IO.println(s"Error listing jobs: ${error.message}")
+  }
+}
+```
+
+**Cancel a Running Job**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+
+def cancelJob(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  service.cancelBatchJob(jobName).flatMap {
+    case Right(_) =>
+      IO.println(s"Job $jobName cancelled successfully")
+    case Left(error) =>
+      IO.println(s"Error cancelling job: ${error.message}")
+  }
+}
+```
+
+**Delete a Completed Job**
+
+```scala mdoc:compile-only
+import cats.effect.IO
+import gemini4s.GeminiService
+
+def deleteJob(service: GeminiService[IO], jobName: String): IO[Unit] = {
+  service.deleteBatchJob(jobName).flatMap {
+    case Right(_) =>
+      IO.println(s"Job $jobName deleted successfully")
+    case Left(error) =>
+      IO.println(s"Error deleting job: ${error.message}")
+  }
+}
+```
+
+#### Batch Job States
+
+| State | Description |
+|-------|-------------|
+| `JOB_STATE_PENDING` | Job created but not yet started |
+| `JOB_STATE_RUNNING` | Job is currently processing |
+| `JOB_STATE_SUCCEEDED` | Job completed successfully |
+| `JOB_STATE_FAILED` | Job failed with an error |
+| `JOB_STATE_CANCELLED` | Job was cancelled |
+
+#### Best Practices
+
+1. **File Format**: When using file-based input, ensure your JSONL file has one request per line
+2. **Polling Interval**: Poll every 5-30 seconds depending on batch size
+3. **Error Handling**: Always check for `error` field in failed jobs
+4. **Cleanup**: Delete completed jobs to avoid quota issues
+5. **Monitoring**: List jobs periodically to track overall batch processing status
+
+
+ 
 ## Next Steps
 
 - **[Streaming](streaming.md)** - Stream responses in real-time

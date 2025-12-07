@@ -42,11 +42,17 @@ class GeminiServiceSpec extends CatsEffectSuite {
     override def get[Res: Decoder](
         endpoint: String,
         params: Map[String, String]
-    ): IO[Either[GeminiError, Res]] = IO.pure(Left(GeminiError.InvalidRequest("Not implemented", None)))
+    ): IO[Either[GeminiError, Res]] = {
+      lastEndpoint = endpoint
+      IO.pure(response.asInstanceOf[Either[GeminiError, Res]])
+    }
 
     override def delete(
         endpoint: String
-    ): IO[Either[GeminiError, Unit]] = IO.pure(Right(()))
+    ): IO[Either[GeminiError, Unit]] = {
+      lastEndpoint = endpoint
+      IO.pure(Right(()))
+    }
 
     override def startResumableUpload(
         uri: String,
@@ -162,6 +168,31 @@ class GeminiServiceSpec extends CatsEffectSuite {
     }
   }
 
+  test("batchGenerateContent should call client with correct request") {
+    val expectedResponse = BatchJob("job-name", BatchJobState.JOB_STATE_PENDING, "now", "now")
+    val client           = new MockHttpClient(response = Right(expectedResponse))
+    val service          = GeminiService.make[IO](client)
+    val model            = GeminiConstants.DefaultModel
+    val requests         = List(GenerateContentRequest(model, List(Content(List(ContentPart.Text("test"))))))
+
+    service.batchGenerateContent(model, requests).map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.batchGenerateContent(model))
+      assert(client.lastRequest.exists(_.isInstanceOf[BatchGenerateContentRequest]))
+    }
+  }
+
+  test("getBatchJob should call client with correct request") {
+    val expectedResponse = BatchJob("job-name", BatchJobState.JOB_STATE_SUCCEEDED, "now", "now")
+    val client           = new MockHttpClient(response = Right(expectedResponse))
+    val service          = GeminiService.make[IO](client)
+
+    service.getBatchJob("job-name").map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, "job-name")
+    }
+  }
+
   test("createCachedContent should call client with correct request") {
     val expectedResponse = CachedContent("name", "model", "now", "now", "later")
     val client           = new MockHttpClient(response = Right(expectedResponse))
@@ -207,6 +238,16 @@ class GeminiServiceSpec extends CatsEffectSuite {
     val request = BatchEmbedContentsRequest(GeminiConstants.EmbeddingGemini001, List.empty)
 
     service.batchEmbedContents(request).map(result => assertEquals(result, Left(error)))
+  }
+
+  test("batchGenerateContent should handle errors") {
+    val error    = GeminiError.InvalidRequest("error")
+    val client   = new MockHttpClient(response = Left(error))
+    val service  = GeminiService.make[IO](client)
+    val model    = GeminiConstants.DefaultModel
+    val requests = List(GenerateContentRequest(model, List(Content(List(ContentPart.Text("test"))))))
+
+    service.batchGenerateContent(model, requests).map(result => assertEquals(result, Left(error)))
   }
 
   test("createCachedContent should handle errors") {
@@ -323,5 +364,117 @@ class GeminiServiceSpec extends CatsEffectSuite {
     java.nio.file.Files.write(path, "content".getBytes)
 
     service.uploadFile(path, "text/plain").map(result => assertEquals(result, Left(error)))
+  }
+
+  test("listBatchJobs should call client with correct request") {
+    val expectedResponse = ListBatchJobsResponse(Some(List.empty), None)
+    val client           = new MockHttpClient() {
+      override def get[Res: Decoder](
+          endpoint: String,
+          params: Map[String, String]
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(expectedResponse.asInstanceOf[Res]))
+      }
+    }
+    val service          = GeminiService.make[IO](client)
+
+    service.listBatchJobs().map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.listBatchJobs)
+    }
+  }
+
+  test("cancelBatchJob should call client with correct request") {
+    val client  = new MockHttpClient() {
+      override def post[Req: Encoder, Res: Decoder](
+          endpoint: String,
+          request: Req
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(().asInstanceOf[Res]))
+      }
+    }
+    val service = GeminiService.make[IO](client)
+
+    service.cancelBatchJob("job-name").map { result =>
+      assertEquals(result, Right(()))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.cancelBatchJob("job-name"))
+    }
+  }
+
+  test("deleteBatchJob should call client with correct request") {
+    val client  = new MockHttpClient() {
+      override def delete(endpoint: String): IO[Either[GeminiError, Unit]] = {
+        lastEndpoint = endpoint
+        IO.pure(Right(()))
+      }
+    }
+    val service = GeminiService.make[IO](client)
+
+    service.deleteBatchJob("job-name").map { result =>
+      assertEquals(result, Right(()))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.deleteBatchJob("job-name"))
+    }
+  }
+
+  test("batchGenerateContent (file) should call client with correct request") {
+    val expectedResponse = BatchJob("job-name", BatchJobState.JOB_STATE_PENDING, "now", "now")
+    val client           = new MockHttpClient(response = Right(expectedResponse))
+    val service          = GeminiService.make[IO](client)
+    val model            = GeminiConstants.DefaultModel
+    val dataset          = "gs://bucket/file.jsonl"
+
+    service.batchGenerateContent(model, BatchInput.GcsFile(GcsUri(dataset))).map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.batchGenerateContent(model))
+      assert(client.lastRequest.exists(_.isInstanceOf[BatchGenerateContentRequest]))
+      val req = client.lastRequest.get.asInstanceOf[BatchGenerateContentRequest]
+      assertEquals(req.input, BatchInput.GcsFile(GcsUri(dataset)))
+    }
+  }
+
+  test("listFiles with pageSize and pageToken should pass parameters") {
+    val expectedResponse                    = ListFilesResponse(Some(List.empty), None)
+    var capturedParams: Map[String, String] = Map.empty
+    val client                              = new MockHttpClient() {
+      override def get[Res: Decoder](
+          endpoint: String,
+          params: Map[String, String]
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        capturedParams = params
+        IO.pure(Right(expectedResponse.asInstanceOf[Res]))
+      }
+    }
+    val service                             = GeminiService.make[IO](client)
+
+    service.listFiles(pageSize = 10, pageToken = Some("token")).map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(capturedParams.get("pageSize"), Some("10"))
+      assertEquals(capturedParams.get("pageToken"), Some("token"))
+    }
+  }
+
+  test("listBatchJobs with pageSize and pageToken should pass parameters") {
+    val expectedResponse                    = ListBatchJobsResponse(Some(List.empty), None)
+    var capturedParams: Map[String, String] = Map.empty
+    val client                              = new MockHttpClient() {
+      override def get[Res: Decoder](
+          endpoint: String,
+          params: Map[String, String]
+      ): IO[Either[GeminiError, Res]] = {
+        lastEndpoint = endpoint
+        capturedParams = params
+        IO.pure(Right(expectedResponse.asInstanceOf[Res]))
+      }
+    }
+    val service                             = GeminiService.make[IO](client)
+
+    service.listBatchJobs(pageSize = 20, pageToken = Some("batch-token")).map { result =>
+      assertEquals(result, Right(expectedResponse))
+      assertEquals(capturedParams.get("pageSize"), Some("20"))
+      assertEquals(capturedParams.get("pageToken"), Some("batch-token"))
+    }
   }
 }
