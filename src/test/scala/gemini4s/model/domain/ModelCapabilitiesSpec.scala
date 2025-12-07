@@ -77,4 +77,20 @@ class ModelCapabilitiesSpec extends FunSuite {
     val evidence = summon[SupportsBatch[Model[CanBatch]]]
     assert(evidence != null)
   }
+
+  // Type-level safety demonstration tests
+  // Note: These tests verify compile-time constraints by proving evidence exists
+
+  test("FullGenerationCapabilities models should have all generation evidence") {
+    // This tests that Model[FullGenerationCapabilities] satisfies all generation type classes
+    summon[SupportsGeneration[Model[FullGenerationCapabilities]]]
+    summon[SupportsTokenCount[Model[FullGenerationCapabilities]]]
+    summon[SupportsCaching[Model[FullGenerationCapabilities]]]
+    summon[SupportsBatch[Model[FullGenerationCapabilities]]]
+  }
+
+  test("EmbeddingCapabilities models should have embedding and count evidence") {
+    summon[SupportsEmbedding[Model[EmbeddingCapabilities]]]
+    summon[SupportsTokenCount[Model[EmbeddingCapabilities]]]
+  }
 }

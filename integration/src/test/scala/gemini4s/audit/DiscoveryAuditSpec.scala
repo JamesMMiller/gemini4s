@@ -102,23 +102,18 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
 
           httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta")).map {
             case Right(discovery) =>
-              var errors = List.empty[String]
-
               // --- Audit Resources & Methods ---
               val resources = discovery.hcursor.downField("resources").keys.getOrElse(Iterable.empty)
 
-              resources.foreach { resName =>
-                if (config.resources.contains(resName)) {
+              val resourceErrors = resources.toList.flatMap { resName =>
+                config.resources.get(resName).toList.flatMap { conf =>
                   val methodsCursor = discovery.hcursor.downField("resources").downField(resName).downField("methods")
                   val apiMethods    = methodsCursor.keys.getOrElse(Iterable.empty).toList
-
-                  val conf    = config.resources(resName)
-                  val tracked = conf.implemented ++ conf.ignored.map(_.name)
-
-                  val missing = apiMethods.diff(tracked)
-                  if (missing.nonEmpty) {
-                    errors :+= s"Resource '$resName' has unimplemented/untracked methods: ${missing.mkString(", ")}"
-                  }
+                  val tracked       = conf.implemented ++ conf.ignored.map(_.name)
+                  val missing       = apiMethods.diff(tracked)
+                  if (missing.nonEmpty)
+                    List(s"Resource '$resName' has unimplemented/untracked methods: ${missing.mkString(", ")}")
+                  else Nil
                 }
               }
 
@@ -127,14 +122,15 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
                 discovery.hcursor.downField("schemas").downField("GenerationConfig").downField("properties")
               val apiProps       = genConfigProps.keys.getOrElse(Iterable.empty).toList
 
-              val confSchema   = config.schemas("GenerationConfig")
-              val trackedProps = confSchema.implemented ++ confSchema.ignored.map(_.name)
-
-              val missingProps = apiProps.diff(trackedProps)
-              if (missingProps.nonEmpty) {
-                errors :+= s"Schema 'GenerationConfig' has untracked fields: ${missingProps.mkString(", ")}"
+              val schemaErrors = config.schemas.get("GenerationConfig").toList.flatMap { confSchema =>
+                val trackedProps = confSchema.implemented ++ confSchema.ignored.map(_.name)
+                val missingProps = apiProps.diff(trackedProps)
+                if (missingProps.nonEmpty)
+                  List(s"Schema 'GenerationConfig' has untracked fields: ${missingProps.mkString(", ")}")
+                else Nil
               }
 
+              val errors = resourceErrors ++ schemaErrors
               if (errors.nonEmpty) {
                 fail(
                   s"Compliance Audit Failed:\n${errors.mkString("\n")}\n\nPlease update compliance_config.json with 'ignored' entries if these are known missing features."
@@ -162,11 +158,9 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           // Fetch the models list to get actual supportedGenerationMethods
           httpClient.get[Json]("v1beta/models").map {
             case Right(modelsJson) =>
-              val models   = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
-              var errors   = List.empty[String]
-              var verified = List.empty[String]
+              val models = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
 
-              capabilityAssertions.foreach { assertion =>
+              val results = capabilityAssertions.flatMap { assertion =>
                 // Find models matching the pattern
                 val matchingModels = models.filter { m =>
                   val name = m.hcursor.downField("name").as[String].getOrElse("")
@@ -174,25 +168,26 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
                 }
 
                 if (matchingModels.isEmpty) {
-                  // Model not found - could be renamed or removed
                   println(s"WARNING: No models found matching pattern '${assertion.modelPattern}'")
+                  Nil
                 } else {
-                  matchingModels.foreach { model =>
+                  matchingModels.map { model =>
                     val modelName        = model.hcursor.downField("name").as[String].getOrElse("unknown")
                     val supportedMethods =
                       model.hcursor.downField("supportedGenerationMethods").as[List[String]].getOrElse(List.empty).toSet
 
-                    // Check if all expected methods are supported
                     val missingMethods = assertion.expectedMethods.diff(supportedMethods)
                     if (missingMethods.nonEmpty) {
-                      errors :+= s"${assertion.description}: Model '$modelName' is missing expected methods: ${missingMethods
-                          .mkString(", ")}. Actual: ${supportedMethods.mkString(", ")}"
+                      Left(s"${assertion.description}: Model '$modelName' is missing expected methods: ${missingMethods
+                          .mkString(", ")}. Actual: ${supportedMethods.mkString(", ")}")
                     } else {
-                      verified :+= s"✓ $modelName supports all expected methods for ${assertion.description}"
+                      Right(s"✓ $modelName supports all expected methods for ${assertion.description}")
                     }
                   }
                 }
               }
+
+              val (errors, verified) = results.partitionMap(identity)
 
               // Print verified models
               verified.foreach(println)

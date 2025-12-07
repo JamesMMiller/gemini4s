@@ -10,17 +10,19 @@ The `ModelCapabilities` module provides compile-time verification that a model s
 
 ```scala
 import gemini4s.model.domain.ModelCapabilities._
+import gemini4s.GeminiService.ops._  // Import type-safe extensions
 
 // Pre-defined models with their capabilities
 val textModel = Model.gemini25Flash  // Has: CanGenerate, CanStream, CanCount, CanCache, CanBatch
 val embedModel = Model.embeddingGemini001  // Has: CanEmbed, CanCount
 
-// These compile because the models have the right capabilities:
-service.generateContent(textModel.toModelName, request)  // ✓
-service.embedContent(embedModel.toModelName, request)    // ✓
+// Type-safe methods - the compiler ensures you use the right model:
+service.generateWithModel(textModel, contents)     // ✓ Compiles - textModel has CanGenerate
+service.embedWithModel(embedModel, content)        // ✓ Compiles - embedModel has CanEmbed
 
-// If we add type-safe method signatures in the future, this wouldn't compile:
-// service.embedContent(textModel.toModelName, request)  // ✗ Would be a compile error
+// These would NOT compile:
+// service.embedWithModel(textModel, content)      // ✗ textModel doesn't have CanEmbed
+// service.generateWithModel(embedModel, contents) // ✗ embedModel doesn't have CanGenerate
 ```
 
 ## Capability Types

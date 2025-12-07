@@ -253,6 +253,106 @@ object GeminiService {
   def file(uri: String, mimeType: String): Content =
     Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), FileUri(uri))))
 
+  // ============================================
+  // Type-Safe Extension Methods using Capabilities
+  // ============================================
+
+  import gemini4s.model.domain.ModelCapabilities._
+
+  /**
+   * Extension methods for GeminiService that provide type-safe model capability checking.
+   *
+   * These methods ensure at compile-time that you can only use models with the required capabilities.
+   *
+   * Example:
+   * {{{
+   * import gemini4s.GeminiService.ops._
+   *
+   * // This compiles - gemini25Flash has CanGenerate
+   * service.generateWithModel(Model.gemini25Flash, List(GeminiService.text("Hello")))
+   *
+   * // This compiles - embeddingGemini001 has CanEmbed
+   * service.embedWithModel(Model.embeddingGemini001, content)
+   *
+   * // This would NOT compile - gemini25Flash doesn't have CanEmbed
+   * // service.embedWithModel(Model.gemini25Flash, content)  // Compile error!
+   * }}}
+   */
+  object ops {
+
+    extension [F[_]](service: GeminiService[F]) {
+
+      /**
+       * Type-safe content generation - requires model with CanGenerate capability.
+       */
+      def generateWithModel[M: SupportsGeneration](
+          model: M,
+          contents: List[Content],
+          config: Option[GenerationConfig] = None,
+          safetySettings: Option[List[SafetySetting]] = None,
+          systemInstruction: Option[Content] = None
+      ): F[Either[GeminiError, GenerateContentResponse]] = {
+        val modelName = summon[SupportsGeneration[M]].toModelName(model)
+        service.generateContent(
+          GenerateContentRequest(modelName, contents, safetySettings, config, systemInstruction)
+        )
+      }
+
+      /**
+       * Type-safe streaming generation - requires model with CanGenerate capability.
+       */
+      def streamWithModel[M: SupportsGeneration](
+          model: M,
+          contents: List[Content],
+          config: Option[GenerationConfig] = None,
+          safetySettings: Option[List[SafetySetting]] = None,
+          systemInstruction: Option[Content] = None
+      ): Stream[F, GenerateContentResponse] = {
+        val modelName = summon[SupportsGeneration[M]].toModelName(model)
+        service.generateContentStream(
+          GenerateContentRequest(modelName, contents, safetySettings, config, systemInstruction)
+        )
+      }
+
+      /**
+       * Type-safe embedding - requires model with CanEmbed capability.
+       */
+      def embedWithModel[M: SupportsEmbedding](
+          model: M,
+          content: Content,
+          taskType: Option[TaskType] = None,
+          title: Option[String] = None
+      ): F[Either[GeminiError, ContentEmbedding]] = {
+        val modelName = summon[SupportsEmbedding[M]].toModelName(model)
+        service.embedContent(EmbedContentRequest(content, modelName, taskType, title))
+      }
+
+      /**
+       * Type-safe batch embedding - requires model with CanEmbed capability.
+       */
+      def batchEmbedWithModel[M: SupportsEmbedding](
+          model: M,
+          requests: List[EmbedContentRequest]
+      ): F[Either[GeminiError, List[ContentEmbedding]]] = {
+        val modelName = summon[SupportsEmbedding[M]].toModelName(model)
+        service.batchEmbedContents(BatchEmbedContentsRequest(modelName, requests))
+      }
+
+      /**
+       * Type-safe token counting - requires model with CanCount capability.
+       */
+      def countWithModel[M: SupportsTokenCount](
+          model: M,
+          contents: List[Content]
+      ): F[Either[GeminiError, Int]] = {
+        val modelName = summon[SupportsTokenCount[M]].toModelName(model)
+        service.countTokens(CountTokensRequest(modelName, contents))
+      }
+
+    }
+
+  }
+
   private final class GeminiServiceImpl[F[_]: Async](
       httpClient: GeminiHttpClient[F]
   ) extends GeminiService[F] {
