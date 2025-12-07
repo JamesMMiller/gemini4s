@@ -210,7 +210,7 @@ object GeminiService {
     val httpClient = GeminiHttpClient.make[F](
       backend,
       ApiKey.unsafe(config.apiKey),
-      config.baseUrl
+      config.versionedBaseUrl
     )
     new GeminiServiceImpl(httpClient)
   }
@@ -341,7 +341,7 @@ object GeminiService {
         "X-Goog-Upload-Header-Content-Type"   -> mimeType
       )
 
-      httpClient.startResumableUpload(GeminiConstants.Endpoints.uploadFile, metadata, startHeaders).flatMap {
+      httpClient.startResumableUpload(GeminiConstants.Endpoints.uploadFile(), metadata, startHeaders).flatMap {
         case Right(uploadUrl) =>
           val uploadHeaders = Map(
             "Content-Length"        -> fileSize.toString,

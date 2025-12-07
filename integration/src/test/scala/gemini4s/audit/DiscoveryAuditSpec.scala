@@ -357,6 +357,27 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
                   if (!versions.supported.contains("v1beta")) {
                     fail("Configuration should include 'v1beta' in supported versions")
                   }
+
+                  // Verify our ApiVersion feature mappings are accurate
+                  import gemini4s.config.ApiVersion
+
+                  val expectedV1BetaResources = ApiVersion.v1betaOnlyResources
+                  val expectedV1Resources     = ApiVersion.v1OnlyResources
+
+                  val missingFromMapping = onlyInBeta.diff(expectedV1BetaResources)
+                  val extraInMapping     = expectedV1BetaResources.diff(onlyInBeta)
+
+                  if (missingFromMapping.nonEmpty) {
+                    println(
+                      s"\nWARNING: Resources in v1beta but not in ApiVersion.v1betaOnlyResources: ${missingFromMapping.mkString(", ")}"
+                    )
+                  }
+                  if (extraInMapping.nonEmpty) {
+                    println(
+                      s"\nWARNING: Resources in ApiVersion.v1betaOnlyResources but not in v1beta: ${extraInMapping.mkString(", ")}"
+                    )
+                  }
+
                   println("\nAPI Version Audit Passed: v1beta is configured and available.")
 
                 case None => println("\nWARNING: No 'apiVersions' section in config. Add one to track API versions.")
