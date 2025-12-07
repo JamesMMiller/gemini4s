@@ -66,6 +66,32 @@ It has the following structure:
 | `ignored[].reason` | Why this feature is not implemented (e.g., "Legacy API - deprecated") |
 | `ignored[].link` | URL to a GitHub issue tracking implementation (empty string if not tracked) |
 
+## API Versions
+
+The library currently uses **v1beta** which provides access to all features:
+
+```json
+"apiVersions": {
+  "supported": ["v1beta"],
+  "ignored": [
+    { "name": "v1", "reason": "Stable API - subset of v1beta features", "link": "" },
+    { "name": "v1alpha", "reason": "Alpha API - unstable", "link": "" }
+  ]
+}
+```
+
+### Version Differences
+
+| Feature | v1beta | v1 (stable) |
+|---------|--------|-------------|
+| `cachedContents` (caching) | ✅ | ❌ |
+| `files` (file upload) | ✅ | ❌ |
+| `media` (media handling) | ✅ | ❌ |
+| `operations` (LRO tracking) | ❌ | ✅ |
+| `generateAnswer` (AQA) | ✅ | ❌ |
+| `predict` (Imagen) | ✅ | ❌ |
+| `predictLongRunning` (Veo) | ✅ | ❌ |
+
 ## Running the Audit Locally
 
 ```bash

@@ -17,8 +17,10 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   case class IgnoreItem(name: String, reason: String, link: String)
   case class ResourceConfig(implemented: List[String], ignored: List[IgnoreItem])
   case class ModelsConfig(tracked: List[String], ignored: List[IgnoreItem])
+  case class ApiVersionsConfig(supported: List[String], ignored: List[IgnoreItem])
 
   case class Config(
+      apiVersions: Option[ApiVersionsConfig],
       resources: Map[String, ResourceConfig],
       schemas: Map[String, ResourceConfig],
       availableModels: Option[ModelsConfig]
@@ -69,8 +71,11 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   implicit val modelsConfigDecoder: Decoder[ModelsConfig] =
     Decoder.forProduct2("tracked", "ignored")(ModelsConfig.apply)
 
+  implicit val apiVersionsConfigDecoder: Decoder[ApiVersionsConfig] =
+    Decoder.forProduct2("supported", "ignored")(ApiVersionsConfig.apply)
+
   implicit val configDecoder: Decoder[Config] =
-    Decoder.forProduct3("resources", "schemas", "availableModels")(Config.apply)
+    Decoder.forProduct4("apiVersions", "resources", "schemas", "availableModels")(Config.apply)
 
   val apiKey = sys.env.get("GEMINI_API_KEY")
 
@@ -271,6 +276,97 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           }
         }
       case None      => IO(println("No API key, skipping available models audit"))
+    }
+  }
+
+  test("API Version Audit") {
+    val configFile = new File("src/test/resources/compliance_config.json")
+    if (!configFile.exists()) {
+      fail(s"Config file not found at: ${configFile.getAbsolutePath}")
+    }
+
+    val configJson = Source.fromFile(configFile).mkString
+    val config     = decode[Config](configJson).fold(
+      err => throw new Exception(s"JSON Decode Error: $err"),
+      c => c
+    )
+
+    apiKey match {
+      case Some(key) => HttpClientFs2Backend.resource[IO]().use { backend =>
+          val httpClient = GeminiHttpClient.make[IO](
+            backend,
+            ApiKey.unsafe(key),
+            baseUrl = "https://generativelanguage.googleapis.com"
+          )
+
+          // Check both v1 and v1beta to understand differences
+          for {
+            v1betaResult <- httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta"))
+            v1Result     <- httpClient.get[Json]("$discovery/rest", Map("version" -> "v1"))
+          } yield (v1betaResult, v1Result) match {
+            case (Right(v1beta), Right(v1)) =>
+              val v1betaVersion = v1beta.hcursor.downField("version").as[String].getOrElse("unknown")
+              val v1Version     = v1.hcursor.downField("version").as[String].getOrElse("unknown")
+
+              println(s"\n=== API VERSION AUDIT ===")
+              println(s"v1beta version: $v1betaVersion")
+              println(s"v1 (stable) version: $v1Version")
+
+              // Compare resources between versions
+              val v1betaResources = v1beta.hcursor.downField("resources").keys.getOrElse(Iterable.empty).toSet
+              val v1Resources     = v1.hcursor.downField("resources").keys.getOrElse(Iterable.empty).toSet
+
+              val onlyInBeta = v1betaResources.diff(v1Resources)
+              val onlyInV1   = v1Resources.diff(v1betaResources)
+
+              if (onlyInBeta.nonEmpty) {
+                println(s"\nResources only in v1beta: ${onlyInBeta.mkString(", ")}")
+              }
+              if (onlyInV1.nonEmpty) {
+                println(s"\nResources only in v1: ${onlyInV1.mkString(", ")}")
+              }
+
+              // Compare models resource methods
+              def getMethods(json: Json, resource: String): Set[String] = json.hcursor
+                .downField("resources")
+                .downField(resource)
+                .downField("methods")
+                .keys
+                .getOrElse(Iterable.empty)
+                .toSet
+
+              val v1betaModelMethods = getMethods(v1beta, "models")
+              val v1ModelMethods     = getMethods(v1, "models")
+
+              val methodsOnlyInBeta = v1betaModelMethods.diff(v1ModelMethods)
+              val methodsOnlyInV1   = v1ModelMethods.diff(v1betaModelMethods)
+
+              if (methodsOnlyInBeta.nonEmpty) {
+                println(s"\nmodels methods only in v1beta: ${methodsOnlyInBeta.mkString(", ")}")
+              }
+              if (methodsOnlyInV1.nonEmpty) {
+                println(s"\nmodels methods only in v1: ${methodsOnlyInV1.mkString(", ")}")
+              }
+
+              // Verify config tracks API versions
+              config.apiVersions match {
+                case Some(versions) =>
+                  println(s"\nConfigured to use: ${versions.supported.mkString(", ")}")
+                  println(s"Ignored versions: ${versions.ignored.map(_.name).mkString(", ")}")
+
+                  if (!versions.supported.contains("v1beta")) {
+                    fail("Configuration should include 'v1beta' in supported versions")
+                  }
+                  println("\nAPI Version Audit Passed: v1beta is configured and available.")
+
+                case None => println("\nWARNING: No 'apiVersions' section in config. Add one to track API versions.")
+              }
+
+            case (Left(e1), _) => fail(s"Failed to fetch v1beta discovery: $e1")
+            case (_, Left(e2)) => fail(s"Failed to fetch v1 discovery: $e2")
+          }
+        }
+      case None      => IO(println("No API key, skipping API version audit"))
     }
   }
 }

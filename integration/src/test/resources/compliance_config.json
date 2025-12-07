@@ -1,4 +1,21 @@
 {
+    "apiVersions": {
+        "supported": [
+            "v1beta"
+        ],
+        "ignored": [
+            {
+                "name": "v1",
+                "reason": "Stable API - subset of v1beta features, using v1beta for full access",
+                "link": ""
+            },
+            {
+                "name": "v1alpha",
+                "reason": "Alpha API - unstable, not recommended for production",
+                "link": ""
+            }
+        ]
+    },
     "resources": {
         "models": {
             "implemented": [
