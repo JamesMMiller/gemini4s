@@ -34,14 +34,14 @@ class BatchGenerateContentRequestSpec extends FunSuite {
   }
 
   test("BatchGenerateContentRequest encoder should handle file URI") {
-    val fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
-    val req     = BatchGenerateContentRequest(fileUri)
-    val json    = req.asJson
+    val fileResourceName = "files/abc123"
+    val req              = BatchGenerateContentRequest(fileResourceName)
+    val json             = req.asJson
 
     assert(json.hcursor.downField("batch").downField("input_config").downField("file_name").succeeded)
     assertEquals(
       json.hcursor.downField("batch").downField("input_config").downField("file_name").as[String],
-      Right(fileUri)
+      Right(fileResourceName)
     )
   }
 
@@ -62,11 +62,11 @@ class BatchGenerateContentRequestSpec extends FunSuite {
     val dataset = "gs://my-bucket/data.jsonl"
     val req     = BatchGenerateContentRequest(dataset)
 
-    assertEquals(req.input, BatchInput.GcsFile(dataset))
+    assertEquals(req.input, BatchInput.GcsFile(GcsUri(dataset)))
   }
 
   test("BatchGenerateContentRequest apply(dataset) should set API File input correctly") {
-    val dataset = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+    val dataset = "files/abc123"
     val req     = BatchGenerateContentRequest(dataset)
 
     assertEquals(req.input, BatchInput.ApiFile(dataset))

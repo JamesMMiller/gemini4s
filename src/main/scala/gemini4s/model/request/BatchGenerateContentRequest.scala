@@ -17,8 +17,8 @@ sealed trait BatchInput
 
 object BatchInput {
   final case class InlineRequests(requests: List[GenerateContentRequest]) extends BatchInput
-  final case class GcsFile(uri: String)                                   extends BatchInput
-  final case class ApiFile(uri: String)                                   extends BatchInput
+  final case class GcsFile(uri: GcsUri)                                   extends BatchInput
+  final case class ApiFile(resourceName: String)                          extends BatchInput
 }
 
 object BatchGenerateContentRequest {
@@ -27,7 +27,7 @@ object BatchGenerateContentRequest {
     BatchGenerateContentRequest(BatchInput.InlineRequests(requests))
 
   def apply(datasetUri: String): BatchGenerateContentRequest =
-    if (datasetUri.startsWith("gs://")) BatchGenerateContentRequest(BatchInput.GcsFile(datasetUri))
+    if (datasetUri.startsWith("gs://")) BatchGenerateContentRequest(BatchInput.GcsFile(GcsUri(datasetUri)))
     else BatchGenerateContentRequest(BatchInput.ApiFile(datasetUri))
 
   given Encoder[BatchGenerateContentRequest] = Encoder.instance { req =>
@@ -46,8 +46,8 @@ object BatchGenerateContentRequest {
             "requests" -> Json.fromValues(requestsJson)
           )
         )
-      case BatchInput.GcsFile(uri)         => Json.obj("gcs_source" -> Json.obj("uri" -> Json.fromString(uri)))
-      case BatchInput.ApiFile(uri)         => Json.obj("file_name" -> Json.fromString(uri))
+      case BatchInput.GcsFile(uri)         => Json.obj("gcs_source" -> Json.obj("uri" -> uri.asJson))
+      case BatchInput.ApiFile(name)        => Json.obj("file_name" -> Json.fromString(name))
     }
 
     Json.obj(
@@ -65,12 +65,12 @@ object BatchGenerateContentRequest {
     inputConfig
       .downField("gcs_source")
       .downField("uri")
-      .as[String]
+      .as[GcsUri]
       .map(uri => BatchGenerateContentRequest(BatchInput.GcsFile(uri)))
       .orElse {
         // Try decoding File API source
-        inputConfig.downField("file_name").as[String].map { uri =>
-          BatchGenerateContentRequest(BatchInput.ApiFile(uri))
+        inputConfig.downField("file_name").as[String].map { name =>
+          BatchGenerateContentRequest(BatchInput.ApiFile(name))
         }
       }
       .orElse {

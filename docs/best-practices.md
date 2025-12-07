@@ -270,6 +270,19 @@ class MockGemini extends GeminiService[IO] {
     IO.pure(Right(job))
   }
 
+  override def batchGenerateContent(
+      model: ModelName,
+      input: BatchInput
+  ): IO[Either[GeminiError, BatchJob]] = {
+    val job = BatchJob(
+      name = s"models/${model.toString}/batchJobs/input-123",
+      state = BatchJobState.JOB_STATE_PENDING,
+      createTime = java.time.Instant.now().toString,
+      updateTime = java.time.Instant.now().toString
+    )
+    IO.pure(Right(job))
+  }
+
   override def getBatchJob(name: String): IO[Either[GeminiError, BatchJob]] = {
     val job = BatchJob(
       name = name,

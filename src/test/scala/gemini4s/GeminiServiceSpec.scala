@@ -430,7 +430,7 @@ class GeminiServiceSpec extends CatsEffectSuite {
       assertEquals(client.lastEndpoint, GeminiConstants.Endpoints.batchGenerateContent(model))
       assert(client.lastRequest.exists(_.isInstanceOf[BatchGenerateContentRequest]))
       val req = client.lastRequest.get.asInstanceOf[BatchGenerateContentRequest]
-      assertEquals(req.input, BatchInput.GcsFile(dataset))
+      assertEquals(req.input, BatchInput.GcsFile(GcsUri(dataset)))
     }
   }
 

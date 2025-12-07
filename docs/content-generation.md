@@ -508,7 +508,7 @@ def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
     file         <- IO.fromEither(uploadResult)
     
     // Create batch job from uploaded file
-    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, file.uri.value)
+    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, file.name)
     job          <- IO.fromEither(jobResult)
     
     _            <- IO.println(s"Batch job from File API: ${job.name}")
