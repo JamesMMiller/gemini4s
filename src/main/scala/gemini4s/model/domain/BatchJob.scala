@@ -56,7 +56,25 @@ final case class BatchJobResponse(
 )
 
 object BatchJobResponse {
-  given Decoder[BatchJobResponse] = deriveDecoder
+
+  given Decoder[BatchJobResponse] = Decoder.instance { c =>
+    val inlinedResponsesCursor = c.downField("inlinedResponses")
+
+    // Check if inlinedResponses is an array (standard) or object (nested)
+    val inlinedResponsesDecoder: Decoder[Option[List[BatchInlineResponse]]] =
+      Decoder.decodeOption(Decoder.decodeList[BatchInlineResponse])
+
+    val inlinedResponsesResult = inlinedResponsesDecoder.tryDecode(inlinedResponsesCursor).orElse {
+      // If direct decoding fails, try one level deeper (handling the case where it's wrapped in an object)
+      inlinedResponsesCursor.downField("inlinedResponses").as[Option[List[BatchInlineResponse]]]
+    }
+
+    for {
+      inlined       <- inlinedResponsesResult
+      responsesFile <- c.downField("responsesFile").as[Option[String]]
+    } yield BatchJobResponse(inlined, responsesFile)
+  }
+
   given Encoder[BatchJobResponse] = deriveEncoder
 }
 

@@ -1,5 +1,7 @@
 package gemini4s
 
+import scala.concurrent.duration._
+
 import cats.effect.IO
 import munit.CatsEffectSuite
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
@@ -20,6 +22,8 @@ import gemini4s.model.request._
 import gemini4s.model.response._
 
 class GeminiIntegrationSpec extends CatsEffectSuite {
+
+  override def munitTimeout = 5.minutes
 
   // Helper to get API key from env
   val apiKey = sys.env.get("GEMINI_API_KEY")
@@ -610,6 +614,7 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
   }
 
   test("batchGenerateContent should retrieve inline results after completion") {
+
     withBackend { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
@@ -625,20 +630,41 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
         // Create batch job
         result <- service.batchGenerateContent(model, requests)
         job    <- IO.fromEither(result)
+        _      <- IO.println(s"Created batch job: ${job.name}. Waiting for completion...")
 
-        // Get job status and retrieve results
-        jobResult    <- service.getBatchJob(job.name)
-        completedJob <- IO.fromEither(jobResult)
+        // Poll for completion (up to ~10 minutes)
+        completedJob <- fs2.Stream
+                          .retry(
+                            IO.defer {
+                              service.getBatchJob(job.name).flatMap {
+                                case Right(job) if job.state == BatchJobState.JOB_STATE_SUCCEEDED =>
+                                  IO.println(s"Job succeeded: ${job.name}") *> IO.pure(job)
+                                case Right(job) if job.state == BatchJobState.JOB_STATE_FAILED    =>
+                                  IO.raiseError(new RuntimeException(s"Batch job failed: ${job.error}"))
+                                case Right(job)                                                   => IO.println(s"Job state: ${job.state}. Retrying...") *> IO
+                                    .raiseError(new RuntimeException(s"Job still pending: ${job.state}"))
+                                case Left(e)                                                      => IO.raiseError(new RuntimeException(s"Failed to get job: $e"))
+                              }
+                            },
+                            delay = 5.seconds,
+                            nextDelay = d => (d.toMillis * 1.5).toLong.millis,
+                            maxAttempts = 20
+                          )
+                          .compile
+                          .lastOrError
 
         // Verify results are present
-        _ = assert(completedJob.response.isDefined, "Response should be present")
-        _ = completedJob.response.foreach { response =>
-              assert(response.inlinedResponses.isDefined, "InlinedResponses should be present")
-              response.inlinedResponses.foreach { results =>
-                assertEquals(results.size, 2, "Should have 2 results")
-                assert(results.head.response.isDefined, "First result should have response")
-              }
-            }
+        _             = assert(
+                          completedJob.response.isDefined,
+                          s"Response should be present for job ${completedJob.name} in state ${completedJob.state}"
+                        )
+        _             = completedJob.response.foreach { response =>
+                          assert(response.inlinedResponses.isDefined, "InlinedResponses should be present")
+                          response.inlinedResponses.foreach { results =>
+                            assertEquals(results.size, 2, "Should have 2 results")
+                            assert(results.head.response.isDefined, "First result should have response")
+                          }
+                        }
       } yield ()
     }
   }
