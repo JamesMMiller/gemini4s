@@ -142,6 +142,20 @@ class BatchJobSpec extends FunSuite {
     assert(decoded.map(_.inlinedResponses.map(_.size)) == Right(Some(2)))
   }
 
+  test("BatchJobResponse should handle double-nested inlinedResponses (API quirk)") {
+    val json    = """{
+      "inlinedResponses": {
+        "inlinedResponses": [
+          {"response": {"candidates": [], "usageMetadata": null}}
+        ]
+      }
+    }"""
+    val decoded = decode[BatchJobResponse](json)
+
+    assert(decoded.isRight)
+    assert(decoded.map(_.inlinedResponses.map(_.size)) == Right(Some(1)))
+  }
+
   test("BatchJobResponse should handle responses file") {
     val json    = """{"responsesFile": "files/output-123"}"""
     val decoded = decode[BatchJobResponse](json)
