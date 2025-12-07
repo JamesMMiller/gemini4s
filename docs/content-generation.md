@@ -475,12 +475,13 @@ For very large batches, use Cloud Storage:
 import cats.effect.IO
 import gemini4s.GeminiService
 import gemini4s.model.domain._
+import gemini4s.model.request.BatchInput
 
 def gcsBatchJob(service: GeminiService[IO]): IO[Unit] = {
   // File should be in JSONL format with one request per line
   val gcsUri = "gs://my-bucket/batch-requests.jsonl"
   
-  service.batchGenerateContent(ModelName.Gemini25Flash, gcsUri).flatMap {
+  service.batchGenerateContent(ModelName.Gemini25Flash, BatchInput.GcsFile(GcsUri(gcsUri))).flatMap {
     case Right(job) =>
       IO.println(s"File-based batch job created: ${job.name}")
     case Left(error) =>
@@ -496,7 +497,8 @@ Use files uploaded via the File API:
 ```scala mdoc:compile-only
 import cats.effect.IO
 import gemini4s.GeminiService
-import gemini4s.model.domain.ModelName
+import gemini4s.model.domain.{ModelName, ResourceName}
+import gemini4s.model.request.BatchInput
 import java.nio.file.Paths
 
 def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
@@ -508,7 +510,7 @@ def fileApiBatchJob(service: GeminiService[IO]): IO[Unit] = {
     file         <- IO.fromEither(uploadResult)
     
     // Create batch job from uploaded file
-    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, file.name)
+    jobResult    <- service.batchGenerateContent(ModelName.Gemini25Flash, BatchInput.ApiFile(ResourceName(file.name)))
     job          <- IO.fromEither(jobResult)
     
     _            <- IO.println(s"Batch job from File API: ${job.name}")

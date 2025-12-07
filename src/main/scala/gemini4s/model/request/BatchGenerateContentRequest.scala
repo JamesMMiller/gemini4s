@@ -18,17 +18,13 @@ sealed trait BatchInput
 object BatchInput {
   final case class InlineRequests(requests: List[GenerateContentRequest]) extends BatchInput
   final case class GcsFile(uri: GcsUri)                                   extends BatchInput
-  final case class ApiFile(resourceName: String)                          extends BatchInput
+  final case class ApiFile(resourceName: ResourceName)                    extends BatchInput
 }
 
 object BatchGenerateContentRequest {
 
   def apply(requests: List[GenerateContentRequest]): BatchGenerateContentRequest =
     BatchGenerateContentRequest(BatchInput.InlineRequests(requests))
-
-  def apply(datasetUri: String): BatchGenerateContentRequest =
-    if (datasetUri.startsWith("gs://")) BatchGenerateContentRequest(BatchInput.GcsFile(GcsUri(datasetUri)))
-    else BatchGenerateContentRequest(BatchInput.ApiFile(datasetUri))
 
   given Encoder[BatchGenerateContentRequest] = Encoder.instance { req =>
     val inputConfig = req.input match {
@@ -47,7 +43,7 @@ object BatchGenerateContentRequest {
           )
         )
       case BatchInput.GcsFile(uri)         => Json.obj("gcs_source" -> Json.obj("uri" -> uri.asJson))
-      case BatchInput.ApiFile(name)        => Json.obj("file_name" -> Json.fromString(name))
+      case BatchInput.ApiFile(name)        => Json.obj("file_name" -> name.asJson)
     }
 
     Json.obj(
@@ -69,7 +65,7 @@ object BatchGenerateContentRequest {
       .map(uri => BatchGenerateContentRequest(BatchInput.GcsFile(uri)))
       .orElse {
         // Try decoding File API source
-        inputConfig.downField("file_name").as[String].map { name =>
+        inputConfig.downField("file_name").as[ResourceName].map { name =>
           BatchGenerateContentRequest(BatchInput.ApiFile(name))
         }
       }

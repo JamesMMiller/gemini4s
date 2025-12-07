@@ -618,10 +618,8 @@ class GeminiIntegrationSpec extends CatsEffectSuite {
     withBackend { backend =>
       val apiKeyValue = ApiKey.unsafe(apiKey.getOrElse("mock-key"))
       val httpClient  = GeminiHttpClient.make[IO](backend, apiKeyValue)
-      val service     = GeminiService.make[IO](httpClient)
-
-      val model    = ModelName.Gemini25Flash
-      val requests = List(
+      val model       = ModelName.Gemini25Flash
+      val requests    = List(
         GenerateContentRequest(model, List(GeminiService.text("Test prompt 1"))),
         GenerateContentRequest(model, List(GeminiService.text("Test prompt 2")))
       )

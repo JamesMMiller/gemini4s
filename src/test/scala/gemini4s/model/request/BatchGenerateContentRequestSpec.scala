@@ -23,7 +23,7 @@ class BatchGenerateContentRequestSpec extends FunSuite {
   }
 
   test("BatchGenerateContentRequest encoder should handle GCS URI") {
-    val req  = BatchGenerateContentRequest("gs://bucket/path/file.jsonl")
+    val req  = BatchGenerateContentRequest(BatchInput.GcsFile(GcsUri("gs://bucket/path/file.jsonl")))
     val json = req.asJson
 
     assert(json.hcursor.downField("batch").downField("input_config").downField("gcs_source").downField("uri").succeeded)
@@ -35,7 +35,7 @@ class BatchGenerateContentRequestSpec extends FunSuite {
 
   test("BatchGenerateContentRequest encoder should handle file URI") {
     val fileResourceName = "files/abc123"
-    val req              = BatchGenerateContentRequest(fileResourceName)
+    val req              = BatchGenerateContentRequest(BatchInput.ApiFile(ResourceName(fileResourceName)))
     val json             = req.asJson
 
     assert(json.hcursor.downField("batch").downField("input_config").downField("file_name").succeeded)
@@ -60,30 +60,30 @@ class BatchGenerateContentRequestSpec extends FunSuite {
 
   test("BatchGenerateContentRequest apply(dataset) should set GCS input correctly") {
     val dataset = "gs://my-bucket/data.jsonl"
-    val req     = BatchGenerateContentRequest(dataset)
+    val req     = BatchGenerateContentRequest(BatchInput.GcsFile(GcsUri(dataset)))
 
     assertEquals(req.input, BatchInput.GcsFile(GcsUri(dataset)))
   }
 
   test("BatchGenerateContentRequest apply(dataset) should set API File input correctly") {
     val dataset = "files/abc123"
-    val req     = BatchGenerateContentRequest(dataset)
+    val req     = BatchGenerateContentRequest(BatchInput.ApiFile(ResourceName(dataset)))
 
-    assertEquals(req.input, BatchInput.ApiFile(dataset))
+    assertEquals(req.input, BatchInput.ApiFile(ResourceName(dataset)))
   }
 
   test("BatchGenerateContentRequest decoder should decode GCS URI") {
     val jsonString = """{"batch": {"input_config": {"gcs_source": {"uri": "gs://bucket/file.jsonl"}}}}"""
     val decoded    = decode[BatchGenerateContentRequest](jsonString)
 
-    assertEquals(decoded, Right(BatchGenerateContentRequest("gs://bucket/file.jsonl")))
+    assertEquals(decoded, Right(BatchGenerateContentRequest(BatchInput.GcsFile(GcsUri("gs://bucket/file.jsonl")))))
   }
 
   test("BatchGenerateContentRequest decoder should decode file name URI") {
     val jsonString = """{"batch": {"input_config": {"file_name": "files/abc123"}}}"""
     val decoded    = decode[BatchGenerateContentRequest](jsonString)
 
-    assertEquals(decoded, Right(BatchGenerateContentRequest("files/abc123")))
+    assertEquals(decoded, Right(BatchGenerateContentRequest(BatchInput.ApiFile(ResourceName("files/abc123")))))
   }
 
   test("BatchGenerateContentRequest decoder should fail for inline requests (currently unsupported)") {

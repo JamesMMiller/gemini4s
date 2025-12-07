@@ -183,18 +183,6 @@ trait GeminiService[F[_]] {
   ): F[Either[GeminiError, Unit]]
 
   /**
-   * Generates content for a batch of requests using a file dataset.
-   *
-   * @param model The model to use
-   * @param dataset The URI of the dataset (File API resource name or GCS URI "gs://...")
-   * @return Either a GeminiError or the BatchJob
-   */
-  def batchGenerateContent(
-      model: ModelName,
-      dataset: String
-  ): F[Either[GeminiError, BatchJob]]
-
-  /**
    * Generates content for a batch of requests using type-safe BatchInput.
    *
    * @param model The model to use
@@ -390,14 +378,6 @@ object GeminiService {
 
     override def deleteBatchJob(name: String): F[Either[GeminiError, Unit]] =
       httpClient.delete(GeminiConstants.Endpoints.deleteBatchJob(name))
-
-    override def batchGenerateContent(
-        model: ModelName,
-        dataset: String
-    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
-      GeminiConstants.Endpoints.batchGenerateContent(model),
-      BatchGenerateContentRequest(dataset)
-    )
 
     override def batchGenerateContent(
         model: ModelName,
