@@ -349,6 +349,50 @@ object GeminiService {
         service.countTokens(CountTokensRequest(modelName, contents))
       }
 
+      /**
+       * Type-safe cached content creation - requires model with CanCache capability.
+       */
+      def createCacheWithModel[M: SupportsCaching](
+          model: M,
+          contents: List[Content],
+          displayName: Option[String] = None,
+          ttl: Option[String] = None,
+          systemInstruction: Option[Content] = None
+      ): F[Either[GeminiError, CachedContent]] = {
+        val modelName = summon[SupportsCaching[M]].toModelName(model)
+        service.createCachedContent(
+          CreateCachedContentRequest(
+            model = Some(modelName.value),
+            contents = Some(contents),
+            displayName = displayName,
+            ttl = ttl,
+            systemInstruction = systemInstruction
+          )
+        )
+      }
+
+      /**
+       * Type-safe batch generation - requires model with CanBatch capability.
+       */
+      def batchGenerateWithModel[M: SupportsBatch](
+          model: M,
+          requests: List[GenerateContentRequest]
+      )(using Async[F]): F[Either[GeminiError, BatchJob]] = {
+        val modelName = summon[SupportsBatch[M]].toModelName(model)
+        service.batchGenerateContent(modelName, requests)
+      }
+
+      /**
+       * Type-safe batch generation from file - requires model with CanBatch capability.
+       */
+      def batchGenerateFromFileWithModel[M: SupportsBatch](
+          model: M,
+          input: BatchInput
+      )(using Async[F]): F[Either[GeminiError, BatchJob]] = {
+        val modelName = summon[SupportsBatch[M]].toModelName(model)
+        service.batchGenerateContent(modelName, input)
+      }
+
     }
 
   }

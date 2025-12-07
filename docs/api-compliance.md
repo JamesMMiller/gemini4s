@@ -92,6 +92,26 @@ The library currently uses **v1beta** which provides access to all features:
 | `predict` (Imagen) | ✅ | ❌ |
 | `predictLongRunning` (Veo) | ✅ | ❌ |
 
+### Type-Safe Version Selection
+
+Use `VersionedGeminiService` to get compile-time guarantees that you only use features available in your chosen API version:
+
+```scala
+import gemini4s.VersionedGeminiService
+
+// v1beta - has caching and file operations
+VersionedGeminiService.v1beta[IO](apiKey).use { svc =>
+  svc.createCachedContent(...)  // ✓ Compiles - v1beta has caching
+  svc.uploadFile(...)           // ✓ Compiles - v1beta has files
+}
+
+// v1 (stable) - limited features, compile-time enforced
+VersionedGeminiService.v1[IO](apiKey).use { svc =>
+  svc.generateContent(...)      // ✓ Compiles - basic generation available
+  // svc.uploadFile(...)        // ✗ Would NOT compile - v1 doesn't have files!
+}
+```
+
 ## Running the Audit Locally
 
 ```bash
