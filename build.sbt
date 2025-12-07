@@ -1,4 +1,4 @@
-val baseVersion   = "0.3"
+val baseVersion   = "0.4"
 val scala3Version = "3.6.2"
 
 inThisBuild(

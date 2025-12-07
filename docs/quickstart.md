@@ -56,22 +56,25 @@ object QuickStart extends IOApp.Simple {
 
 ## Choosing an API Version
 
-By default, gemini4s uses `v1beta` for full feature access. You can also use the stable `v1` API:
+By default, gemini4s gives you the full v1beta service with all capabilities. For a minimal service, use `makeV1`:
 
 ```scala mdoc:compile-only
-import gemini4s.config.{GeminiConfig, ApiVersion}
+import cats.effect.IO
+import gemini4s.GeminiService
+import gemini4s.config.GeminiConfig
 
-// v1beta (default) - Full features: caching, files, Imagen, Veo
-val betaConfig = GeminiConfig(apiKey = "your-key")
-// or explicitly:
-val betaConfig2 = GeminiConfig(apiKey = "your-key", apiVersion = ApiVersion.V1Beta)
+// Full v1beta service (default) - all capabilities
+GeminiService.make[IO](GeminiConfig.v1beta("key")).use { svc =>
+  // svc has: GeminiCore & GeminiFiles & GeminiCaching & GeminiBatch
+  IO.unit
+}
 
-// v1 (stable) - Limited features, but more stable
-val stableConfig = GeminiConfig(apiKey = "your-key", apiVersion = ApiVersion.V1)
-
-// Convenience constructors
-val beta = GeminiConfig.v1beta("your-key")
-val stable = GeminiConfig.v1("your-key")
+// Minimal v1 service - core capabilities only
+GeminiService.makeV1[IO]("key").use { svc =>
+  // svc has: GeminiCore only
+  // File/caching/batch methods won't compile!
+  IO.unit
+}
 ```
 
 See [API Compliance](api-compliance.md) for details on feature differences between versions.

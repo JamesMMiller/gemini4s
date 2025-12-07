@@ -5,7 +5,7 @@ import cats.syntax.all._
 import fs2.Stream
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.config.{ ApiKey, GeminiConfig }
+import gemini4s.config.{ ApiKey, ApiVersion, GeminiConfig }
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._
@@ -13,196 +13,43 @@ import gemini4s.model.request._
 import gemini4s.model.response._
 
 /**
- * Core algebra for interacting with the Google Gemini API.
+ * GeminiService is the main entry point for the Gemini API.
  *
- * This service follows the Tagless Final pattern, allowing for different effect type implementations.
- * It provides high-level operations for content generation, streaming, and token counting.
+ * It's a type alias for the full v1beta service with all capabilities:
+ * - Core (generation, streaming, counting, embeddings)
+ * - Files (upload, list, get, delete)
+ * - Caching (create cached content)
+ * - Batch (batch generation operations)
  *
- * @tparam F The effect type (e.g., IO for Cats Effect implementation)
+ * For the limited v1 API, use [[GeminiServiceV1]] via [[GeminiService.makeV1]].
+ *
+ * @example
+ * {{{
+ * import gemini4s.GeminiService
+ *
+ * // Full v1beta service (default)
+ * GeminiService.make[IO](config).use { svc =>
+ *   svc.generateContent(...)  // Available
+ *   svc.uploadFile(...)       // Available
+ *   svc.createCachedContent(...) // Available
+ * }
+ *
+ * // Minimal v1 service
+ * GeminiService.makeV1[IO](apiKey).use { svc =>
+ *   svc.generateContent(...)  // Available
+ *   // svc.uploadFile(...)    // Not available - compile error!
+ * }
+ * }}}
  */
-trait GeminiService[F[_]] {
-
-  /**
-   * Generates content using the Gemini API.
-   *
-   * @param request The generation request
-   * @return Either a [[gemini4s.error.GeminiError]] or a [[gemini4s.model.response.GenerateContentResponse]]
-   */
-  def generateContent(
-      request: GenerateContentRequest
-  ): F[Either[GeminiError, GenerateContentResponse]]
-
-  /**
-   * Generates content using the Gemini API with streaming response.
-   *
-   * @param request The generation request
-   * @return A stream of [[gemini4s.model.response.GenerateContentResponse]] chunks
-   */
-  def generateContentStream(
-      request: GenerateContentRequest
-  ): Stream[F, GenerateContentResponse]
-
-  /**
-   * Counts tokens in the provided content.
-   *
-   * @param request The count tokens request
-   * @return The number of tokens
-   */
-  def countTokens(
-      request: CountTokensRequest
-  ): F[Either[GeminiError, Int]]
-
-  /**
-   * Generates an embedding for the given content.
-   *
-   * @param request The embed content request
-   * @return Either a [[gemini4s.error.GeminiError]] or the embedding values
-   */
-  def embedContent(
-      request: EmbedContentRequest
-  ): F[Either[GeminiError, ContentEmbedding]]
-
-  /**
-   * Generates embeddings for a batch of contents.
-   *
-   * @param request The batch embed request
-   * @return Either a [[gemini4s.error.GeminiError]] or the list of embeddings
-   */
-  def batchEmbedContents(
-      request: BatchEmbedContentsRequest
-  ): F[Either[GeminiError, List[ContentEmbedding]]]
-
-  /**
-   * Creates cached content for efficient reuse.
-   *
-   * @param request The create cached content request
-   * @return Either a [[gemini4s.error.GeminiError]] or the created [[gemini4s.model.response.CachedContent]]
-   */
-  def createCachedContent(
-      request: CreateCachedContentRequest
-  ): F[Either[GeminiError, CachedContent]]
-
-  /**
-   * Uploads a file using the resumable upload protocol.
-   *
-   * @param path The path to the file
-   * @param mimeType The MIME type of the file
-   * @param displayName Optional display name
-   * @return Either a GeminiError or the uploaded File
-   */
-  def uploadFile(
-      path: java.nio.file.Path,
-      mimeType: String,
-      displayName: Option[String] = None
-  ): F[Either[GeminiError, File]]
-
-  /**
-   * Lists files with pagination.
-   *
-   * @param pageSize The number of files to return
-   * @param pageToken The page token for pagination
-   * @return Either a GeminiError or the ListFilesResponse
-   */
-  def listFiles(
-      pageSize: Int = 10,
-      pageToken: Option[String] = None
-  ): F[Either[GeminiError, ListFilesResponse]]
-
-  /**
-   * Gets a file by name.
-   *
-   * @param name The resource name of the file
-   * @return Either a GeminiError or the File
-   */
-  def getFile(
-      name: String
-  ): F[Either[GeminiError, File]]
-
-  /**
-   * Deletes a file by name.
-   *
-   * @param name The resource name of the file
-   * @return Either a GeminiError or Unit
-   */
-  def deleteFile(
-      name: String
-  ): F[Either[GeminiError, Unit]]
-
-  /**
-   * Generates content for a batch of requests.
-   *
-   * @param model The model to use
-   * @param requests The list of generation requests
-   * @return Either a GeminiError or the BatchGenerateContentResponse
-   */
-  def batchGenerateContent(
-      model: ModelName,
-      requests: List[GenerateContentRequest]
-  ): F[Either[GeminiError, BatchJob]]
-
-  /**
-   * Gets the status of a batch job.
-   *
-   * @param name The resource name of the batch job
-   * @return Either a GeminiError or the BatchJob
-   */
-  def getBatchJob(
-      name: String
-  ): F[Either[GeminiError, BatchJob]]
-
-  /**
-   * Lists batch jobs.
-   *
-   * @param pageSize The maximum number of batch jobs to return
-   * @param pageToken A page token, received from a previous list call
-   * @return Either a GeminiError or the ListBatchJobsResponse
-   */
-  def listBatchJobs(
-      pageSize: Int = 10,
-      pageToken: Option[String] = None
-  ): F[Either[GeminiError, ListBatchJobsResponse]]
-
-  /**
-   * Cancels a batch job.
-   *
-   * @param name The resource name of the batch job
-   * @return Either a GeminiError or Unit
-   */
-  def cancelBatchJob(
-      name: String
-  ): F[Either[GeminiError, Unit]]
-
-  /**
-   * Deletes a batch job.
-   *
-   * @param name The resource name of the batch job
-   * @return Either a GeminiError or Unit
-   */
-  def deleteBatchJob(
-      name: String
-  ): F[Either[GeminiError, Unit]]
-
-  /**
-   * Generates content for a batch of requests using type-safe BatchInput.
-   *
-   * @param model The model to use
-   * @param input The batch input configuration (Inline, GCS, or File API)
-   * @return Either a GeminiError or the BatchJob
-   */
-  def batchGenerateContent(
-      model: ModelName,
-      input: BatchInput
-  ): F[Either[GeminiError, BatchJob]]
-
-}
+type GeminiService[F[_]] = GeminiServiceFull[F]
 
 object GeminiService {
 
   /**
-   * Creates a new Gemini instance with internal resource management.
+   * Creates a full Gemini service with all v1beta capabilities.
    *
-   * @param config The configuration for the service
-   * @return A Resource containing the GeminiService
+   * @param config The configuration (uses v1beta by default)
+   * @return A Resource containing the full GeminiService
    */
   def make[F[_]: Async](
       config: GeminiConfig
@@ -216,71 +63,70 @@ object GeminiService {
   }
 
   /**
-   * Creates a new Gemini instance using an existing HTTP client.
+   * Creates a full Gemini service using an existing HTTP client.
    *
-   * @param httpClient The HTTP client to use for requests
+   * @param httpClient The HTTP client to use
    */
   def make[F[_]: Async](
       httpClient: GeminiHttpClient[F]
   ): GeminiService[F] = new GeminiServiceImpl(httpClient)
 
   /**
-   * Creates a Content instance from text input.
+   * Creates a minimal v1 Gemini service with only core capabilities.
    *
-   * @param text The input text
-   * @return A Content instance with the text wrapped in a Part
+   * This service does NOT have file, caching, or batch operations.
+   * Use this when you only need basic generation and embedding.
+   *
+   * @param apiKey Your Gemini API key
+   * @return A Resource containing the v1 service
+   */
+  def makeV1[F[_]: Async](
+      apiKey: String
+  ): Resource[F, GeminiServiceV1[F]] = {
+    val config = GeminiConfig.v1(apiKey)
+    HttpClientFs2Backend.resource[F]().map { backend =>
+      val httpClient = GeminiHttpClient.make[F](
+        backend,
+        ApiKey.unsafe(config.apiKey),
+        config.versionedBaseUrl
+      )
+      new GeminiCoreImpl(httpClient)
+    }
+  }
+
+  // ============================================
+  // Content Helpers
+  // ============================================
+
+  /**
+   * Creates a Content instance from text input.
    */
   def text(text: String): Content = Content(parts = List(ContentPart.Text(text)))
 
   /**
    * Creates a Content instance from an image (Base64 encoded).
-   *
-   * @param base64 The Base64 encoded image data
-   * @param mimeType The MIME type of the image (e.g., "image/jpeg")
-   * @return A Content instance with the image wrapped in a Part
    */
   def image(base64: String, mimeType: String): Content =
     Content(parts = List(ContentPart.InlineData(MimeType.unsafe(mimeType), ContentPart.Base64Data(base64))))
 
   /**
-   * Helper to create a Content object with a file URI.
-   *
-   * @param uri
-   *   The URI of the file.
-   * @param mimeType
-   *   The MIME type of the file.
+   * Creates a Content instance with a file URI.
    */
   def file(uri: String, mimeType: String): Content =
     Content(parts = List(ContentPart.FileData(MimeType.unsafe(mimeType), FileUri(uri))))
 
   // ============================================
-  // Type-Safe Extension Methods using Capabilities
+  // Type-Safe Model Capability Extensions
   // ============================================
 
   import gemini4s.model.domain.ModelCapabilities._
 
   /**
-   * Extension methods for GeminiService that provide type-safe model capability checking.
-   *
-   * These methods ensure at compile-time that you can only use models with the required capabilities.
-   *
-   * Example:
-   * {{{
-   * import gemini4s.GeminiService.ops._
-   *
-   * // This compiles - gemini25Flash has CanGenerate
-   * service.generateWithModel(Model.gemini25Flash, List(GeminiService.text("Hello")))
-   *
-   * // This compiles - embeddingGemini001 has CanEmbed
-   * service.embedWithModel(Model.embeddingGemini001, content)
-   *
-   * // This would NOT compile - gemini25Flash doesn't have CanEmbed
-   * // service.embedWithModel(Model.gemini25Flash, content)  // Compile error!
-   * }}}
+   * Extension methods for type-safe model capability checking.
    */
   object ops {
 
-    extension [F[_]](service: GeminiService[F]) {
+    extension [F[_]](service: GeminiCore[F]) {
 
       /**
        * Type-safe content generation - requires model with CanGenerate capability.
@@ -349,6 +195,10 @@ object GeminiService {
         service.countTokens(CountTokensRequest(modelName, contents))
       }
 
+    }
+
+    extension [F[_]](service: GeminiCaching[F]) {
+
       /**
        * Type-safe cached content creation - requires model with CanCache capability.
        */
@@ -371,6 +221,10 @@ object GeminiService {
         )
       }
 
+    }
+
+    extension [F[_]](service: GeminiBatch[F]) {
+
       /**
        * Type-safe batch generation - requires model with CanBatch capability.
        */
@@ -382,130 +236,111 @@ object GeminiService {
         service.batchGenerateContent(modelName, requests)
       }
 
-      /**
-       * Type-safe batch generation from file - requires model with CanBatch capability.
-       */
-      def batchGenerateFromFileWithModel[M: SupportsBatch](
-          model: M,
-          input: BatchInput
-      )(using Async[F]): F[Either[GeminiError, BatchJob]] = {
-        val modelName = summon[SupportsBatch[M]].toModelName(model)
-        service.batchGenerateContent(modelName, input)
-      }
-
-    }
-
-    // ============================================
-    // Version-Aware Extension Methods
-    // ============================================
-
-    import gemini4s.config.ApiVersion._
-
-    /**
-     * Extension methods that require API version capability evidence.
-     *
-     * These methods ensure at compile-time that you're using a configuration
-     * with an API version that supports the required features.
-     *
-     * Example:
-     * {{{
-     * import gemini4s.GeminiService.ops._
-     *
-     * val betaConfig = GeminiConfig.v1beta("key")  // V1BetaCapabilities
-     * val stableConfig = GeminiConfig.v1("key")    // V1Capabilities
-     *
-     * // This compiles - v1beta has file operations
-     * service.requiresFiles(betaConfig)
-     *
-     * // This would NOT compile - v1 doesn't have file operations
-     * // service.requiresFiles(stableConfig)  // Compile error!
-     * }}}
-     */
-    extension [F[_]](service: GeminiService[F]) {
-
-      /**
-       * Marker method that requires caching capability.
-       * Use this to document that a code path requires v1beta.
-       */
-      def withCachingSupport[V: SupportsCaching]: GeminiService[F] = service
-
-      /**
-       * Marker method that requires files capability.
-       * Use this to document that a code path requires v1beta.
-       */
-      def withFilesSupport[V: SupportsFiles]: GeminiService[F] = service
     }
 
   }
 
-  private final class GeminiServiceImpl[F[_]: Async](
-      httpClient: GeminiHttpClient[F]
-  ) extends GeminiService[F] {
+  // ============================================
+  // Implementations
+  // ============================================
 
-    override def generateContent(
-        request: GenerateContentRequest
-    ): F[Either[GeminiError, GenerateContentResponse]] =
+  /**
+   * Core-only implementation for v1 API.
+   */
+  private final class GeminiCoreImpl[F[_]: Async](
+      httpClient: GeminiHttpClient[F]
+  ) extends GeminiCore[F] {
+
+    def generateContent(request: GenerateContentRequest): F[Either[GeminiError, GenerateContentResponse]] =
       httpClient.post[GenerateContentRequest, GenerateContentResponse](
         GeminiConstants.Endpoints.generateContent(request.model),
         request
       )
 
-    override def batchGenerateContent(
-        model: ModelName,
-        requests: List[GenerateContentRequest]
-    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
-      GeminiConstants.Endpoints.batchGenerateContent(model),
-      BatchGenerateContentRequest(requests)
-    )
+    def generateContentStream(request: GenerateContentRequest): Stream[F, GenerateContentResponse] =
+      httpClient.postStream[GenerateContentRequest, GenerateContentResponse](
+        GeminiConstants.Endpoints.generateContentStream(request.model),
+        request
+      )
 
-    override def getBatchJob(
-        name: String
-    ): F[Either[GeminiError, BatchJob]] = httpClient.get[BatchJob](
-      GeminiConstants.Endpoints.getBatchJob(name)
-    )
-
-    override def generateContentStream(
-        request: GenerateContentRequest
-    ): Stream[F, GenerateContentResponse] = httpClient.postStream[GenerateContentRequest, GenerateContentResponse](
-      GeminiConstants.Endpoints.generateContentStream(request.model),
-      request
-    )
-
-    override def countTokens(
-        request: CountTokensRequest
-    ): F[Either[GeminiError, Int]] = httpClient
+    def countTokens(request: CountTokensRequest): F[Either[GeminiError, Int]] = httpClient
       .post[CountTokensRequest, CountTokensResponse](
         GeminiConstants.Endpoints.countTokens(request.model),
         request
       )
       .map(_.map(_.totalTokens))
 
-    override def embedContent(
-        request: EmbedContentRequest
-    ): F[Either[GeminiError, ContentEmbedding]] = httpClient
+    def embedContent(request: EmbedContentRequest): F[Either[GeminiError, ContentEmbedding]] = httpClient
       .post[EmbedContentRequest, EmbedContentResponse](
         GeminiConstants.Endpoints.embedContent(request.model),
         request
       )
       .map(_.map(_.embedding))
 
-    override def batchEmbedContents(
-        request: BatchEmbedContentsRequest
-    ): F[Either[GeminiError, List[ContentEmbedding]]] = httpClient
-      .post[BatchEmbedContentsRequest, BatchEmbedContentsResponse](
-        GeminiConstants.Endpoints.batchEmbedContents(request.model),
+    def batchEmbedContents(request: BatchEmbedContentsRequest): F[Either[GeminiError, List[ContentEmbedding]]] =
+      httpClient
+        .post[BatchEmbedContentsRequest, BatchEmbedContentsResponse](
+          GeminiConstants.Endpoints.batchEmbedContents(request.model),
+          request
+        )
+        .map(_.map(_.embeddings))
+
+  }
+
+  /**
+   * Full implementation for v1beta API with all capabilities.
+   */
+  private final class GeminiServiceImpl[F[_]: Async](
+      httpClient: GeminiHttpClient[F]
+  ) extends GeminiCore[F]
+      with GeminiFiles[F]
+      with GeminiCaching[F]
+      with GeminiBatch[F] {
+
+    // Core
+    def generateContent(request: GenerateContentRequest): F[Either[GeminiError, GenerateContentResponse]] =
+      httpClient.post[GenerateContentRequest, GenerateContentResponse](
+        GeminiConstants.Endpoints.generateContent(request.model),
         request
       )
-      .map(_.map(_.embeddings))
 
-    override def createCachedContent(
-        request: CreateCachedContentRequest
-    ): F[Either[GeminiError, CachedContent]] = httpClient.post[CreateCachedContentRequest, CachedContent](
-      GeminiConstants.Endpoints.createCachedContent,
-      request
-    )
+    def generateContentStream(request: GenerateContentRequest): Stream[F, GenerateContentResponse] =
+      httpClient.postStream[GenerateContentRequest, GenerateContentResponse](
+        GeminiConstants.Endpoints.generateContentStream(request.model),
+        request
+      )
 
-    override def uploadFile(
+    def countTokens(request: CountTokensRequest): F[Either[GeminiError, Int]] = httpClient
+      .post[CountTokensRequest, CountTokensResponse](
+        GeminiConstants.Endpoints.countTokens(request.model),
+        request
+      )
+      .map(_.map(_.totalTokens))
+
+    def embedContent(request: EmbedContentRequest): F[Either[GeminiError, ContentEmbedding]] = httpClient
+      .post[EmbedContentRequest, EmbedContentResponse](
+        GeminiConstants.Endpoints.embedContent(request.model),
+        request
+      )
+      .map(_.map(_.embedding))
+
+    def batchEmbedContents(request: BatchEmbedContentsRequest): F[Either[GeminiError, List[ContentEmbedding]]] =
+      httpClient
+        .post[BatchEmbedContentsRequest, BatchEmbedContentsResponse](
+          GeminiConstants.Endpoints.batchEmbedContents(request.model),
+          request
+        )
+        .map(_.map(_.embeddings))
+
+    // Caching
+    def createCachedContent(request: CreateCachedContentRequest): F[Either[GeminiError, CachedContent]] =
+      httpClient.post[CreateCachedContentRequest, CachedContent](
+        GeminiConstants.Endpoints.createCachedContent,
+        request
+      )
+
+    // Files
+    def uploadFile(
         path: java.nio.file.Path,
         mimeType: String,
         displayName: Option[String]
@@ -538,39 +373,43 @@ object GeminiService {
       }
     }
 
-    override def listFiles(
-        pageSize: Int,
-        pageToken: Option[String]
-    ): F[Either[GeminiError, ListFilesResponse]] = {
+    def listFiles(pageSize: Int, pageToken: Option[String]): F[Either[GeminiError, ListFilesResponse]] = {
       val params = Map("pageSize" -> pageSize.toString) ++ pageToken.map("pageToken" -> _)
       httpClient.get[ListFilesResponse](GeminiConstants.Endpoints.files, params)
     }
 
-    override def getFile(name: String): F[Either[GeminiError, File]] = httpClient.get[File](name)
+    def getFile(name: String): F[Either[GeminiError, File]] = httpClient.get[File](name)
 
-    override def deleteFile(name: String): F[Either[GeminiError, Unit]] = httpClient.delete(name)
+    def deleteFile(name: String): F[Either[GeminiError, Unit]] = httpClient.delete(name)
 
-    override def listBatchJobs(
-        pageSize: Int,
-        pageToken: Option[String]
-    ): F[Either[GeminiError, ListBatchJobsResponse]] = {
+    // Batch
+    def batchGenerateContent(
+        model: ModelName,
+        requests: List[GenerateContentRequest]
+    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
+      GeminiConstants.Endpoints.batchGenerateContent(model),
+      BatchGenerateContentRequest(requests)
+    )
+
+    def batchGenerateContent(model: ModelName, input: BatchInput): F[Either[GeminiError, BatchJob]] =
+      httpClient.post[BatchGenerateContentRequest, BatchJob](
+        GeminiConstants.Endpoints.batchGenerateContent(model),
+        BatchGenerateContentRequest(input)
+      )
+
+    def getBatchJob(name: String): F[Either[GeminiError, BatchJob]] =
+      httpClient.get[BatchJob](GeminiConstants.Endpoints.getBatchJob(name))
+
+    def listBatchJobs(pageSize: Int, pageToken: Option[String]): F[Either[GeminiError, ListBatchJobsResponse]] = {
       val params = Map("pageSize" -> pageSize.toString) ++ pageToken.map("pageToken" -> _)
       httpClient.get[ListBatchJobsResponse](GeminiConstants.Endpoints.listBatchJobs, params)
     }
 
-    override def cancelBatchJob(name: String): F[Either[GeminiError, Unit]] =
+    def cancelBatchJob(name: String): F[Either[GeminiError, Unit]] =
       httpClient.post[Unit, Unit](GeminiConstants.Endpoints.cancelBatchJob(name), ())
 
-    override def deleteBatchJob(name: String): F[Either[GeminiError, Unit]] =
+    def deleteBatchJob(name: String): F[Either[GeminiError, Unit]] =
       httpClient.delete(GeminiConstants.Endpoints.deleteBatchJob(name))
-
-    override def batchGenerateContent(
-        model: ModelName,
-        input: BatchInput
-    ): F[Either[GeminiError, BatchJob]] = httpClient.post[BatchGenerateContentRequest, BatchJob](
-      GeminiConstants.Endpoints.batchGenerateContent(model),
-      BatchGenerateContentRequest(input)
-    )
 
   }
 

@@ -94,24 +94,34 @@ The library currently uses **v1beta** which provides access to all features:
 
 ### Choosing an API Version
 
-Select your API version when creating the config:
+The library provides type-safe version selection through capability modules:
 
 ```scala
-import gemini4s.config.{GeminiConfig, ApiVersion}
+import gemini4s.GeminiService
+import gemini4s.config.GeminiConfig
 
-// v1beta (default) - Full features: caching, files, Imagen, Veo
-val betaConfig = GeminiConfig.v1beta("your-key")
+// Full v1beta service - all capabilities available
+GeminiService.make[IO](GeminiConfig.v1beta("key")).use { svc =>
+  svc.generateContent(...)     // ✓ GeminiCore
+  svc.uploadFile(...)          // ✓ GeminiFiles  
+  svc.createCachedContent(...) // ✓ GeminiCaching
+  svc.batchGenerateContent(...)// ✓ GeminiBatch
+}
 
-// v1 (stable) - Limited features, but more stable  
-val stableConfig = GeminiConfig.v1("your-key")
-
-// Both work with GeminiService.make
-GeminiService.make[IO](betaConfig).use { svc =>
-  // All features available
+// Minimal v1 service - only core capabilities
+GeminiService.makeV1[IO]("key").use { svc =>
+  svc.generateContent(...)     // ✓ GeminiCore
+  // svc.uploadFile(...)       // ✗ Compile error - not available!
 }
 ```
 
-**Note**: Currently, the library uses v1beta by default since it provides access to all features. The v1 API is a stable subset that lacks caching, file operations, and image/video generation.
+The service type determines what methods are available at compile time:
+
+| Type | Traits Included |
+|------|-----------------|
+| `GeminiService[F]` (default) | `GeminiCore & GeminiFiles & GeminiCaching & GeminiBatch` |
+| `GeminiServiceV1[F]` | `GeminiCore` only |
+
 
 
 ## Running the Audit Locally
