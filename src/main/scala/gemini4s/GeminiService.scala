@@ -395,6 +395,47 @@ object GeminiService {
 
     }
 
+    // ============================================
+    // Version-Aware Extension Methods
+    // ============================================
+
+    import gemini4s.config.ApiVersion._
+
+    /**
+     * Extension methods that require API version capability evidence.
+     *
+     * These methods ensure at compile-time that you're using a configuration
+     * with an API version that supports the required features.
+     *
+     * Example:
+     * {{{
+     * import gemini4s.GeminiService.ops._
+     *
+     * val betaConfig = GeminiConfig.v1beta("key")  // V1BetaCapabilities
+     * val stableConfig = GeminiConfig.v1("key")    // V1Capabilities
+     *
+     * // This compiles - v1beta has file operations
+     * service.requiresFiles(betaConfig)
+     *
+     * // This would NOT compile - v1 doesn't have file operations
+     * // service.requiresFiles(stableConfig)  // Compile error!
+     * }}}
+     */
+    extension [F[_]](service: GeminiService[F]) {
+
+      /**
+       * Marker method that requires caching capability.
+       * Use this to document that a code path requires v1beta.
+       */
+      def withCachingSupport[V: SupportsCaching]: GeminiService[F] = service
+
+      /**
+       * Marker method that requires files capability.
+       * Use this to document that a code path requires v1beta.
+       */
+      def withFilesSupport[V: SupportsFiles]: GeminiService[F] = service
+    }
+
   }
 
   private final class GeminiServiceImpl[F[_]: Async](
