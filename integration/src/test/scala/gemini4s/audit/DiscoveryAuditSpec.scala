@@ -80,7 +80,6 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
   val apiKey = sys.env.get("GEMINI_API_KEY")
 
   test("Automated API Compliance Audit") {
-    println(s"DEBUG: CWD is ${System.getProperty("user.dir")}")
     val configFile = new File("src/test/resources/compliance_config.json")
 
     if (!configFile.exists()) {
@@ -92,7 +91,6 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
       err => throw new Exception(s"JSON Decode Error: $err"),
       c => c
     )
-    println("DEBUG: Config loaded successfully")
 
     apiKey match {
       case Some(key) => HttpClientFs2Backend.resource[IO]().use { backend =>
