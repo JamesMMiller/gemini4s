@@ -1,8 +1,9 @@
 package gemini4s.model.domain
 
-import munit.FunSuite
-import io.circe.syntax._
 import io.circe.parser._
+import io.circe.syntax._
+import munit.FunSuite
+
 import ModelCapabilities._
 
 class ModelCapabilitiesSpec extends FunSuite {

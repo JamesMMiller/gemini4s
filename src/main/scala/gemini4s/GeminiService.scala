@@ -5,7 +5,7 @@ import cats.syntax.all._
 import fs2.Stream
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 
-import gemini4s.config.{ ApiKey, ApiVersion, GeminiConfig }
+import gemini4s.config.{ ApiKey, GeminiConfig }
 import gemini4s.error.GeminiError
 import gemini4s.http.GeminiHttpClient
 import gemini4s.model.domain._

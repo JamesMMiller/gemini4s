@@ -1,6 +1,5 @@
 package gemini4s
 
-import cats.effect.Async
 import fs2.Stream
 
 import gemini4s.error.GeminiError
