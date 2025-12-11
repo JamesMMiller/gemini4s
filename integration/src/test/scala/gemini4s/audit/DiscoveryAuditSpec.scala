@@ -104,6 +104,13 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
               // --- Audit Resources & Methods ---
               val resources = discovery.hcursor.downField("resources").keys.getOrElse(Iterable.empty)
 
+              val untrackedResources = resources.toSet.diff(config.resources.keySet)
+              if (untrackedResources.nonEmpty) {
+                fail(
+                  s"Untracked API Resources found (add to compliance_config.json): ${untrackedResources.mkString(", ")}"
+                )
+              }
+
               val resourceErrors = resources.toList.flatMap { resName =>
                 config.resources.get(resName).toList.flatMap { conf =>
                   val methodsCursor = discovery.hcursor.downField("resources").downField(resName).downField("methods")

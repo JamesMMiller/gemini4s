@@ -208,6 +208,128 @@
                     "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
                 }
             ]
+        },
+        "batches": {
+            "implemented": [
+                "list",
+                "cancel",
+                "delete",
+                "get"
+            ],
+            "ignored": [
+                {
+                    "name": "updateGenerateContentBatch",
+                    "reason": "Internal usage?",
+                    "link": ""
+                },
+                {
+                    "name": "updateEmbedContentBatch",
+                    "reason": "Internal usage?",
+                    "link": ""
+                }
+            ]
+        },
+        "generatedFiles": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "list",
+                    "reason": "Generated files management not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "cachedContents": {
+            "implemented": [
+                "create"
+            ],
+            "ignored": [
+                {
+                    "name": "list",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "get",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "patch",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "files": {
+            "implemented": [
+                "list",
+                "get",
+                "delete"
+            ],
+            "ignored": []
+        },
+        "fileSearchStores": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "get",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "list",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "delete",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "importFile",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                }
+            ]
+        },
+        "media": {
+            "implemented": [
+                "upload"
+            ],
+            "ignored": [
+                {
+                    "name": "uploadToFileSearchStore",
+                    "reason": "Not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "dynamic": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "generateContent",
+                    "reason": "Use models resource",
+                    "link": ""
+                },
+                {
+                    "name": "streamGenerateContent",
+                    "reason": "Use models resource",
+                    "link": ""
+                }
+            ]
         }
     },
     "schemas": {
