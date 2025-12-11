@@ -5,6 +5,8 @@ import munit.CatsEffectSuite
 import sttp.client3.httpclient.fs2.HttpClientFs2Backend
 import gemini4s.config.ApiKey
 import gemini4s.http.GeminiHttpClient
+import gemini4s._
+import gemini4s.audit.ApiMapping
 import gemini4s.model.domain.ModelCapabilities._
 import io.circe.Json
 import io.circe.parser._
@@ -158,36 +160,37 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           // Fetch the models list to get actual supportedGenerationMethods
           httpClient.get[Json]("v1beta/models").map {
             case Right(modelsJson) =>
-              val models = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
+              val models   = modelsJson.hcursor.downField("models").as[List[Json]].getOrElse(List.empty)
+              var errors   = List.empty[String]
+              var verified = List.empty[String]
 
-              val results = capabilityAssertions.flatMap { assertion =>
+              capabilityAssertions.foreach { assertion =>
                 // Find models matching the pattern
                 val matchingModels = models.filter { m =>
                   val name = m.hcursor.downField("name").as[String].getOrElse("")
-                  name.contains(assertion.modelPattern)
+                  name.contains(assertion.modelPattern) && !name.contains("native-audio")
                 }
 
                 if (matchingModels.isEmpty) {
+                  // Model not found - could be renamed or removed
                   println(s"WARNING: No models found matching pattern '${assertion.modelPattern}'")
-                  Nil
                 } else {
-                  matchingModels.map { model =>
+                  matchingModels.foreach { model =>
                     val modelName        = model.hcursor.downField("name").as[String].getOrElse("unknown")
                     val supportedMethods =
                       model.hcursor.downField("supportedGenerationMethods").as[List[String]].getOrElse(List.empty).toSet
 
+                    // Check if all expected methods are supported
                     val missingMethods = assertion.expectedMethods.diff(supportedMethods)
                     if (missingMethods.nonEmpty) {
-                      Left(s"${assertion.description}: Model '$modelName' is missing expected methods: ${missingMethods
-                          .mkString(", ")}. Actual: ${supportedMethods.mkString(", ")}")
+                      errors :+= s"${assertion.description}: Model '$modelName' is missing expected methods: ${missingMethods
+                          .mkString(", ")}. Actual: ${supportedMethods.mkString(", ")}"
                     } else {
-                      Right(s"✓ $modelName supports all expected methods for ${assertion.description}")
+                      verified :+= s"✓ $modelName supports all expected methods for ${assertion.description}"
                     }
                   }
                 }
               }
-
-              val (errors, verified) = results.partitionMap(identity)
 
               // Print verified models
               verified.foreach(println)
@@ -381,6 +384,101 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           }
         }
       case None      => IO(println("No API key, skipping API version audit"))
+    }
+  }
+
+  test("Service Contract Audit") {
+    // 1. Reflect on Capability Traits to get Scala methods
+    val traits = List(
+      classOf[GeminiCore[?]],
+      classOf[GeminiFiles[?]],
+      classOf[GeminiCaching[?]],
+      classOf[GeminiBatch[?]]
+    )
+
+    val serviceMethods = traits.flatMap(_.getDeclaredMethods.map(_.getName)).toSet
+
+    // 2. Define Contract: Scala Name -> API Resource.Method
+    val contract = Map(
+      "generateContent"       -> "models.generateContent",
+      "generateContentStream" -> "models.streamGenerateContent",
+      "countTokens"           -> "models.countTokens",
+      "embedContent"          -> "models.embedContent",
+      "batchEmbedContents"    -> "models.batchEmbedContents",
+      "uploadFile"            -> "media.upload",
+      "listFiles"             -> "files.list",
+      "getFile"               -> "files.get",
+      "deleteFile"            -> "files.delete",
+      "createCachedContent"   -> "cachedContents.create",
+      "batchGenerateContent"  -> "models.batchGenerateContent",
+      "getBatchJob"           -> "batches.get",
+      "listBatchJobs"         -> "batches.list",
+      "cancelBatchJob"        -> "batches.cancel",
+      "deleteBatchJob"        -> "batches.delete"
+    )
+
+    val knownContract = contract
+
+    // 3. Verify all Service methods match contract or are ignored
+    val ignoredServiceMethods = Set("equals", "hashCode", "toString", "wait", "notify", "notifyAll", "getClass")
+    val untracked             = serviceMethods
+      .filterNot(m => m.contains("$") || m.contains("<init>"))
+      .diff(contract.keySet)
+      .diff(ignoredServiceMethods)
+
+    if (untracked.nonEmpty) {
+      fail(s"Service has untracked methods (add to contract): ${untracked.mkString(", ")}")
+    }
+
+    // 4. Validate Contract against API
+    apiKey match {
+      case Some(key) => HttpClientFs2Backend.resource[IO]().use { backend =>
+          val httpClient = GeminiHttpClient.make[IO](
+            backend,
+            ApiKey.unsafe(key),
+            baseUrl = "https://generativelanguage.googleapis.com"
+          )
+
+          for {
+            discovery <- httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta")).flatMap {
+                           case Right(json) => IO.pure(json)
+                           case Left(err)   => IO.raiseError(new Exception(s"Discovery fetch failed: $err"))
+                         }
+          } yield {
+            // Flatten API methods: "resource.method"
+            def getMethods(json: Json, resourcePrefix: String): Set[String] = {
+              val methods         = json.hcursor.downField("methods").keys.getOrElse(Iterable.empty).toSet
+              val nestedResources = json.hcursor.downField("resources").keys.getOrElse(Iterable.empty).toSet
+
+              val currentMethods = methods.map(m => s"$resourcePrefix$m")
+
+              val nestedMethods = nestedResources.flatMap { res =>
+                val subJson = json.hcursor.downField("resources").downField(res).focus.get
+                getMethods(subJson, s"$resourcePrefix$res.")
+              }
+
+              currentMethods ++ nestedMethods
+            }
+
+            val apiMethods = getMethods(discovery, "")
+
+            println(s"\n=== SERVICE CONTRACT AUDIT ===")
+            println(s"Verified ${knownContract.size} methods against API.")
+
+            val missingInApi = knownContract.values.toSet.diff(apiMethods)
+
+            // Print batch related methods to find the real ones
+            val batchMethods = apiMethods.filter(m => m.contains("batch") || m.contains("Batch"))
+            println(s"Found Batch-related API methods: ${batchMethods.mkString(", ")}")
+
+            if (missingInApi.nonEmpty) {
+              fail(s"Contract expects API methods that don't exist: ${missingInApi.mkString(", ")}")
+            }
+
+            println("\nService Contract Verified: All mapped methods exist in API.")
+          }
+        }
+      case None      => IO(println("Skipping Service Contract Audit (No API Key)"))
     }
   }
 }

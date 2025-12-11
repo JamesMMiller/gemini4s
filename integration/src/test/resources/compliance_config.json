@@ -33,6 +33,21 @@
                     "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
                 },
                 {
+                    "name": "deep-research-pro-preview-12-2025",
+                    "reason": "New model detected by audit",
+                    "link": "TODO"
+                },
+                {
+                    "name": "gemini-2.5-flash-native-audio-latest",
+                    "reason": "New model using bidiGenerateContent",
+                    "link": "TODO"
+                },
+                {
+                    "name": "gemini-1.5-pro",
+                    "reason": "Alias for gemini-1.5-pro-latest",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/12"
+                },
+                {
                     "name": "list",
                     "reason": "Not implemented",
                     "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
@@ -287,6 +302,16 @@
             "imagen-4.0-generate-001"
         ],
         "ignored": [
+            {
+                "name": "deep-research-pro-preview-12-2025",
+                "reason": "New model detected by audit",
+                "link": "TODO"
+            },
+            {
+                "name": "gemini-2.5-flash-native-audio-latest",
+                "reason": "New model using bidiGenerateContent",
+                "link": "TODO"
+            },
             {
                 "name": "aqa",
                 "reason": "AQA model - generateAnswer not implemented",

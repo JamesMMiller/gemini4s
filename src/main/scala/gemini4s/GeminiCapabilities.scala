@@ -2,6 +2,7 @@ package gemini4s
 
 import fs2.Stream
 
+import gemini4s.audit.ApiMapping
 import gemini4s.error.GeminiError
 import gemini4s.model.domain._
 import gemini4s.model.request._
@@ -23,6 +24,7 @@ trait GeminiCore[F[_]] {
   /**
    * Generates content using the Gemini API.
    */
+  @ApiMapping("models", "generateContent")
   def generateContent(
       request: GenerateContentRequest
   ): F[Either[GeminiError, GenerateContentResponse]]
@@ -30,6 +32,7 @@ trait GeminiCore[F[_]] {
   /**
    * Generates content with streaming response.
    */
+  @ApiMapping("models", "streamGenerateContent")
   def generateContentStream(
       request: GenerateContentRequest
   ): Stream[F, GenerateContentResponse]
@@ -37,6 +40,7 @@ trait GeminiCore[F[_]] {
   /**
    * Counts tokens in the provided content.
    */
+  @ApiMapping("models", "countTokens")
   def countTokens(
       request: CountTokensRequest
   ): F[Either[GeminiError, Int]]
@@ -44,6 +48,7 @@ trait GeminiCore[F[_]] {
   /**
    * Generates an embedding for content.
    */
+  @ApiMapping("models", "embedContent")
   def embedContent(
       request: EmbedContentRequest
   ): F[Either[GeminiError, ContentEmbedding]]
@@ -51,6 +56,7 @@ trait GeminiCore[F[_]] {
   /**
    * Generates embeddings for a batch of contents.
    */
+  @ApiMapping("models", "batchEmbedContents")
   def batchEmbedContents(
       request: BatchEmbedContentsRequest
   ): F[Either[GeminiError, List[ContentEmbedding]]]
@@ -68,6 +74,7 @@ trait GeminiFiles[F[_]] {
   /**
    * Uploads a file using the resumable upload protocol.
    */
+  @ApiMapping("media", "upload")
   def uploadFile(
       path: java.nio.file.Path,
       mimeType: String,
@@ -77,6 +84,7 @@ trait GeminiFiles[F[_]] {
   /**
    * Lists files with pagination.
    */
+  @ApiMapping("files", "list")
   def listFiles(
       pageSize: Int = 10,
       pageToken: Option[String] = None
@@ -85,12 +93,15 @@ trait GeminiFiles[F[_]] {
   /**
    * Gets a file by name.
    */
+  @ApiMapping("files", "get")
   def getFile(name: String): F[Either[GeminiError, File]]
 
   /**
    * Deletes a file by name.
    */
+  @ApiMapping("files", "delete")
   def deleteFile(name: String): F[Either[GeminiError, Unit]]
+
 }
 
 /**
@@ -104,6 +115,7 @@ trait GeminiCaching[F[_]] {
   /**
    * Creates cached content for efficient reuse.
    */
+  @ApiMapping("cachedContents", "create")
   def createCachedContent(
       request: CreateCachedContentRequest
   ): F[Either[GeminiError, CachedContent]]
@@ -121,6 +133,7 @@ trait GeminiBatch[F[_]] {
   /**
    * Generates content for a batch of requests.
    */
+  @ApiMapping("models", "batchGenerateContent")
   def batchGenerateContent(
       model: ModelName,
       requests: List[GenerateContentRequest]
@@ -129,6 +142,7 @@ trait GeminiBatch[F[_]] {
   /**
    * Generates content for a batch using file input.
    */
+  @ApiMapping("models", "batchGenerateContent")
   def batchGenerateContent(
       model: ModelName,
       input: BatchInput
@@ -137,11 +151,13 @@ trait GeminiBatch[F[_]] {
   /**
    * Gets the status of a batch job.
    */
+  @ApiMapping("batches", "get")
   def getBatchJob(name: String): F[Either[GeminiError, BatchJob]]
 
   /**
    * Lists batch jobs.
    */
+  @ApiMapping("batches", "list")
   def listBatchJobs(
       pageSize: Int = 10,
       pageToken: Option[String] = None
@@ -150,12 +166,15 @@ trait GeminiBatch[F[_]] {
   /**
    * Cancels a batch job.
    */
+  @ApiMapping("batches", "cancel")
   def cancelBatchJob(name: String): F[Either[GeminiError, Unit]]
 
   /**
    * Deletes a batch job.
    */
+  @ApiMapping("batches", "delete")
   def deleteBatchJob(name: String): F[Either[GeminiError, Unit]]
+
 }
 
 // ============================================
