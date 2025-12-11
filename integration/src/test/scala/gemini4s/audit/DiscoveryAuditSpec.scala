@@ -37,32 +37,29 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
       description: String
   )
 
-  // Our capability model assertions - based on what the API actually reports
-  // Note: streaming is always available when generateContent is supported
-  val capabilityAssertions = List(
-    // Generation models - core capabilities
-    ModelCapabilityAssertion(
-      "gemini-2.5-flash",
-      Set("generateContent", "countTokens"), // batchGenerateContent varies by variant
-      "Gemini 2.5 Flash - Core Generation"
-    ),
-    ModelCapabilityAssertion(
-      "gemini-2.5-pro",
-      Set("generateContent", "countTokens"),
-      "Gemini 2.5 Pro - Core Generation"
-    ),
-    // Embedding models should support embedContent
-    ModelCapabilityAssertion(
-      "gemini-embedding-001",
-      Set("embedContent", "countTokens"),
-      "Gemini Embedding 001 - EmbeddingCapabilities"
-    ),
-    ModelCapabilityAssertion(
-      "text-embedding",
-      Set("embedContent"),
-      "Text Embedding models - EmbeddingCapabilities"
-    )
-  )
+  // Our capability model assertions - generated programmatically from Model definitions
+  // This ensures that our code's understanding of model capabilities matches reality
+  val capabilityAssertions = {
+    val modelObj = Model
+    modelObj.getClass.getDeclaredMethods
+      .filter(_.getParameterCount == 0)
+      .filter(m => classOf[Model[?]].isAssignableFrom(m.getReturnType))
+      .map { m =>
+        m.setAccessible(true)
+        val model = m.invoke(modelObj).asInstanceOf[Model[?]]
+        ModelCapabilityAssertion(
+          model.value, // Uses the model name as the pattern (exact match or prefix)
+          model.requiredMethods,
+          s"Defined Model: ${m.getName}"
+        )
+      }
+      .toList
+  }
+
+  // Verify we actually generated assertions
+  test("Code Awareness Sanity Check") {
+    assert(capabilityAssertions.nonEmpty, "Failed to generate capability assertions from Model object via reflection")
+  }
 
   import io.circe._
   implicit val ignoreItemDecoder: Decoder[IgnoreItem] = Decoder.forProduct3("name", "reason", "link")(IgnoreItem.apply)

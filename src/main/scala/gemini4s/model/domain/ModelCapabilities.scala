@@ -85,7 +85,7 @@ object ModelCapabilities {
    * @tparam C The capabilities this model supports (intersection type)
    * @param name The underlying model name
    */
-  final case class Model[C <: Capability](name: ModelName) {
+  final case class Model[C <: Capability](name: ModelName, requiredMethods: Set[String] = Set.empty) {
 
     /** Get the raw model name value */
     def value: String = name.value
@@ -95,33 +95,37 @@ object ModelCapabilities {
   }
 
   object Model {
+    // Capabilities sets
+    private val GenMethods   = Set("generateContent", "countTokens")
+    private val EmbedMethods = Set("embedContent")
+
     // ============================================
     // Pre-defined Models with Their Capabilities
     // ============================================
 
     /** Gemini 2.5 Flash - Full generation capabilities */
-    val gemini25Flash: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25Flash)
+    val gemini25Flash: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25Flash, GenMethods)
 
     /** Gemini 2.5 Pro - Full generation capabilities */
-    val gemini25Pro: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25Pro)
+    val gemini25Pro: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25Pro, GenMethods)
 
     /** Gemini 2.5 Flash Lite - Full generation capabilities */
-    val gemini25FlashLite: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25FlashLite)
+    val gemini25FlashLite: Model[FullGenerationCapabilities] = Model(ModelName.Gemini25FlashLite, GenMethods)
 
     /** Gemini 3 Pro - Full generation capabilities */
-    val gemini3Pro: Model[FullGenerationCapabilities] = Model(ModelName.Gemini3Pro)
+    val gemini3Pro: Model[FullGenerationCapabilities] = Model(ModelName.Gemini3Pro, GenMethods)
 
     /** Gemini Flash Latest - Full generation capabilities */
-    val geminiFlashLatest: Model[FullGenerationCapabilities] = Model(ModelName.GeminiFlashLatest)
+    val geminiFlashLatest: Model[FullGenerationCapabilities] = Model(ModelName.GeminiFlashLatest, GenMethods)
 
     /** Gemini Pro Latest - Full generation capabilities */
-    val geminiProLatest: Model[FullGenerationCapabilities] = Model(ModelName.GeminiProLatest)
+    val geminiProLatest: Model[FullGenerationCapabilities] = Model(ModelName.GeminiProLatest, GenMethods)
 
     /** Gemini Embedding 001 - Embedding capabilities */
-    val embeddingGemini001: Model[EmbeddingCapabilities] = Model(ModelName.EmbeddingGemini001)
+    val embeddingGemini001: Model[EmbeddingCapabilities] = Model(ModelName.EmbeddingGemini001, EmbedMethods)
 
     /** Imagen 4 - Image generation */
-    val imagen4: Model[CanPredict] = Model(ModelName.Imagen4)
+    val imagen4: Model[CanPredict] = Model(ModelName.Imagen4, Set("predict"))
 
     // ============================================
     // Smart Constructors
@@ -131,23 +135,23 @@ object ModelCapabilities {
      * Create a model with full generation capabilities.
      * Use when you know the model supports all standard operations.
      */
-    def generationModel(name: String): Model[FullGenerationCapabilities] = Model(ModelName.Standard(name))
+    def generationModel(name: String): Model[FullGenerationCapabilities] = Model(ModelName.Standard(name), GenMethods)
 
     /**
      * Create a model with embedding capabilities.
      * Use for embedding-specific models.
      */
-    def embeddingModel(name: String): Model[EmbeddingCapabilities] = Model(ModelName.Standard(name))
+    def embeddingModel(name: String): Model[EmbeddingCapabilities] = Model(ModelName.Standard(name), EmbedMethods)
 
     /**
      * Create a model with minimal capabilities (just generation).
      * Use when you're unsure of the model's full capabilities.
      */
-    def basicModel(name: String): Model[CanGenerate] = Model(ModelName.Standard(name))
+    def basicModel(name: String): Model[CanGenerate] = Model(ModelName.Standard(name), Set("generateContent"))
 
     // Circe codecs (encode as plain model name)
     given [C <: Capability]: Encoder[Model[C]] = Encoder[ModelName].contramap(_.name)
-    given [C <: Capability]: Decoder[Model[C]] = Decoder[ModelName].map(Model(_))
+    given [C <: Capability]: Decoder[Model[C]] = Decoder[ModelName].map(name => Model(name))
   }
 
   // ============================================
