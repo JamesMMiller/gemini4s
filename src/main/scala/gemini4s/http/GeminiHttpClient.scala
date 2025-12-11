@@ -99,8 +99,8 @@ trait GeminiHttpClient[F[_]] {
 
 object GeminiHttpClient {
 
-  /** Default base URL for the Gemini API */
-  val DefaultBaseUrl = "https://generativelanguage.googleapis.com/v1beta"
+  /** Default base URL for the Gemini API (without version path) */
+  val DefaultBaseUrl = "https://generativelanguage.googleapis.com"
 
   /**
    * Creates a Sttp-based implementation of GeminiHttpClient.

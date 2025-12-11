@@ -1,0 +1,759 @@
+{
+    "apiVersions": {
+        "supported": [
+            "v1beta"
+        ],
+        "ignored": [
+            {
+                "name": "v1",
+                "reason": "Stable API - subset of v1beta features, using v1beta for full access",
+                "link": ""
+            },
+            {
+                "name": "v1alpha",
+                "reason": "Alpha API - unstable, not recommended for production",
+                "link": ""
+            }
+        ]
+    },
+    "resources": {
+        "models": {
+            "implemented": [
+                "generateContent",
+                "streamGenerateContent",
+                "countTokens",
+                "embedContent",
+                "batchEmbedContents",
+                "batchGenerateContent"
+            ],
+            "ignored": [
+                {
+                    "name": "get",
+                    "reason": "Not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
+                },
+                {
+                    "name": "deep-research-pro-preview-12-2025",
+                    "reason": "New model detected by audit",
+                    "link": "TODO"
+                },
+                {
+                    "name": "gemini-2.5-flash-native-audio-latest",
+                    "reason": "New model using bidiGenerateContent",
+                    "link": "TODO"
+                },
+                {
+                    "name": "gemini-1.5-pro",
+                    "reason": "Alias for gemini-1.5-pro-latest",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/12"
+                },
+                {
+                    "name": "list",
+                    "reason": "Not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/81"
+                },
+                {
+                    "name": "patch",
+                    "reason": "Model patching not applicable for API consumers",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Model deletion not applicable for API consumers",
+                    "link": ""
+                },
+                {
+                    "name": "generateMessage",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "generateAnswer",
+                    "reason": "AQA not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/75"
+                },
+                {
+                    "name": "predict",
+                    "reason": "Imagen not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+                },
+                {
+                    "name": "predictLongRunning",
+                    "reason": "Veo not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+                },
+                {
+                    "name": "generateText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "batchEmbedText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "asyncBatchEmbedContent",
+                    "reason": "Async batch not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/78"
+                },
+                {
+                    "name": "countTextTokens",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "countMessageTokens",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "embedText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.list",
+                    "reason": "LRO management not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "tunedModels": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Tuning API unavailable in region - no models support createTunedModel",
+                    "link": ""
+                },
+                {
+                    "name": "list",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "get",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "patch",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "transferOwnership",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "generateContent",
+                    "reason": "Would be handled via standard generation with tuned model name",
+                    "link": ""
+                },
+                {
+                    "name": "streamGenerateContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "asyncBatchEmbedContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "batchGenerateContent",
+                    "reason": "Tuning feature disabled",
+                    "link": ""
+                },
+                {
+                    "name": "generateText",
+                    "reason": "Legacy PaLM API - deprecated",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.get",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.list",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.create",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.delete",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.patch",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.list",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "corpora": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "list",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "get",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "delete",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "patch",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "query",
+                    "reason": "Semantic Retriever not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "permissions.get",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.list",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.create",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.delete",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.patch",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "batches": {
+            "implemented": [
+                "list",
+                "cancel",
+                "delete",
+                "get"
+            ],
+            "ignored": [
+                {
+                    "name": "updateGenerateContentBatch",
+                    "reason": "Internal usage?",
+                    "link": ""
+                },
+                {
+                    "name": "updateEmbedContentBatch",
+                    "reason": "Internal usage?",
+                    "link": ""
+                }
+            ]
+        },
+        "generatedFiles": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "list",
+                    "reason": "Generated files management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "cachedContents": {
+            "implemented": [
+                "create"
+            ],
+            "ignored": [
+                {
+                    "name": "list",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "get",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "delete",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "patch",
+                    "reason": "Cache management not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "files": {
+            "implemented": [
+                "list",
+                "get",
+                "delete"
+            ],
+            "ignored": []
+        },
+        "fileSearchStores": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "create",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "get",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "list",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "delete",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "importFile",
+                    "reason": "Not implemented",
+                    "link": "TODO"
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.get",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.list",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.delete",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "upload.operations.get",
+                    "reason": "Upload LRO not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "media": {
+            "implemented": [
+                "upload"
+            ],
+            "ignored": [
+                {
+                    "name": "uploadToFileSearchStore",
+                    "reason": "Not implemented",
+                    "link": ""
+                }
+            ]
+        },
+        "dynamic": {
+            "implemented": [],
+            "ignored": [
+                {
+                    "name": "generateContent",
+                    "reason": "Use models resource",
+                    "link": ""
+                },
+                {
+                    "name": "streamGenerateContent",
+                    "reason": "Use models resource",
+                    "link": ""
+                }
+            ]
+        }
+    },
+    "schemas": {
+        "GenerationConfig": {
+            "implemented": [
+                "temperature",
+                "topP",
+                "topK",
+                "candidateCount",
+                "maxOutputTokens",
+                "stopSequences",
+                "responseMimeType",
+                "responseSchema"
+            ],
+            "ignored": [
+                {
+                    "name": "presencePenalty",
+                    "reason": "New feature - penalties",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "frequencyPenalty",
+                    "reason": "New feature - penalties",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "responseLogprobs",
+                    "reason": "New feature - logprobs",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "logprobs",
+                    "reason": "New feature - logprobs",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "enableEnhancedCivicAnswers",
+                    "reason": "Niche feature - low priority",
+                    "link": ""
+                },
+                {
+                    "name": "speechConfig",
+                    "reason": "TTS not implemented",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "mediaResolution",
+                    "reason": "New feature",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "thinkingConfig",
+                    "reason": "Gemini 2.5+ thinking",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "seed",
+                    "reason": "Deterministic generation",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "imageConfig",
+                    "reason": "Image generation config",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                },
+                {
+                    "name": "_responseJsonSchema",
+                    "reason": "Internal field - not for public use",
+                    "link": ""
+                },
+                {
+                    "name": "responseJsonSchema",
+                    "reason": "Internal field - alias for responseSchema",
+                    "link": ""
+                },
+                {
+                    "name": "responseModalities",
+                    "reason": "Multimodal output selection",
+                    "link": "https://github.com/JamesMMiller/gemini4s/issues/80"
+                }
+            ]
+        }
+    },
+    "availableModels": {
+        "tracked": [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.5-flash-lite",
+            "gemini-embedding-001",
+            "gemini-flash-latest",
+            "gemini-pro-latest",
+            "imagen-4.0-generate-001"
+        ],
+        "ignored": [
+            {
+                "name": "deep-research-pro-preview-12-2025",
+                "reason": "New model detected by audit",
+                "link": "TODO"
+            },
+            {
+                "name": "gemini-2.5-flash-native-audio-latest",
+                "reason": "New model using bidiGenerateContent",
+                "link": "TODO"
+            },
+            {
+                "name": "aqa",
+                "reason": "AQA model - generateAnswer not implemented",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/75"
+            },
+            {
+                "name": "embedding-001",
+                "reason": "Legacy embedding model",
+                "link": ""
+            },
+            {
+                "name": "embedding-gecko-001",
+                "reason": "Legacy embedding model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-001",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-exp",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash-lite",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-lite-001",
+                "reason": "Not added to ModelName constants",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.0-flash-lite-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-flash-lite-preview-02-05",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-pro-exp",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.0-pro-exp-02-05",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-computer-use-preview-10-2025",
+                "reason": "Computer use preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-image",
+                "reason": "Image variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemini-2.5-flash-image-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-lite-preview-09-2025",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-preview-09-2025",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-flash-preview-tts",
+                "reason": "TTS preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-2.5-pro-preview-tts",
+                "reason": "TTS preview",
+                "link": ""
+            },
+            {
+                "name": "gemini-3-pro-image-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-3-pro-preview",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "gemini-embedding-exp",
+                "reason": "Experimental embedding",
+                "link": ""
+            },
+            {
+                "name": "gemini-embedding-exp-03-07",
+                "reason": "Experimental embedding",
+                "link": ""
+            },
+            {
+                "name": "gemini-exp-1206",
+                "reason": "Experimental model",
+                "link": ""
+            },
+            {
+                "name": "gemini-flash-lite-latest",
+                "reason": "Alias model",
+                "link": ""
+            },
+            {
+                "name": "gemini-robotics-er-1.5-preview",
+                "reason": "Robotics preview",
+                "link": ""
+            },
+            {
+                "name": "gemma-3-12b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-1b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-27b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3-4b-it",
+                "reason": "Gemma model - open weights",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/83"
+            },
+            {
+                "name": "gemma-3n-e2b-it",
+                "reason": "Gemma nano model",
+                "link": ""
+            },
+            {
+                "name": "gemma-3n-e4b-it",
+                "reason": "Gemma nano model",
+                "link": ""
+            },
+            {
+                "name": "imagen-4.0-fast-generate-001",
+                "reason": "Imagen fast variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+            },
+            {
+                "name": "imagen-4.0-generate-preview-06-06",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "imagen-4.0-ultra-generate-001",
+                "reason": "Imagen ultra variant",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/76"
+            },
+            {
+                "name": "imagen-4.0-ultra-generate-preview-06-06",
+                "reason": "Preview model",
+                "link": ""
+            },
+            {
+                "name": "nano-banana-pro-preview",
+                "reason": "Unknown preview model",
+                "link": ""
+            },
+            {
+                "name": "text-embedding-004",
+                "reason": "Legacy text embedding",
+                "link": ""
+            },
+            {
+                "name": "veo-2.0-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.0-fast-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.0-generate-001",
+                "reason": "Veo video generation",
+                "link": "https://github.com/JamesMMiller/gemini4s/issues/77"
+            },
+            {
+                "name": "veo-3.1-fast-generate-preview",
+                "reason": "Veo preview",
+                "link": ""
+            },
+            {
+                "name": "veo-3.1-generate-preview",
+                "reason": "Veo preview",
+                "link": ""
+            }
+        ]
+    }
+}

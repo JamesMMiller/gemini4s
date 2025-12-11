@@ -64,6 +64,18 @@ Documentation is built using Typelevel Helium (Laika).
 3.  Open a Pull Request against the `main` branch of the `gemini4s` repository.
 4.  Provide a clear description of your changes and link to any relevant issues.
 
+## API Compliance Audit
+
+This project includes an automated API compliance audit that runs on CI. It ensures the library stays in sync with the Google Gemini API by:
+
+-   Detecting new API methods and schema fields
+-   Verifying that claimed implementations are accurate
+-   Tracking missing features via GitHub issues
+
+When adding new features or the API changes, you may need to update `integration/src/test/resources/compliance_config.json`.
+
+**See the full documentation**: [API Compliance Audit](api-compliance.md)
+
 ## Code of Conduct
 
 Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms.

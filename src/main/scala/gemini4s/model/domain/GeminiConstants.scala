@@ -56,9 +56,11 @@ object GeminiConstants {
     def deleteBatchJob(name: String): String                           = name
     val createCachedContent: String                                    = "cachedContents"
 
-    // File API
-    val uploadFile: String = "https://generativelanguage.googleapis.com/upload/v1beta/files"
-    val files: String      = "files"
+    // File API - requires version parameter
+    def uploadFile(version: String = "v1beta"): String =
+      s"https://generativelanguage.googleapis.com/upload/$version/files"
+
+    val files: String                                  = "files"
   }
 
 }

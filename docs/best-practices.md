@@ -221,14 +221,15 @@ val productionSafety = List(
 
 ```scala mdoc:compile-only
 import cats.effect.IO
-import gemini4s.GeminiService
+import gemini4s._
 import gemini4s.config.ApiKey
 import gemini4s.model.domain._
 import gemini4s.model.request._
 import gemini4s.model.response._
 import gemini4s.error.GeminiError
 
-class MockGemini extends GeminiService[IO] {
+// Mock service implementing all capability traits
+class MockGemini extends GeminiCore[IO] with GeminiFiles[IO] with GeminiCaching[IO] with GeminiBatch[IO] {
   def generateContent(request: gemini4s.model.request.GenerateContentRequest): IO[Either[GeminiError, GenerateContentResponse]] = {
     // Return mock response
     IO.pure(Right(GenerateContentResponse(
