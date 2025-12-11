@@ -111,6 +111,16 @@
                     "name": "embedText",
                     "reason": "Legacy PaLM API - deprecated",
                     "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.list",
+                    "reason": "LRO management not implemented",
+                    "link": ""
                 }
             ]
         },
@@ -171,6 +181,41 @@
                     "name": "generateText",
                     "reason": "Legacy PaLM API - deprecated",
                     "link": ""
+                },
+                {
+                    "name": "permissions.get",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.list",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.create",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.delete",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.patch",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.list",
+                    "reason": "LRO not implemented",
+                    "link": ""
                 }
             ]
         },
@@ -206,6 +251,36 @@
                     "name": "query",
                     "reason": "Semantic Retriever not implemented",
                     "link": "https://github.com/JamesMMiller/gemini4s/issues/79"
+                },
+                {
+                    "name": "permissions.get",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.list",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.create",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.delete",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "permissions.patch",
+                    "reason": "Permissions not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
                 }
             ]
         },
@@ -235,6 +310,11 @@
                 {
                     "name": "list",
                     "reason": "Generated files management not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
                     "link": ""
                 }
             ]
@@ -301,6 +381,31 @@
                     "name": "importFile",
                     "reason": "Not implemented",
                     "link": "TODO"
+                },
+                {
+                    "name": "operations.get",
+                    "reason": "LRO not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.get",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.list",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "documents.delete",
+                    "reason": "FileSearch docs not implemented",
+                    "link": ""
+                },
+                {
+                    "name": "upload.operations.get",
+                    "reason": "Upload LRO not implemented",
+                    "link": ""
                 }
             ]
         },

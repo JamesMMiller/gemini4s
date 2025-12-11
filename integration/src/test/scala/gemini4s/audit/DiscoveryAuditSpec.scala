@@ -8,6 +8,7 @@ import gemini4s.http.GeminiHttpClient
 import gemini4s._
 import gemini4s.audit.ApiMapping
 import gemini4s.model.domain.ModelCapabilities._
+import gemini4s.audit.DiscoveryModels._
 import io.circe.Json
 import io.circe.parser._
 import scala.io.Source
@@ -80,7 +81,6 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
 
   test("Automated API Compliance Audit") {
     val configFile = new File("src/test/resources/compliance_config.json")
-
     if (!configFile.exists()) {
       fail(s"Config file not found at: ${configFile.getAbsolutePath}")
     }
@@ -100,47 +100,58 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           )
 
           httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta")).map {
-            case Right(discovery) =>
-              // --- Audit Resources & Methods ---
-              val resources = discovery.hcursor.downField("resources").keys.getOrElse(Iterable.empty)
+            case Right(json) =>
+              val doc = json.as[DiscoveryDoc].fold(err => fail(s"Failed to parse Discovery Doc: $err"), identity)
 
-              val untrackedResources = resources.toSet.diff(config.resources.keySet)
+              // 1. Audit Resources Existence
+              val apiResources       = doc.resources.getOrElse(Map.empty).keySet
+              val untrackedResources = apiResources -- config.resources.keySet
               if (untrackedResources.nonEmpty) {
                 fail(
                   s"Untracked API Resources found (add to compliance_config.json): ${untrackedResources.mkString(", ")}"
                 )
               }
 
-              val resourceErrors = resources.toList.flatMap { resName =>
-                config.resources.get(resName).toList.flatMap { conf =>
-                  val methodsCursor = discovery.hcursor.downField("resources").downField(resName).downField("methods")
-                  val apiMethods    = methodsCursor.keys.getOrElse(Iterable.empty).toList
-                  val tracked       = conf.implemented ++ conf.ignored.map(_.name)
-                  val missing       = apiMethods.diff(tracked)
-                  if (missing.nonEmpty)
-                    List(s"Resource '$resName' has unimplemented/untracked methods: ${missing.mkString(", ")}")
-                  else Nil
+              // 2. Audit Methods (Flattened Check)
+              val allMethods   = DiscoveryModels.flattenMethods(doc)
+              val methodErrors = allMethods.toList.flatMap { fullMethod =>
+                // fullMethod is e.g. "models.generateContent" or "tunedModels.operations.get"
+                val parts = fullMethod.split("\\.", 2)
+                if (parts.length < 2) List(s"Invalid method format: $fullMethod")
+                else {
+                  val resName    = parts(0)
+                  val methodName = parts(1)
+
+                  config.resources.get(resName).toList.flatMap { conf =>
+                    val isImpl    = conf.implemented.contains(methodName)
+                    val isIgnored = conf.ignored.exists(_.name == methodName)
+
+                    if (!isImpl && !isIgnored)
+                      Some(s"Resource '$resName' has unimplemented/untracked method: $methodName")
+                    else None
+                  }
                 }
               }
 
-              // --- Audit Schemas (GenerationConfig) ---
-              val genConfigProps =
-                discovery.hcursor.downField("schemas").downField("GenerationConfig").downField("properties")
-              val apiProps       = genConfigProps.keys.getOrElse(Iterable.empty).toList
-
-              val schemaErrors = config.schemas.get("GenerationConfig").toList.flatMap { confSchema =>
-                val trackedProps = confSchema.implemented ++ confSchema.ignored.map(_.name)
-                val missingProps = apiProps.diff(trackedProps)
-                if (missingProps.nonEmpty)
-                  List(s"Schema 'GenerationConfig' has untracked fields: ${missingProps.mkString(", ")}")
-                else Nil
+              if (methodErrors.nonEmpty) {
+                fail(s"Compliance Audit Method Check Failed:\n${methodErrors.distinct.mkString("\n")}")
               }
 
-              val errors = resourceErrors ++ schemaErrors
-              if (errors.nonEmpty) {
-                fail(
-                  s"Compliance Audit Failed:\n${errors.mkString("\n")}\n\nPlease update compliance_config.json with 'ignored' entries if these are known missing features."
-                )
+              // 3. Audit Schemas
+              val schemaErrors = doc.schemas.getOrElse(Map.empty).toList.flatMap { case (schemaName, schema) =>
+                config.schemas.get(schemaName).toList.flatMap { conf =>
+                  val apiFields       = schema.properties.getOrElse(Map.empty).keySet
+                  val trackedFields   = conf.implemented.toSet ++ conf.ignored.map(_.name).toSet
+                  val untrackedFields = apiFields -- trackedFields
+
+                  if (untrackedFields.nonEmpty)
+                    Some(s"Schema '$schemaName' has untracked fields: ${untrackedFields.mkString(", ")}")
+                  else None
+                }
+              }
+
+              if (schemaErrors.nonEmpty) {
+                fail(s"Compliance Audit Schema Check Failed:\n${schemaErrors.mkString("\n")}")
               } else {
                 println("Compliance Audit Passed: All API features are tracked.")
               }
@@ -444,27 +455,13 @@ class DiscoveryAuditSpec extends CatsEffectSuite {
           )
 
           for {
-            discovery <- httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta")).flatMap {
-                           case Right(json) => IO.pure(json)
-                           case Left(err)   => IO.raiseError(new Exception(s"Discovery fetch failed: $err"))
-                         }
+            json <- httpClient.get[Json]("$discovery/rest", Map("version" -> "v1beta")).flatMap {
+                      case Right(json) => IO.pure(json)
+                      case Left(err)   => IO.raiseError(new Exception(s"Discovery fetch failed: $err"))
+                    }
           } yield {
-            // Flatten API methods: "resource.method"
-            def getMethods(json: Json, resourcePrefix: String): Set[String] = {
-              val methods         = json.hcursor.downField("methods").keys.getOrElse(Iterable.empty).toSet
-              val nestedResources = json.hcursor.downField("resources").keys.getOrElse(Iterable.empty).toSet
-
-              val currentMethods = methods.map(m => s"$resourcePrefix$m")
-
-              val nestedMethods = nestedResources.flatMap { res =>
-                val subJson = json.hcursor.downField("resources").downField(res).focus.get
-                getMethods(subJson, s"$resourcePrefix$res.")
-              }
-
-              currentMethods ++ nestedMethods
-            }
-
-            val apiMethods = getMethods(discovery, "")
+            val doc        = json.as[DiscoveryDoc].fold(err => throw new Exception(s"Discovery Parse Error: $err"), identity)
+            val apiMethods = DiscoveryModels.flattenMethods(doc)
 
             println(s"\n=== SERVICE CONTRACT AUDIT ===")
             println(s"Verified ${knownContract.size} methods against API.")
